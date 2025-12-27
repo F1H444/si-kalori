@@ -1,0 +1,50 @@
+{
+  "foszy112233@gmail.com": {
+    "goal": "gain",
+    "weight": 50,
+    "height": 160,
+    "age": 18,
+    "gender": "male",
+    "activityLevel": "light",
+    "targetWeight": 70,
+    "dietPreference": "normal",
+    "bmi": 19.5,
+    "bmr": 1415,
+    "tdee": 1946,
+    "recommendedCalories": 2446,
+    "email": "foszy112233@gmail.com",
+    "updatedAt": "2025-12-02T07:21:50.878Z"
+  },
+  "vexxyz42@gmail.com": {
+    "goal": "gain",
+    "weight": 60,
+    "height": 160,
+    "age": 18,
+    "gender": "male",
+    "activityLevel": "light",
+    "targetWeight": 80,
+    "dietPreference": "normal",
+    "bmi": 23.4,
+    "bmr": 1515,
+    "tdee": 2083,
+    "recommendedCalories": 2583,
+    "email": "vexxyz42@gmail.com",
+    "updatedAt": "2025-12-22T01:33:20.362Z"
+  },
+  "zenmety@gmail.com": {
+    "goal": "maintain",
+    "weight": 250,
+    "height": 106,
+    "age": 100,
+    "gender": "male",
+    "activityLevel": "moderate",
+    "targetWeight": 208,
+    "dietPreference": "vegetarian",
+    "bmi": 222.5,
+    "bmr": 2668,
+    "tdee": 4135,
+    "recommendedCalories": 4135,
+    "email": "zenmety@gmail.com",
+    "updatedAt": "2025-12-22T02:08:19.102Z"
+  }
+}
