@@ -13,71 +13,65 @@ export default function ValuesSection() {
   const values = [
     {
       icon: Heart,
-      title: "SEHAT ITU WARAS",
+      title: "BALANCE, BUKAN SIKSA",
       description:
-        "Diet bukan berarti menderita. Kesehatan mentalmu sama pentingnya dengan fisikmu.",
-      bg: "bg-white",
+        "Kami percaya makan enak dan hidup sehat bisa jalan bareng. Fokus ke progres, bukan penderitaan.",
+      color: "bg-pink-500",
     },
     {
       icon: Shield,
-      title: "DATA > MITOS",
+      title: "ANGKA TIDAK BOHONG",
       description:
-        "Kami bicara berdasarkan sains dan angka, bukan tren diet viral yang menyesatkan.",
-      bg: "bg-white",
+        "Lupakan mitos diet 'ajaib'. Semua berbasis data nutrisi yang akurat supaya targetmu gak cuma mimpi.",
+      color: "bg-blue-500",
     },
     {
       icon: Users,
-      title: "NO JUDGMENT",
+      title: "GAS BARENG-BARENG",
       description:
-        "Mau bulking atau cutting, semua proses dihargai di sini. Kita berjuang bareng.",
-      bg: "bg-white",
+        "Apapun targetmu—turun berat badan atau bentuk otot—kita sediakan alatnya, kamu yang eksekusi.",
+      color: "bg-green-500",
     },
   ];
 
   return (
-    <div className="relative bg-black text-white py-20 px-4 mb-20 sm:mb-32 overflow-hidden">
-      {/* White Grid on Black Background */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(to right, #fff 1px, transparent 1px)`,
-            backgroundSize: "40px 40px",
-          }}
-        />
-      </div>
+    <div className="max-w-7xl mx-auto px-4 mb-20 sm:mb-32">
+      <h2 className="text-4xl sm:text-5xl font-black text-center mb-16 uppercase italic tracking-tighter">
+        PRINSIP KITA
+      </h2>
 
-      <div className="relative z-10 max-w-6xl mx-auto">
-        <h2 className="text-4xl sm:text-5xl font-black text-center mb-16 uppercase text-white">
-          PRINSIP KAMI
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          {values.map((value, index) => {
-            const Icon = value.icon;
-            return (
+      <div className="grid md:grid-cols-3 gap-8 sm:gap-10">
+        {values.map((value, index) => {
+          const Icon = value.icon;
+          return (
+            <div
+              key={index}
+              className={`group relative bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[4px] hover:translate-y-[4px] transition-all duration-300 ${
+                mounted
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-12"
+              }`}
+              style={{ transitionDelay: `${index * 150}ms` }}
+            >
               <div
-                key={index}
-                className={`bg-white text-black border-4 border-white p-8 shadow-[8px_8px_0px_0px_#22c55e] transition-all duration-500 hover:-translate-y-2 ${
-                  mounted
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-12"
-                }`}
-                style={{ transitionDelay: `${index * 150}ms` }}
+                className={`flex items-center gap-4 p-4 border-b-4 border-black ${value.color}`}
               >
-                <div className="w-16 h-16 bg-black text-white flex items-center justify-center mb-6 border-4 border-black">
-                  <Icon className="w-8 h-8" strokeWidth={2.5} />
+                <div className="w-12 h-12 bg-black flex items-center justify-center border-2 border-white shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]">
+                  <Icon className="w-6 h-6 text-white" strokeWidth={3} />
                 </div>
-                <h3 className="text-2xl font-black mb-4 uppercase">
+                <h3 className="text-xl font-black text-white uppercase tracking-tight">
                   {value.title}
                 </h3>
-                <p className="text-base font-bold text-gray-800 leading-relaxed">
+              </div>
+
+              <div className="p-6 bg-white">
+                <p className="text-lg font-bold text-black leading-relaxed">
                   {value.description}
                 </p>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

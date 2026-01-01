@@ -34,14 +34,14 @@ export default function MissionSection() {
               MISI KITA SIMPEL:
             </h2>
             <p className="text-lg sm:text-xl font-bold text-black leading-relaxed">
-              "Kami ingin menghancurkan mitos diet yang menyesatkan. Kamu berhak
+              &quot;Kami ingin menghancurkan mitos diet yang menyesatkan. Kamu berhak
               tahu apa yang sebenarnya masuk ke tubuhmu. Bukan tebak-tebakan,
-              bukan 'katanya', tapi fakta nutrisi yang jelas.{" "}
+              bukan &apos;katanya&apos;, tapi fakta nutrisi yang jelas.&quot;{" "}
               <span className="bg-black text-white px-1">
                 Your Body, Your Data.
               </span>
-              "
             </p>
+
           </div>
         </div>
       </div>

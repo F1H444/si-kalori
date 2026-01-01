@@ -9,8 +9,9 @@ import {
   User,
   Users,
   CheckCircle2,
-  ArrowRight,
 } from "lucide-react";
+
+
 
 export default function TargetAudienceSection() {
   const [mounted, setMounted] = useState(false);

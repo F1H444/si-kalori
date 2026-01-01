@@ -4,20 +4,19 @@ import { useState, useEffect } from "react";
 import { 
   Search, 
   Trash2, 
-  Activity, 
-  Zap, 
   Loader2,
-  TrendingUp,
   Meh,
   Info,
-  ChevronRight,
   Calendar
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
+import type { ScanLog } from "@/types/user";
+
 
 export default function RiwayatPage() {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<ScanLog[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
@@ -40,8 +39,9 @@ export default function RiwayatPage() {
 
       if (error) throw error;
       setLogs(data || []);
-    } catch (error) {
-      console.error("Error fetching logs:", error);                                                                                         
+    } catch (error: unknown) {
+      console.error("Error fetching logs:", error instanceof Error ? error.message : error);                                                                                         
+
     } finally {
       setLoading(false);
     }
@@ -76,6 +76,7 @@ export default function RiwayatPage() {
     const nut = typeof log.nutrition === 'string' ? JSON.parse(log.nutrition) : log.nutrition;
     return acc + (Number(nut?.calories) || 0);
   }, 0);
+
 
   if (!mounted || loading) {
     return (
@@ -115,12 +116,12 @@ export default function RiwayatPage() {
         </div>
       </header>
 
-      {/* STATS AREA */}
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <StatBox label="Total Menu" value={logs.length} color="bg-white" icon={<Zap />} />
-        <StatBox label="Total Kalori" value={`${totalCalories}`} color="bg-yellow-400" icon={<Activity />} />
-        <StatBox label="Status Akun" value="Aktif" color="bg-black text-white" icon={<TrendingUp />} />
+        <StatBox label="Total Menu" value={logs.length} color="bg-white" />
+        <StatBox label="Total Kalori" value={`${totalCalories}`} color="bg-yellow-400" />
+        <StatBox label="Status Akun" value="Aktif" color="bg-black text-white" />
       </div>
+
 
       {/* LIST AREA */}
       <div className="max-w-6xl mx-auto space-y-6">
@@ -203,21 +204,19 @@ export default function RiwayatPage() {
 }
 
 // Komponen Pendukung
-function StatBox({ label, value, color, icon }: any) {
+function StatBox({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (
     <div className={`${color} border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between`}>
        <div className="min-w-0">
          <p className="text-xs font-black uppercase opacity-60 mb-1">{label}</p>
          <p className="text-4xl font-black uppercase tracking-tighter truncate">{value}</p>
        </div>
-       <div className="p-3 border-4 border-black bg-white text-black shrink-0">
-        {icon}
-       </div>
     </div>
   );
 }
 
-function MiniStat({ label, value, color }: any) {
+function MiniStat({ label, value, color }: { label: string; value: string | number; color: string }) {
+
   return (
     <div className={`${color} border-2 border-black p-2 min-w-[70px] text-center`}>
       <p className="text-[8px] font-black uppercase mb-1 opacity-60">{label}</p>

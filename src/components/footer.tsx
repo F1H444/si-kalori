@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 // 1. Hapus 'Link' dari lucide-react
 import { ArrowRight, Github, Twitter, Instagram } from "lucide-react";
 // 2. Import Link dari next/link
-import Link from "next/link";
+// import Link from "next/link";
+
 
 export default function Footer() {
   const [mounted, setMounted] = useState(false);

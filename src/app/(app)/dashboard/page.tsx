@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { 
-  Target,
   Scale,
-  Zap,
   Ruler,
   Calendar,
   Fingerprint,
@@ -15,6 +13,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
 
 interface UserProfile {
   id: string;

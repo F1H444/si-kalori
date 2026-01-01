@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { 
   LogOut, 
-  Shield, 
   LayoutDashboard, 
   Menu, 
   X, 
@@ -14,6 +13,7 @@ import {
   Fingerprint,
   History // Ikon baru untuk Riwayat
 } from "lucide-react";
+
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 
@@ -31,7 +31,8 @@ export default function Sidebar() {
   };
 
   // REUSABLE NAV ITEM COMPONENT (Gaya Neo-Brutalism)
-  const NavItem = ({ href, icon, label, active, onClick }: any) => (
+  const NavItem = ({ href, icon, label, active, onClick }: { href: string; icon: React.ReactNode; label: string; active: boolean; onClick?: () => void }) => (
+
     <Link
       href={href}
       onClick={onClick}
@@ -122,7 +123,7 @@ export default function Sidebar() {
               <NavItem 
                 href="/riwayat" 
                 icon={<History size={20} />} 
-                label="Riwayat Konsumsi" 
+                label="Riwayat" 
                 active={pathname === "/riwayat"} 
                 onClick={() => setIsMobileOpen(false)}
               />

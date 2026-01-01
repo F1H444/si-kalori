@@ -8,11 +8,11 @@ import {
   Loader2, 
   Check, 
   Zap, 
-  CameraOff, 
   Info, 
   ArrowLeft,
   History
 } from "lucide-react";
+
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -176,10 +176,12 @@ export default function ScanPage() {
 
             setResult(aiData);
             setMode("result");
-        } catch (error: any) {
-            alert(error.message || "Something went wrong");
+        } catch (error: unknown) {
+            const err = error as Error;
+            alert(err.message || "Something went wrong");
             setMode("select");
         } finally {
+
             setLoading(false);
         }
     };
@@ -215,7 +217,7 @@ export default function ScanPage() {
                             <Loader2 className="w-20 h-20 animate-spin mb-6 text-black" strokeWidth={3} />
                             <h2 className="text-5xl font-black uppercase tracking-tighter italic text-black">Lagi Diproses...</h2>
                             <p className="mt-4 bg-black text-white px-6 py-2 font-bold uppercase shadow-[6px_6px_0px_0px_rgba(37,99,235,1)]">
-                                Menghubungkan ke Otak AI Sikalori
+                                Menganalisa
                             </p>
                         </motion.div>
                     )}
@@ -243,7 +245,7 @@ export default function ScanPage() {
                                     color="bg-yellow-400" 
                                     icon={<Upload size={32} />} 
                                     label="DARI GALERI" 
-                                    desc="Pilih foto dari HP/Laptop"
+                                    desc="Pilih foto Galeri"
                                     isUpload 
                                     onChange={handleFileUpload}
                                 />
@@ -361,7 +363,7 @@ export default function ScanPage() {
                                 ))}
                                 
                                 <Link href="/riwayat" className="flex items-center justify-center gap-2 w-full p-4 border-4 border-black bg-blue-600 text-white font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 transition-all">
-                                   <History /> Riwayat Konsumsi
+                                   <History /> Riwayat
                                 </Link>
                             </div>
                         </motion.div>
@@ -375,7 +377,18 @@ export default function ScanPage() {
 
 // --- HELPER COMPONENTS ---
 
-function BrutalMenuBtn({ onClick, color, icon, label, desc, isUpload, onChange }: any) {
+interface BrutalMenuBtnProps {
+    onClick?: () => void;
+    color: string;
+    icon: React.ReactNode;
+    label: string;
+    desc: string;
+    isUpload?: boolean;
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+function BrutalMenuBtn({ onClick, color, icon, label, desc, isUpload, onChange }: BrutalMenuBtnProps) {
+
     return (
         <button 
             onClick={onClick} 
@@ -393,7 +406,14 @@ function BrutalMenuBtn({ onClick, color, icon, label, desc, isUpload, onChange }
     );
 }
 
-function NutritionCard({ label, value, unit, color }: any) {
+interface NutritionCardProps {
+    label: string;
+    value: string | number;
+    unit: string;
+    color: string;
+}
+
+function NutritionCard({ label, value, unit, color }: NutritionCardProps) {
     return (
         <div className={`${color} border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]`}>
             <p className="text-[10px] font-black uppercase opacity-60 mb-1">{label}</p>

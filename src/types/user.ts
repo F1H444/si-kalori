@@ -38,14 +38,19 @@ export interface ScanLog {
   id: string;
   user_id: string;
   food_name: string;
-  calories: number;
-  protein: string;
-  carbs: string;
-  fat: string;
-  health_score: number;
-  description: string;
+  nutrition: {
+    calories: number;
+    protein: string | number;
+    carbs: string | number;
+    fat: string | number;
+    health_score: number;
+  } | string;
+  ai_analysis: string;
+  image_url?: string | null;
+  meal_type: string;
   created_at: string;
 }
+
 
 
 export interface OnboardingFormData {

@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SI KALORI",
   description: "Website Cek Kalori",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

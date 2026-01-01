@@ -8,20 +8,21 @@ import path from "path";
 
 const usersFilePath = path.join(process.cwd(), "data", "users.json");
 
-function getUsers() {
-    try {
-        if (!fs.existsSync(usersFilePath)) return [];
-        return JSON.parse(fs.readFileSync(usersFilePath, "utf-8"));
-    } catch {
-        return [];
-    }
-}
+// function getUsers() {
+//     try {
+//         if (!fs.existsSync(usersFilePath)) return [];
+//         return JSON.parse(fs.readFileSync(usersFilePath, "utf-8"));
+//     } catch {
+//         return [];
+//     }
+// }
 
-function saveUsers(users: any[]) {
-    const dir = path.dirname(usersFilePath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
-}
+// function saveUsers(users: any[]) {
+//     const dir = path.dirname(usersFilePath);
+//     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+//     fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
+// }
+
 
 export async function POST(req: NextRequest) {
     try {
@@ -32,45 +33,22 @@ export async function POST(req: NextRequest) {
 
         let userProfile: UserProfile | undefined;
 
-        // --- LOGIKA LIMIT SCAN + GET PROFILE FROM SUPABASE ---
+        // --- GET PROFILE FROM SUPABASE ---
         if (userEmail) {
-            const users = getUsers();
-            const userIndex = users.findIndex((u: any) => u.email === userEmail);
-
-            if (userIndex !== -1) {
-                const user = users[userIndex];
-                const today = new Date().toISOString().split('T')[0];
-
-                // Reset jika hari berganti
-                if (user.lastScanDate !== today) {
-                    user.scanCount = 0;
-                    user.lastScanDate = today;
+            try {
+                const profile = await getProfileByEmail(userEmail);
+                if (profile && profile.weight && profile.height) {
+                    userProfile = profile;
+                    console.log('✅ User profile loaded from Supabase:', {
+                        email: userEmail,
+                        goal: profile.goal,
+                    });
                 }
-
-                // Increment scan count
-                user.scanCount = (user.scanCount || 0) + 1;
-                users[userIndex] = user;
-                saveUsers(users);
-
-                // Get user profile from Supabase for personalization
-                try {
-                    const profile = await getProfileByEmail(userEmail);
-                    if (profile && profile.weight && profile.height) {
-                        userProfile = profile;
-                        console.log('✅ User profile loaded from Supabase:', {
-                            email: userEmail,
-                            goal: profile.goal,
-                            bmr: profile.bmr,
-                            tdee: profile.tdee,
-                        });
-                    } else {
-                        console.log('⚠️ Profile found but incomplete for:', userEmail);
-                    }
-                } catch (error) {
-                    console.log("⚠️ No profile found in Supabase, using default prompts");
-                }
+            } catch (err) {
+                console.log("⚠️ No profile found in Supabase:", (err as Error).message);
             }
         }
+
         // -------------------------
 
         // Cek API Key Groq
@@ -88,7 +66,11 @@ export async function POST(req: NextRequest) {
         // Build personalized or default prompt
         const systemPrompt = buildPersonalizedPrompt(userProfile);
 
-        let userContent: any[] = [];
+        let userContent: (
+            | { type: "text"; text: string }
+            | { type: "image_url"; image_url: { url: string } }
+        )[] = [];
+
 
         if (image) {
             const bytes = await image.arrayBuffer();
@@ -170,12 +152,13 @@ export async function POST(req: NextRequest) {
             userCalorieTarget: userProfile?.recommendedCalories,
         });
 
-    } catch (error: any) {
+    } catch (err: unknown) {
+        const error = err as Error;
         console.error("Error analyzing food with Groq:", error);
-        console.error("Error details:", JSON.stringify(error, null, 2));
         return NextResponse.json(
             { error: `Gagal menganalisa makanan: ${error.message || "Unknown error"}` },
             { status: 500 }
         );
     }
+
 }

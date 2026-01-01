@@ -2,7 +2,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { User, Shield, LayoutDashboard, Users, LogOut, Search, TrendingUp, DollarSign, Activity, Crown, Menu, X, BarChart3, FileText, Settings as SettingsIcon, Check, Bell, ChevronDown, Zap, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Shield, Search, Check, Loader2, Link, Eye, EyeOff } from "lucide-react";
+import NextLink from "next/link";
+
 import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 
@@ -19,8 +21,9 @@ interface UserData {
 
 export default function AdminPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
+  // const router = useRouter();
+  // const pathname = usePathname();
+
   
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,9 +64,10 @@ export default function AdminPage() {
         throw error;
       }
       setUsers(data || []);
-    } catch (error: any) {
-      console.error("Failed to fetch users", error);
+    } catch (error: unknown) {
+      console.error("Failed to fetch users", error instanceof Error ? error.message : error);
     } finally {
+
       setLoading(false);
     }
   }, []);
@@ -114,15 +118,18 @@ export default function AdminPage() {
     }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("admin_auth");
-    setIsAuthenticated(false);
+  // const handleLogout = () => {
+  //   sessionStorage.removeItem("admin_auth");
+  //   setIsAuthenticated(false);
+  // };
+
+
+  const updateSettings = (key: string, value: string | boolean) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    localStorage.setItem('admin_settings', JSON.stringify(newSettings));
   };
 
-  const updateSettings = (key: string, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-    localStorage.setItem('admin_settings', JSON.stringify({ ...settings, [key]: value }));
-  };
 
   useEffect(() => {
     const savedSettings = localStorage.getItem('admin_settings');
@@ -325,12 +332,13 @@ const stats = useMemo(() => {
             </form>
 
             <div className="mt-6 pt-6 border-t-4 border-black">
-              <a
+              <Link
                 href="/"
                 className="flex items-center justify-center gap-2 text-sm font-bold hover:underline uppercase"
               >
                 ← Back to Site
-              </a>
+              </Link>
+
             </div>
           </div>
         </div>
@@ -542,7 +550,8 @@ const stats = useMemo(() => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredUsers.map((user, i) => (
+                      {filteredUsers.map((user) => (
+
                         <tr
                           key={user.id}
                           className="border-b-4 border-black hover:bg-[#FFDE59]/10 transition-colors group"

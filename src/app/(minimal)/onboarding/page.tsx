@@ -13,7 +13,16 @@ import {
 import { calculateAllMetrics } from "@/lib/health-calculations";
 
 // --- Komponen Picker Modern untuk Angka ---
-const ModernPicker = ({ value, unit, onChange, min = 0, max = 300 }: any) => {
+interface ModernPickerProps {
+  value: number;
+  unit: string;
+  onChange: (val: number) => void;
+  min?: number;
+  max?: number;
+}
+
+const ModernPicker = ({ value, unit, onChange, min = 0, max = 300 }: ModernPickerProps) => {
+
   const increment = () => value < max && onChange(value + 1);
   const decrement = () => value > min && onChange(value - 1);
 
@@ -148,10 +157,12 @@ export default function Onboarding() {
       localStorage.setItem('user_session', JSON.stringify(userSession));
 
       router.push("/dashboard");
-    } catch (error: any) {
-      console.error("Error:", error.message);
-      alert("Gagal menyimpan profil: " + error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error("Error:", err.message);
+      alert("Gagal menyimpan profil: " + err.message);
     } finally {
+
       setLoading(false);
     }
   };
@@ -161,9 +172,13 @@ export default function Onboarding() {
     else setCurrentStep((prev) => prev + 1);
   };
 
-  const updateData = (field: keyof OnboardingFormData, value: any) => {
+  const updateData = <K extends keyof OnboardingFormData>(
+    field: K,
+    value: OnboardingFormData[K]
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
 
   return (
     <div className="min-h-screen bg-white text-black font-mono flex flex-col">
@@ -191,11 +206,12 @@ export default function Onboarding() {
               <div className="space-y-8 text-center">
                 <h2 className="text-4xl sm:text-6xl font-black italic tracking-tighter uppercase">Apa target utama kamu?</h2>
                 <div className="grid gap-4">
-                  {Object.entries(goalLabels).map(([key, label]) => (
-                    <button 
-                      key={key} 
-                      onClick={() => updateData("goal", key)} 
-                      className={`p-6 border-4 border-black text-2xl font-black flex justify-between items-center transition-all ${
+                    {Object.entries(goalLabels).map(([key, label]) => (
+                      <button 
+                        key={key} 
+                        onClick={() => updateData("goal", key as OnboardingFormData["goal"])} 
+                        className={`p-6 border-4 border-black text-2xl font-black flex justify-between items-center transition-all ${
+
                         formData.goal === key ? "bg-[#FFDE59]" : "bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1"
                       }`}
                     >
@@ -215,8 +231,9 @@ export default function Onboarding() {
                   {["male", "female"].map((g) => (
                     <button 
                       key={g} 
-                      onClick={() => updateData("gender", g)} 
+                      onClick={() => updateData("gender", g as OnboardingFormData["gender"])} 
                       className={`flex-1 p-8 border-4 border-black text-2xl font-black uppercase transition-all ${
+
                         formData.gender === g ? "bg-[#FFDE59]" : "bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1"
                       }`}
                     >
@@ -259,8 +276,9 @@ export default function Onboarding() {
                   {Object.entries(activityLabels).map(([key, label]) => (
                     <button 
                       key={key} 
-                      onClick={() => updateData("activityLevel", key)} 
+                      onClick={() => updateData("activityLevel", key as OnboardingFormData["activityLevel"])} 
                       className={`p-4 border-4 border-black text-xl font-black flex justify-between items-center transition-all ${
+
                         formData.activityLevel === key ? "bg-[#FFDE59]" : "bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1"
                       }`}
                     >

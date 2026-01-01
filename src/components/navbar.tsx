@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { Menu, X, LogOut, User as UserIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import NextImage from "next/image";
+
+
 
 interface User {
   name: string;
@@ -89,7 +92,8 @@ export default function Navbar() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [pathname, supabase]); // Still keep pathname to refresh on navigation if needed
+  }, [pathname]); // Removed supabase from dependencies as it is a singleton
+
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -154,12 +158,15 @@ export default function Navbar() {
                       className="flex items-center gap-2 px-4 py-2 bg-yellow-400 border-2 border-black font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none transition-all"
                     >
                       {user.picture ? (
-                        <img
+                        <NextImage
                           src={user.picture}
                           alt={user.name}
+                          width={32}
+                          height={32}
                           className="w-8 h-8 rounded-full border border-black"
                         />
                       ) : (
+
                         <UserIcon size={20} />
                       )}
                       <span className="text-sm truncate max-w-[100px]">
@@ -270,12 +277,15 @@ export default function Navbar() {
               <div className="flex flex-col items-center gap-4 mt-8">
                 <div className="flex items-center gap-3 px-6 py-3 bg-yellow-400 border-4 border-white text-black font-black text-xl">
                   {user.picture && (
-                    <img
+                    <NextImage
                       src={user.picture}
                       alt="Profile"
+                      width={32}
+                      height={32}
                       className="w-8 h-8 rounded-full"
                     />
                   )}
+
                   <span>Halo, {user.name.split(" ")[0]}</span>
                 </div>
                 <button
