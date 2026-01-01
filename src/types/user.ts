@@ -31,9 +31,22 @@ export interface UserData {
   joinedAt: string | Date;
   lastLogin: string | Date;
   hasCompletedOnboarding: boolean;
-  isPremium?: boolean;
   scanCount?: number;
 }
+
+export interface ScanLog {
+  id: string;
+  user_id: string;
+  food_name: string;
+  calories: number;
+  protein: string;
+  carbs: string;
+  fat: string;
+  health_score: number;
+  description: string;
+  created_at: string;
+}
+
 
 export interface OnboardingFormData {
   goal: UserProfile['goal'];

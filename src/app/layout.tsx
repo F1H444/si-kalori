@@ -1,12 +1,6 @@
-// app/layout.tsx
-
 import type { Metadata } from "next";
 import { Lexend, Geist_Mono } from "next/font/google";
 import "./globals.css";
-// Impor komponen kondisional yang baru
-import ConditionalFooter from "@/components/ConditionalFooter";
-import ConditionalNavbar from "@/components/ConditionalNavbar";
-
 
 const lexend = Lexend({
   variable: "--font-lexend",
@@ -31,14 +25,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
+        suppressHydrationWarning={true}
         className={`${lexend.variable} ${geistMono.variable} antialiased font-sans`}
       >
-        <ConditionalNavbar />
         {children}
-        {/* Ganti baris ini */}
-        {/* <Footer /> */}
-        {/* Menjadi ini */}
-        <ConditionalFooter />
       </body>
     </html>
   );

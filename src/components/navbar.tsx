@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X, LogOut, User as UserIcon } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
 interface User {
   name: string;
   email: string;
   picture?: string;
-  isPremium?: boolean;
 }
 
 interface NavLink {
@@ -32,25 +32,64 @@ export default function Navbar() {
   ];
 
   // 2. Logika Navigasi Dinamis
-  // Jika user ada (login), tambahkan Scan. Jika tidak, pakai link dasar saja.
+  // Jika user ada (login), tambahkan Dashboard. Jika tidak, pakai link dasar saja.
   const navLinks = user
-    ? [...baseLinks, { name: "Scan", href: "/scan" }]
+    ? [...baseLinks, { name: "Dashboard", href: "/dashboard" }]
     : baseLinks;
 
   useEffect(() => {
     setMounted(true);
-    const storedUser = localStorage.getItem("user_session");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error("Invalid user session", e);
-        localStorage.removeItem("user_session");
+    
+    // Initial load from localStorage
+    const loadSession = () => {
+      const storedUser = localStorage.getItem("user_session");
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          console.error("Invalid user session", e);
+          localStorage.removeItem("user_session");
+          setUser(null);
+        }
+      } else {
+        setUser(null);
       }
-    } else {
-      setUser(null);
-    }
-  }, [pathname]);
+    };
+
+    loadSession();
+
+    // Listen for Supabase auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth event:", event);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.user) {
+          // If signed in, fetch profile to ensure we have name/picture info
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile) {
+            const userSession = {
+              name: profile.full_name || profile.email || 'User',
+              email: profile.email,
+              picture: profile.picture || undefined,
+            };
+            localStorage.setItem('user_session', JSON.stringify(userSession));
+            setUser(userSession);
+          }
+        }
+      } else if (event === 'SIGNED_OUT') {
+        localStorage.removeItem("user_session");
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [pathname, supabase]); // Still keep pathname to refresh on navigation if needed
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -73,7 +112,7 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed top-0 z-40 w-full py-4 sm:py-6 transition-all duration-500 ${mounted ? "opacity-100" : "opacity-0"
+        className={`fixed top-0 left-0 right-0 z-40 w-full py-4 sm:py-6 transition-all duration-500 ${mounted ? "opacity-100" : "opacity-0"
           }`}
       >
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
@@ -99,10 +138,7 @@ export default function Navbar() {
                   <Link
                     key={link.name}
                     href={link.href}
-                    className={`font-black text-base lg:text-lg transition-colors duration-200 ${link.name === "Scan"
-                      ? "text-black underline decoration-4 underline-offset-4 hover:text-yellow-600" // Styling khusus Scan biar beda dikit
-                      : "text-black hover:text-yellow-500"
-                      }`}
+                    className={`font-black text-base lg:text-lg transition-colors duration-200 text-black hover:text-yellow-500`}
                   >
                     {link.name}
                   </Link>
@@ -140,30 +176,7 @@ export default function Navbar() {
                           <p className="text-xs text-gray-600 truncate">{user.email}</p>
                         </div>
 
-                        {/* Status */}
-                        <div className="mb-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-bold text-sm">Status:</span>
-                            {user.isPremium ? (
-                              <span className="bg-black text-yellow-400 text-xs font-black px-2 py-1 flex items-center gap-1">
-                                PREMIUM <span className="text-yellow-400">👑</span>
-                              </span>
-                            ) : (
-                              <span className="bg-gray-200 text-gray-600 text-xs font-black px-2 py-1">
-                                FREE
-                              </span>
-                            )}
-                          </div>
 
-                          {!user.isPremium && (
-                            <Link
-                              href="/payment"
-                              className="block w-full text-center bg-[#FF0080] text-white font-black text-sm py-2 border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all"
-                            >
-                              UPGRADE SEKARANG ⚡
-                            </Link>
-                          )}
-                        </div>
 
                         {/* Logout */}
                         <button
@@ -247,10 +260,7 @@ export default function Navbar() {
                 key={link.name}
                 href={link.href}
                 onClick={toggleMobileMenu}
-                className={`text-4xl sm:text-6xl font-black text-white transition-colors duration-200 ${link.name === "Scan"
-                  ? "text-yellow-400"
-                  : "hover:text-yellow-400"
-                  }`}
+                className={`text-4xl sm:text-6xl font-black text-white transition-colors duration-200 hover:text-yellow-400`}
               >
                 {link.name}
               </Link>

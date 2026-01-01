@@ -47,17 +47,8 @@ export async function POST(req: NextRequest) {
                     user.lastScanDate = today;
                 }
 
-                // Cek Limit (Max 10 jika bukan Premium)
-                const currentScanCount = user.scanCount || 0;
-                if (!user.isPremium && currentScanCount >= 10) {
-                    return NextResponse.json(
-                        { error: "Limit harian habis (10/10). Upgrade ke Premium untuk scan tanpa batas!" },
-                        { status: 403 }
-                    );
-                }
-
                 // Increment scan count
-                user.scanCount = currentScanCount + 1;
+                user.scanCount = (user.scanCount || 0) + 1;
                 users[userIndex] = user;
                 saveUsers(users);
 
@@ -137,6 +128,39 @@ export async function POST(req: NextRequest) {
         }
 
         const jsonResult = JSON.parse(resultContent);
+
+        // --- SAVE TO SCAN LOGS ---
+        if (userEmail && userProfile) {
+            try {
+                // We need the profile ID to save the log. 
+                // Since userProfile from getProfileByEmail doesn't have ID, 
+                // we fetch it quickly here or update getProfileByEmail.
+                // For safety, let's use the supabase client directly to get the ID.
+                const { data: profileData } = await (await import("@/lib/supabase")).supabase
+                    .from("profiles")
+                    .select("id")
+                    .eq("email", userEmail)
+                    .single();
+
+                if (profileData) {
+                    await (await import("@/lib/supabase")).supabase
+                        .from("scan_logs")
+                        .insert([{
+                            user_id: profileData.id,
+                            food_name: jsonResult.name,
+                            calories: jsonResult.calories,
+                            protein: jsonResult.protein,
+                            carbs: jsonResult.carbs,
+                            fat: jsonResult.fat,
+                            health_score: jsonResult.health_score,
+                            description: jsonResult.description
+                        }]);
+                    console.log("✅ Scan log saved to Supabase for:", userEmail);
+                }
+            } catch (saveError) {
+                console.warn("⚠️ Failed to save scan log:", saveError);
+            }
+        }
         
         // Add personalization flag to response
         return NextResponse.json({

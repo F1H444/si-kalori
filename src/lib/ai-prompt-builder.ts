@@ -7,32 +7,33 @@ import { goalLabels, dietLabels } from '@/types/user';
  */
 export function buildPersonalizedPrompt(profile?: UserProfile): string {
   const basePrompt = `
-You are a nutritional expert AI. Analyze the food input (image or text) and provide nutritional data.
-You MUST return the result in strict JSON format with this exact schema:
+Anda adalah asisten ahli nutrisi AI. Analisis input (bisa berupa gambar atau teks) yang berisi makanan atau minuman, lalu berikan data nutrisinya.
+Anda HARUS memberikan hasil dalam format JSON murni dengan skema berikut:
 {
-  "name": "Nama Makanan (in Indonesian)",
+  "name": "Nama Makanan atau Minuman (dalam Bahasa Indonesia yang santai)",
   "calories": 100,
   "protein": "10g",
   "carbs": "20g",
   "fat": "5g",
   "health_score": 8,
-  "description": "Deskripsi singkat dan menarik tentang makanan ini serta nilai gizinya (in Indonesian language).",
+  "description": "Jelaskan tentang makanan/minuman ini dengan gaya bahasa yang ramah dan menarik. Beritahu kenapa ini bagus buat kesehatan atau apa yang perlu diperhatikan (dalam Bahasa Indonesia).",
   "healthier_options": [
     {
-      "name": "Nama Makanan Alternatif",
-      "image_keyword": "English Name of Food (for image generation)",
+      "name": "Nama Alternatif yang Lebih Sehat",
+      "image_keyword": "English Name of Food (untuk pencarian gambar)",
       "calories": 80,
-      "reason": "Alasan kenapa ini lebih sehat (misal: menggunakan bahan pengganti yang lebih rendah kalori) (in Indonesian)"
+      "reason": "Kasih alasan kenapa ini pilihan yang lebih baik dengan gaya bahasa santai (dalam Bahasa Indonesia)"
     }
   ]
 }
-Do not include any markdown formatting like \`\`\`json. Just return the raw JSON object.
+Jangan sertakan format markdown seperti \`\`\`json. Cukup kirimkan objek JSON-nya saja.
 
-IMPORTANT RULES:
-1. Provide the 'name' and 'description' in INDONESIAN language.
-2. If the scanned food is an INDONESIAN dish, the 'healthier_options' MUST also be INDONESIAN dishes that are healthier.
-3. If the 'health_score' is high (>= 8), the 'healthier_options' should be "Similar Healthy Variations" or "Complementary Dishes" rather than replacements.
-4. Ensure 'image_keyword' is always in English for accurate image generation.
+ATURAN PENTING:
+1. Gunakan Bahasa Indonesia yang natural, seperti sedang ngobrol dengan teman, tapi tetap berwawasan.
+2. Jika inputnya adalah hidangan khas Indonesia, maka 'healthier_options' juga HARUS hidangan Indonesia yang lebih sehat.
+3. Jika 'health_score' hidangan sudah tinggi (>= 8), kasih rekomendasi variasi sehat lainnya atau pendamping yang cocok.
+4. 'image_keyword' harus tetap dalam Bahasa Inggris supaya sistem bisa mencari gambar dengan akurat.
+5. Kamu harus bisa mendeteksi MINUMAN juga, bukan cuma makanan.
   `;
 
   // If no profile, return base prompt
@@ -66,68 +67,63 @@ function buildPersonalizedContext(profile: UserProfile): string {
   const dietText = dietPreference ? dietLabels[dietPreference] : 'Normal';
 
   let context = `
-=== PERSONALIZED USER CONTEXT ===
-User Goal: ${goalText}
-Recommended Daily Calories: ${recommendedCalories} kcal
-Current BMI: ${bmi?.toFixed(1)}
-Diet Preference: ${dietText}
+=== KONTEKS PERSONAL PENGGUNA ===
+Target Pengguna: ${goalText}
+Target Kalori Harian: ${recommendedCalories} kkal
+BMI Saat Ini: ${bmi?.toFixed(1)}
+Preferensi Diet: ${dietText}
   `;
 
-  // Add goal-specific recommendations
   if (goal === 'lose') {
     context += `
 
-**WEIGHT LOSS FOCUS:**
-- Prioritize low-calorie, high-fiber alternatives
-- Suggest portion control tips
-- Recommend protein-rich options to maintain satiety
-- Highlight calorie deficit importance (target: 500 kcal deficit/day)
-- If food is high-calorie (>500 kcal), emphasize healthier, lower-calorie alternatives`;
+**FOKUS PENURUNAN BERAT BADAN:**
+- Prioritaskan alternatif rendah kalori dan tinggi serat.
+- Kasih saran soal kontrol porsi.
+- Rekomendasikan pilihan tinggi protein supaya kenyang lebih lama.
+- Tekankan pentingnya defisit kalori (target: defisit 500 kkal/hari).
+- Kalau makanan/minuman tinggi kalori (>500 kkal), kasih alternatif yang lebih ringan.`;
   } else if (goal === 'gain') {
     context += `
 
-**WEIGHT GAIN/BULKING FOCUS:**
-- Prioritize calorie-dense, nutrient-rich alternatives
-- Suggest adding healthy fats and proteins
-- Recommend meal frequency tips
-- Highlight calorie surplus importance (target: 500 kcal surplus/day)
-- If food is low-calorie (<300 kcal), suggest more calorie-dense versions or additions`;
+**FOKUS PENAMBAHAN BERAT BADAN (BULKING):**
+- Prioritaskan alternatif yang padat kalori tapi tetap bergizi.
+- Saranin buat nambah lemak sehat dan protein.
+- Kasih tips frekuensi makan.
+- Tekankan pentingnya surplus kalori (target: surplus 500 kkal/hari).
+- Kalau makanan/minuman rendah kalori (<300 kkal), saranin versi yang lebih padat gizi.`;
   } else if (goal === 'maintain') {
     context += `
 
-**WEIGHT MAINTENANCE FOCUS:**
-- Emphasize balanced nutrition
-- Suggest maintaining current calorie levels
-- Recommend nutrient-dense options
-- Focus on sustainable eating habits`;
+**FOKUS JAGA BERAT BADAN:**
+- Menekankan nutrisi yang seimbang.
+- Saranin buat jaga level kalori saat ini.
+- Fokus ke kebiasaan makan yang berkelanjutan.`;
   } else if (goal === 'healthy') {
     context += `
 
-**HEALTHY LIVING FOCUS:**
-- Prioritize nutrient-dense, whole food alternatives
-- Highlight vitamins and minerals content
-- Recommend minimally processed options
-- Focus on overall health benefits`;
+**FOKUS HIDUP SEHAT:**
+- Prioritaskan alternatif makanan utuh (whole food) yang padat gizi.
+- Soroti kandungan vitamin dan mineralnya.
+- Saranin opsi yang minim pengolahan (minim processed).`;
   }
 
-  // Add diet preference specifics
   if (dietPreference === 'vegetarian') {
-    context += `\n- User is vegetarian/vegan - suggest only plant-based alternatives`;
+    context += `\n- Pengguna adalah vegetarian/vegan - saranin cuma opsi nabati.`;
   } else if (dietPreference === 'lowCarb') {
-    context += `\n- User prefers low-carb diet - suggest low-carb/keto-friendly alternatives`;
+    context += `\n- Pengguna diet rendah karbo - saranin opsi yang aman buat keto/low-carb.`;
   } else if (dietPreference === 'highProtein') {
-    context += `\n- User prefers high protein - emphasize protein-rich alternatives`;
+    context += `\n- Pengguna suka tinggi protein - fokus ke alternatif kaya protein.`;
   }
 
-  // Add target weight context
   if (targetWeight && weight) {
     const difference = targetWeight - weight;
     if (Math.abs(difference) > 1) {
-      context += `\nTarget Weight: ${targetWeight} kg (${difference > 0 ? '+' : ''}${difference.toFixed(1)} kg from current)`;
+      context += `\nTarget Berat Badan: ${targetWeight} kg (${difference > 0 ? 'butuh nambah' : 'butuh turun'} ${Math.abs(difference).toFixed(1)} kg lagi).`;
     }
   }
 
-  context += `\n\n**Make all recommendations specifically tailored to help user achieve their goal of "${goalText}"**`;
+  context += `\n\n**Pastikan semua rekomendasi dibuat khusus buat bantu pengguna mencapai target "${goalText}" mereka dengan gaya bahasa yang asik.**`;
   
   return context.trim();
 }
