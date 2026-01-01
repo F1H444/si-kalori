@@ -3,25 +3,7 @@ import Groq from "groq-sdk";
 import { buildPersonalizedPrompt } from "@/lib/ai-prompt-builder";
 import { getProfileByEmail } from "@/lib/db/profiles";
 import type { UserProfile } from "@/types/user";
-import fs from "fs";
-import path from "path";
 
-const usersFilePath = path.join(process.cwd(), "data", "users.json");
-
-// function getUsers() {
-//     try {
-//         if (!fs.existsSync(usersFilePath)) return [];
-//         return JSON.parse(fs.readFileSync(usersFilePath, "utf-8"));
-//     } catch {
-//         return [];
-//     }
-// }
-
-// function saveUsers(users: any[]) {
-//     const dir = path.dirname(usersFilePath);
-//     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-//     fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
-// }
 
 
 export async function POST(req: NextRequest) {

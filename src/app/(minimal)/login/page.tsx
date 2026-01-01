@@ -9,6 +9,7 @@ import type { User } from "@supabase/supabase-js";
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     google: any;
   }
 }
@@ -44,8 +45,9 @@ export default function Login() {
       } else {
         router.replace("/dashboard");
       }
-    } catch (err: any) {
-      console.error("Critical Sync Error:", err.message || err);
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("Critical Sync Error:", error.message || String(err));
       router.replace("/onboarding");
     }
   }, [router]);
@@ -64,8 +66,8 @@ export default function Login() {
 
       if (error) throw error;
       if (data.user) await syncProfileToDatabase(data.user);
-    } catch (error: any) {
-      console.error("Auth Error:", error.message || error);
+    } catch (error: unknown) {
+      console.error("Auth Error:", (error as Error).message || String(error));
       alert("Gagal masuk dengan Google.");
       setLoading(false);
     }

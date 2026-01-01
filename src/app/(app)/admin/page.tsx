@@ -1,9 +1,8 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Shield, Search, Check, Loader2, Link, Eye, EyeOff } from "lucide-react";
-import NextLink from "next/link";
 
 import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
