@@ -9,6 +9,7 @@ import {
   Info,
   Calendar
 } from "lucide-react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ScanLog } from "@/types/user";
@@ -148,6 +149,19 @@ export default function RiwayatPage() {
                   <div className="p-6 md:p-8">
                     <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
                       
+                      {/* Image Thumbnail (If Exists) */}
+                      {log.image_url && (
+                        <div className="relative w-full md:w-32 h-48 md:h-32 border-4 border-black shrink-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                          <Image 
+                            src={log.image_url} 
+                            alt={log.food_name} 
+                            fill 
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                      )}
+
                       {/* Left Side: Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">

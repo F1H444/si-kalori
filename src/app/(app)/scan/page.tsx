@@ -19,7 +19,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
 // --- TYPES ---
-type ScanMode = "select" | "camera" | "upload" | "type" | "result";
+type ScanMode = "select" | "camera" | "upload" | "type" | "result" | "meal_selection";
+type MealType = "pagi" | "siang" | "malam" | "snack" | "minuman";
 
 interface NutritionResult {
     name: string;
@@ -43,6 +44,7 @@ export default function ScanPage() {
     const [result, setResult] = useState<NutritionResult | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [inputText, setInputText] = useState("");
+    const [tempInput, setTempInput] = useState<File | string | null>(null);
     const [mounted, setMounted] = useState(false);
 
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -91,7 +93,7 @@ export default function ScanPage() {
                     if (blob) {
                         const file = new File([blob], `scan-${Date.now()}.jpg`, { type: "image/jpeg" });
                         setPreview(URL.createObjectURL(file));
-                        handleAnalyze(file);
+                        handleMealSelection(file);
                         stopCamera();
                     }
                 }, "image/jpeg", 0.8);
@@ -103,12 +105,17 @@ export default function ScanPage() {
         if (e.target.files?.[0]) {
             const file = e.target.files[0];
             setPreview(URL.createObjectURL(file));
-            handleAnalyze(file);
+            handleMealSelection(file);
         }
     };
 
+    const handleMealSelection = (input: File | string) => {
+        setTempInput(input);
+        setMode("meal_selection");
+    };
+
     // --- LOGIKA ANALISA & DATABASE ---
-    const handleAnalyze = async (input: File | string) => {
+    const handleAnalyze = async (input: File | string, mealType: MealType) => {
         setLoading(true);
         try {
             // 1. Dapatkan User Session
@@ -122,19 +129,26 @@ export default function ScanPage() {
                     const fileExt = input.name.split('.').pop();
                     const path = `${user.id}/${Date.now()}.${fileExt}`;
                     
-                    const { error: uploadError } = await supabase.storage
-                        .from('food_images')
+                    console.log("Attempting to upload file to food-images:", path);
+                    const { error: uploadError, data: uploadData } = await supabase.storage
+                        .from('food-images')
                         .upload(path, input);
 
                     if (uploadError) {
-                        console.warn("⚠️ Storage upload failed (Check if 'food_images' bucket exists):", uploadError.message);
+                        console.error("Upload Error Details:", uploadError);
+                        alert(`Gagal upload gambar: ${uploadError.message}. Pastikan bucket 'food-images' ada dan Policy Public sudah diatur.`);
                     } else {
-                        const { data } = supabase.storage.from('food_images').getPublicUrl(path);
+                        console.log("Upload Success:", uploadData);
+                        const { data } = supabase.storage.from('food-images').getPublicUrl(path);
                         publicUrl = data.publicUrl;
+                        console.log("Generated Public URL:", publicUrl);
                     }
                 } catch (storageErr) {
-                    console.warn("⚠️ Storage exception:", storageErr);
+                    console.error("Storage Exception:", storageErr);
+                    alert("Terjadi kesalahan saat upload gambar.");
                 }
+            } else {
+                console.log("Input is not a File, skipping upload.");
             }
 
             // 3. Panggil API AI (Analyze-Food)
@@ -168,8 +182,9 @@ export default function ScanPage() {
                         health_score: aiData.health_score
                     },
                     ai_analysis: aiData.description,
-                    image_url: publicUrl, // URL gambar asli (bukan blob preview)
-                    meal_type: "Scan AI"
+                    image_url: publicUrl, 
+                    meal_type: mealType,
+                    rating: aiData.health_score
                 }]);
 
             if (dbError) throw dbError;
@@ -189,6 +204,7 @@ export default function ScanPage() {
     const resetScan = () => {
         setMode("select");
         setResult(null);
+        setTempInput(null);
         setPreview(null);
         setInputText("");
         stopCamera();
@@ -297,12 +313,31 @@ export default function ScanPage() {
                                 className="w-full p-6 border-8 border-black bg-white text-2xl font-black uppercase focus:bg-yellow-400 outline-none shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] mb-8 min-h-[200px]"
                             />
                             <button 
-                                onClick={() => inputText.trim() && handleAnalyze(inputText)}
+                                onClick={() => inputText.trim() && handleMealSelection(inputText)}
                                 disabled={!inputText.trim()}
                                 className="w-full bg-black text-white p-6 text-2xl font-black uppercase shadow-[8px_8px_0px_0px_rgba(37,99,235,1)] hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
                             >
-                                ANALISIS DATA
+                                PILIH JENIS MAKANAN
                             </button>
+                        </motion.div>
+                    )}
+
+                     {/* MEAL SELECTION MODE */}
+                     {mode === "meal_selection" && (
+                        <motion.div key="meal_selection" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-xl mx-auto">
+                            <button onClick={() => setMode("select")} className="mb-8 flex items-center gap-2 font-black uppercase text-sm hover:underline">
+                                <ArrowLeft size={16} /> Batal
+                            </button>
+                            <h2 className="text-4xl md:text-5xl font-black uppercase text-center mb-2 leading-none">Kapan Kamu</h2>
+                            <h2 className="text-4xl md:text-5xl font-black uppercase italic text-center mb-8 bg-yellow-400 inline-block w-full">Makan Ini?</h2>
+                            
+                            <div className="grid gap-4">
+                                <MealOption label="Makan Pagi" value="pagi" sub="06:00 - 10:00" color="bg-orange-300" onClick={() => tempInput && handleAnalyze(tempInput, 'pagi')} />
+                                <MealOption label="Makan Siang" value="siang" sub="11:00 - 15:00" color="bg-yellow-400" onClick={() => tempInput && handleAnalyze(tempInput, 'siang')} />
+                                <MealOption label="Makan Malam" value="malam" sub="18:00 - 21:00" color="bg-blue-400" onClick={() => tempInput && handleAnalyze(tempInput, 'malam')} />
+                                <MealOption label="Camilan / Snack" value="snack" sub="Kapan aja boleh" color="bg-pink-400" onClick={() => tempInput && handleAnalyze(tempInput, 'snack')} />
+                                <MealOption label="Minuman" value="minuman" sub="Haus ya?" color="bg-zinc-300" onClick={() => tempInput && handleAnalyze(tempInput, 'minuman')} />
+                            </div>
                         </motion.div>
                     )}
 
@@ -422,5 +457,30 @@ function NutritionCard({ label, value, unit, color }: NutritionCardProps) {
                 <span className="text-[10px] font-black uppercase">{unit}</span>
             </div>
         </div>
+    );
+}
+
+interface MealOptionProps {
+    label: string;
+    value: string;
+    sub: string;
+    color: string;
+    onClick: () => void;
+}
+
+function MealOption({ label, value, sub, color, onClick }: MealOptionProps) {
+    return (
+        <button 
+            onClick={onClick}
+            className={`w-full ${color} border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all flex items-center justify-between group`}
+        >
+            <div className="text-left">
+                <p className="text-xs font-bold uppercase opacity-60 mb-0.5">{sub}</p>
+                <h3 className="text-2xl font-black uppercase italic tracking-tighter">{label}</h3>
+            </div>
+            <div className="w-10 h-10 bg-black text-white flex items-center justify-center border-2 border-transparent group-hover:border-white group-hover:bg-transparent group-hover:text-black transition-colors">
+                 <Check size={20} />
+            </div>
+        </button>
     );
 }
