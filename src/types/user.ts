@@ -48,7 +48,8 @@ export interface ScanLog {
   ai_analysis: string;
   image_url?: string | null;
   meal_type: string;
-  created_at: string;
+  created_at?: string;
+  scan_time?: string;
 }
 
 

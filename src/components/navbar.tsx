@@ -42,48 +42,50 @@ export default function Navbar() {
 
   useEffect(() => {
     setMounted(true);
-    
-    // Initial load from localStorage
-    const loadSession = () => {
-      const storedUser = localStorage.getItem("user_session");
-      if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch (e) {
-          console.error("Invalid user session", e);
-          localStorage.removeItem("user_session");
-          setUser(null);
-        }
-      } else {
+
+    const checkInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        localStorage.removeItem("user_session");
         setUser(null);
+      } else {
+        // Hydrate from localStorage if session exists
+        const storedUser = localStorage.getItem("user_session");
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch (e) {
+            console.error("Invalid user session", e);
+          }
+        }
       }
     };
 
-    loadSession();
+    checkInitialSession();
 
     // Listen for Supabase auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth event:", event);
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (session?.user) {
-          // If signed in, fetch profile to ensure we have name/picture info
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+      
+      if (session?.user) {
+        // Always try to fetch/sync profile if session exists
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
 
-          if (profile) {
-            const userSession = {
-              name: profile.full_name || profile.email || 'User',
-              email: profile.email,
-              picture: profile.picture || undefined,
-            };
-            localStorage.setItem('user_session', JSON.stringify(userSession));
-            setUser(userSession);
-          }
+        if (profile) {
+          const userSession = {
+            name: profile.full_name || profile.email || 'User',
+            email: profile.email,
+            picture: profile.picture || undefined,
+          };
+          localStorage.setItem('user_session', JSON.stringify(userSession));
+          setUser(userSession);
         }
-      } else if (event === 'SIGNED_OUT') {
+      } else {
+        // No session (SIGNED_OUT, etc)
         localStorage.removeItem("user_session");
         setUser(null);
       }
@@ -92,8 +94,7 @@ export default function Navbar() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [pathname]); // Removed supabase from dependencies as it is a singleton
-
+  }, []);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -107,9 +108,11 @@ export default function Navbar() {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem("user_session");
     setUser(null);
+    setIsDropdownOpen(false);
     window.location.href = "/";
   };
 

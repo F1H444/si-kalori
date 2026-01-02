@@ -8,11 +8,11 @@ export default function MainLayout({
 }) {
   return (
     <>
-      <Navbar />
+      <Navbar/>
       <main className="min-h-screen">
         {children}
       </main>
-      <Footer />
+      <Footer/>
     </>
   );
 }

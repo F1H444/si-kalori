@@ -1,9 +1,8 @@
 # ⚡ SIKALORI - Smart Nutrition Tracker
 
 <div align="center">
-
-![Sikalori Banner](public/banner-placeholder.png)
-_(Ganti 'public/banner-placeholder.png' dengan screenshot tampilan awal website Anda)_
+  
+<img width="1918" height="952" alt="Screenshot 2026-01-01 215745" src="https://github.com/user-attachments/assets/25760a63-2bbc-492b-8d43-1c597c281512" />
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-green?style=for-the-badge&logo=supabase)](https://supabase.com/)
@@ -39,7 +38,7 @@ Kami menggunakan tumpukan teknologi (Tech Stack) termutakhir untuk performa maks
 
 | Kategori      | Teknologi                   | Keunggulan                              |
 | :------------ | :-------------------------- | :-------------------------------------- |
-| **Framework** | **Next.js 15 (App Router)** | SSR, Server Actions, & SEO Optimization |
+| **Framework** | **Next.js 16 (App Router)** | SSR, Server Actions, & SEO Optimization |
 | **Database**  | **Supabase (PostgreSQL)**   | Real-time, Secure RLS, & Auth           |
 | **Styling**   | **Tailwind CSS 4**          | Utility-first, Custom Design System     |
 | **Bahasa**    | **TypeScript**              | Type Safety & Clean Code                |

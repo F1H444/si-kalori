@@ -141,7 +141,7 @@ export default function Login() {
               <div className="flex items-center justify-center gap-3 py-2">
                 <Loader2 className="animate-spin text-black" size={20} />
                 <span className="font-black text-[10px] uppercase italic tracking-widest text-black">
-                  Mengamankan Data Anda...
+                  Memuat Data Anda...
                 </span>
               </div>
             )}

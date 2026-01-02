@@ -78,8 +78,21 @@ export default function Onboarding() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push("/login");
-        return; // Don't stop loading, waif for redirect
+        return;
       }
+      
+      // Check if user already finished onboarding
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("daily_target")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.daily_target) {
+        router.replace("/dashboard");
+        return;
+      }
+
       setIsCheckingAuth(false);
     };
     checkAuth();

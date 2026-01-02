@@ -146,23 +146,23 @@ export function generateHealthInsight(
 
   if (profile.goal === 'lose') {
     if (foodCalories > 500) {
-      insight += `⚠️ Cukup tinggi kalori untuk program penurunan berat badan. Pertimbangkan porsi lebih kecil atau alternatif lebih ringan.`;
+      insight += `Cukup tinggi kalori untuk program penurunan berat badan. Pertimbangkan porsi lebih kecil atau alternatif lebih ringan.`;
     } else if (foodCalories < 300) {
-      insight += `✅ Pilihan bagus untuk defisit kalori!`;
+      insight += `Pilihan bagus untuk defisit kalori!`;
     } else {
       insight += `Moderate untuk program penurunan berat badan.`;
     }
   } else if (profile.goal === 'gain') {
     if (foodCalories > 500) {
-      insight += `✅ Bagus untuk surplus kalori dan bulking!`;
+      insight += `Bagus untuk surplus kalori dan bulking!`;
     } else if (foodCalories < 300) {
-      insight += `⚠️ Cukup rendah kalori. Pertimbangkan porsi lebih besar atau tambahan protein shake.`;
+      insight += `Cukup rendah kalori. Pertimbangkan porsi lebih besar atau tambahan protein shake.`;
     } else {
       insight += `Moderate untuk program penambahan berat badan.`;
     }
   } else {
     if (foodCalories > dailyTarget * 0.4) {
-      insight += `⚠️ Ini makan besar (>40% target harian). Seimbangkan dengan makan lebih ringan di waktu lain.`;
+      insight += `Ini makan besar (>40% target harian). Seimbangkan dengan makan lebih ringan di waktu lain.`;
     } else {
       insight += `Porsi yang seimbang.`;
     }

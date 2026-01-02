@@ -21,13 +21,13 @@ export async function POST(req: NextRequest) {
                 const profile = await getProfileByEmail(userEmail);
                 if (profile && profile.weight && profile.height) {
                     userProfile = profile;
-                    console.log('✅ User profile loaded from Supabase:', {
+                    console.log('User profile loaded from Supabase:', {
                         email: userEmail,
                         goal: profile.goal,
                     });
                 }
             } catch (err) {
-                console.log("⚠️ No profile found in Supabase:", (err as Error).message);
+                console.log("No profile found in Supabase:", (err as Error).message);
             }
         }
 
@@ -108,21 +108,25 @@ export async function POST(req: NextRequest) {
 
                 if (profileData) {
                     await (await import("@/lib/supabase")).supabase
-                        .from("scan_logs")
+                        .from("food_logs")
                         .insert([{
                             user_id: profileData.id,
                             food_name: jsonResult.name,
-                            calories: jsonResult.calories,
-                            protein: jsonResult.protein,
-                            carbs: jsonResult.carbs,
-                            fat: jsonResult.fat,
-                            health_score: jsonResult.health_score,
-                            description: jsonResult.description
+                            nutrition: {
+                                calories: jsonResult.calories,
+                                protein: jsonResult.protein,
+                                carbs: jsonResult.carbs,
+                                fat: jsonResult.fat,
+                                health_score: jsonResult.health_score
+                            },
+                            ai_analysis: jsonResult.description,
+                            meal_type: "other", 
+                            rating: jsonResult.health_score
                         }]);
-                    console.log("✅ Scan log saved to Supabase for:", userEmail);
+                    console.log("Scan log saved to food_logs for:", userEmail);
                 }
             } catch (saveError) {
-                console.warn("⚠️ Failed to save scan log:", saveError);
+                console.warn("Failed to save scan log:", saveError);
             }
         }
         

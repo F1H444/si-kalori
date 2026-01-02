@@ -43,11 +43,16 @@ export default function UserDashboard() {
         .eq("id", user.id)
         .single();
 
-      if (error) {
-        console.error("Error:", error);
+      if (error || !data?.daily_target) {
+        console.error("Profile incomplete or error:", error);
         router.push("/onboarding");
       } else {
         setProfile(data);
+        // Update last_login activity
+        await supabase
+          .from("profiles")
+          .update({ last_login: new Date().toISOString() })
+          .eq("id", user.id);
       }
       setLoading(false);
     };

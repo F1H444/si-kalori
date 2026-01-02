@@ -17,11 +17,16 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 
-export default function Sidebar() {
+export default function Sidebar({ forceShow = false }: { forceShow?: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  // Hide sidebar on root admin page unless forced (for login screen clarity)
+  if (pathname === '/admin' && !forceShow) {
+    return null;
+  }
 
   const isAdmin = pathname?.startsWith("/admin");
 
@@ -74,7 +79,7 @@ export default function Sidebar() {
             <div>
               <h2 className="font-black text-xl tracking-tighter uppercase leading-none">SIKALORI</h2>
               <p className="text-yellow-400 text-[10px] font-black uppercase tracking-widest mt-1">
-                {isAdmin ? "Panel Admin" : "Pengguna"}
+                {isAdmin ? "Admin" : "Pengguna"}
               </p>
             </div>
           </div>
@@ -91,7 +96,7 @@ export default function Sidebar() {
               <NavItem 
                 href="/admin?tab=overview" 
                 icon={<LayoutDashboard size={20} />} 
-                label="Ringkasan" 
+                label="Dashboard" 
                 active={searchParams.get("tab") === "overview"} 
                 onClick={() => setIsMobileOpen(false)}
               />

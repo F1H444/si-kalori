@@ -96,9 +96,6 @@ export default function RiwayatPage() {
       <header className="max-w-6xl mx-auto mb-16">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div className="space-y-4">
-            <div className="inline-block bg-black text-white px-4 py-1 text-sm font-black uppercase tracking-[0.3em]">
-              Data Log v1.0
-            </div>
             <h1 className="text-7xl md:text-9xl font-black uppercase leading-[0.8] tracking-tighter">
               RIWAYAT<br /><span className="text-blue-600 italic">KONSUMSI</span>
             </h1>
@@ -169,7 +166,7 @@ export default function RiwayatPage() {
                             ID_{log.id.split('-')[0]}
                           </span>
                           <span className="flex items-center gap-1 text-[10px] font-black uppercase text-gray-400 italic">
-                            <Calendar size={12} /> {log.created_at ? new Date(log.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'TANGGAL KOSONG'}
+                            <Calendar size={12} /> {log.scan_time ? new Date(log.scan_time).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'TANGGAL KOSONG'}
                           </span>
                         </div>
                         
