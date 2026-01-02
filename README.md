@@ -1,4 +1,4 @@
-# ⚡ SIKALORI - Smart Nutrition Tracker
+# SIKALORI - Smart Nutrition Tracker
 
 <div align="center">
   
@@ -141,10 +141,8 @@ Proyek ini bersifat **Open Source**. Kami sangat menghargai setiap kontribusi un
 
 <div align="center">
 
-**Dibuat dengan ❤️ oleh Tim Sikalori**
-
 _Kesehatan adalah investasi terbaik yang bisa Anda miliki._
 
-© 2024 Sikalori.
+© 2026 Sikalori.
 
 </div>
