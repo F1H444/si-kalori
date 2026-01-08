@@ -151,7 +151,7 @@ export default function Sidebar({ forceShow = false }: { forceShow?: boolean }) 
       {/* Overlay Gelap untuk Mobile */}
       {isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-sm cursor-pointer"
           onClick={() => setIsMobileOpen(false)}
         />
       )}

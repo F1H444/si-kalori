@@ -5,12 +5,7 @@
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-lexend);
-  --font-mono: var(--font-geist-mono);
-}
+
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -31,6 +26,28 @@ body {
   /* Mengubah latar belakang hitam menjadi putih */
   color: black;
   /* Mengatur warna teks default */
+}
+
+/* Ensure all clickable elements have a pointer cursor */
+button,
+a,
+select,
+label,
+[role="button"],
+[onclick],
+.cursor-pointer,
+input[type="submit"],
+input[type="button"],
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: pointer;
+}
+
+/* Neo-brutalist interaction refinement */
+button:active:not(:disabled),
+a:active,
+[role="button"]:active {
+  transform: translateY(2px);
 }
 
 @keyframes shake {

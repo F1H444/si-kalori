@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Search, Loader2, Check } from "lucide-react";
+import { Search, Loader2, Check, Users, Activity, Crown, BarChart3 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 interface UserData {
@@ -14,6 +14,7 @@ interface UserData {
   created_at: string;
   last_login?: string | null;
   scan_count?: number;
+  is_premium?: boolean;
 }
 
 interface AdminDashboardProps {
@@ -23,6 +24,7 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalScans, setTotalScans] = useState(0); // New state for total scans
   const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
 
@@ -46,6 +48,14 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
         throw error;
       }
       setUsers(data || []);
+
+      // Fetch Total Scans Count separately
+      const { count } = await supabase
+        .from("food_logs")
+        .select("*", { count: "exact", head: true });
+      
+      setTotalScans(count || 0);
+
     } catch (error: unknown) {
       console.error("Failed to fetch users", error);
     } finally {
@@ -110,8 +120,9 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
         lastLogin.getFullYear() === today.getFullYear()
       );
     }).length;
+    const premiumUsers = users.filter(u => u.is_premium).length;
 
-    return { totalUsers, activeToday };
+    return { totalUsers, activeToday, premiumUsers };
   }, [users]);
 
   const growthData = useMemo(() => {
@@ -202,17 +213,37 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                  title="TOTAL USERS"
+                  title="TOTAL PENGGUNA"
                   value={stats.totalUsers}
+                  icon={<Users className="w-6 h-6 sm:w-8 sm:h-8 mb-2 opacity-80" />}
                   color="bg-white"
                   delay={0}
                   mounted={mounted}
                 />
 
                 <StatCard
-                  title="ACTIVE TODAY"
+                  title="AKTIF HARI INI"
                   value={stats.activeToday}
+                  icon={<Activity className="w-6 h-6 sm:w-8 sm:h-8 mb-2 opacity-80" />}
                   color="bg-[#FFDE59]"
+                  delay={100}
+                  mounted={mounted}
+                />
+
+                <StatCard
+                  title="PREMIUM USER"
+                  value={stats.premiumUsers}
+                  icon={<Crown className="w-6 h-6 sm:w-8 sm:h-8 mb-2 opacity-80" />}
+                  color="bg-[#A076FF]"
+                  delay={200}
+                  mounted={mounted}
+                />
+
+                <StatCard
+                  title="TOTAL SCAN"
+                  value={totalScans}
+                  icon={<BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 mb-2 opacity-80" />}
+                  color="bg-[#FF5F5F]"
                   delay={300}
                   mounted={mounted}
                 />
@@ -454,16 +485,21 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
   );
 }
 
-function StatCard({ title, value, color, delay, mounted }: { title: string; value: string | number; color: string; delay: number; mounted: boolean }) {
+function StatCard({ title, value, color, delay, mounted, icon }: { title: string; value: string | number; color: string; delay: number; mounted: boolean; icon?: React.ReactNode }) {
   return (
     <div
-      className={`${color} border-8 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-8 transition-all duration-300 hover:shadow-none hover:translate-x-2 hover:translate-y-2 group ${
+      className={`${color} border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-6 transition-all duration-300 hover:shadow-none hover:translate-x-1 hover:translate-y-1 group flex flex-col justify-between h-full min-h-[160px] ${
         mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}
       style={{ transitionDelay: `${delay}ms` }}
     >
-      <div className="text-6xl font-black italic tracking-tighter mb-4">{value}</div>
-      <div className="text-xs font-black tracking-[0.2em] border-t-4 border-black pt-4 uppercase">{title}</div>
+      <div className="flex justify-between items-start">
+        <div className="text-5xl lg:text-6xl font-black italic tracking-tighter leading-none">{value}</div>
+        {icon}
+      </div>
+      <div className="text-xs lg:text-sm font-black tracking-widest border-t-4 border-black pt-3 mt-4 uppercase flex items-center gap-2">
+        {title}
+      </div>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Database, PieChart, Target, ScanBarcode } from "lucide-react";
+import { Brain, PieChart, Target, History } from "lucide-react";
 import React from "react";
+import { motion } from "framer-motion";
 
 // Tipe untuk item fitur
 interface FeatureItem {
@@ -10,112 +10,204 @@ interface FeatureItem {
   title: string;
   description: string;
   color: string;
+  shadowColor: string;
 }
 
-// Data fitur yang dipetakan
+// Data fitur yang sesuai dengan fitur website
 const featureItems: FeatureItem[] = [
   {
-    icon: Database,
-    title: "Database Lengkap",
+    icon: Brain,
+    title: "Analisa AI Cerdas",
     description:
-      "Akses 1 Juta+ item, termasuk masakan lokal Indonesia dan produk kemasan.",
-    color: "bg-blue-500", // Warna baru untuk variasi
+      "Foto makanan atau tulis nama menu, AI kami akan menganalisis nutrisinya secara instan dan akurat.",
+    color: "bg-blue-500",
+    shadowColor: "rgba(59, 130, 246, 1)",
   },
   {
     icon: PieChart,
     title: "Rincian Gizi Detail",
-    description: "Lacak Protein, Karbo, Lemak, dan vitamin. Bukan cuma kalori.",
+    description:
+      "Lacak Protein, Karbo, Lemak, Kalori, dan Skor Kesehatan. Data lengkap dalam satu scan.",
     color: "bg-green-500",
+    shadowColor: "rgba(34, 197, 94, 1)",
   },
   {
     icon: Target,
     title: "Target Harian Kustom",
     description:
-      "Atur target (defisit, surplus, atau maintenance) dan pantau kemajuan Anda.",
+      "Atur target (defisit, surplus, atau maintenance) sesuai goal kamu dan pantau kemajuannya.",
     color: "bg-yellow-500",
+    shadowColor: "rgba(234, 179, 8, 1)",
   },
   {
-    icon: ScanBarcode,
-    title: "Scan Barcode Cepat",
+    icon: History,
+    title: "Riwayat Lengkap",
     description:
-      "Scan barcode pada kemasan makanan untuk data nutrisi instan dan akurat.",
-    color: "bg-red-500",
+      "Semua scan makanan tersimpan rapi. Lihat pola makan dan track progress harianmu.",
+    color: "bg-purple-500",
+    shadowColor: "rgba(168, 85, 247, 1)",
   },
 ];
 
+// Animation Variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { 
+    opacity: 0, 
+    y: 60,
+    scale: 0.9,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 12,
+      duration: 0.6,
+    },
+  },
+};
+
+const titleVariants = {
+  hidden: { opacity: 0, x: -50 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 15,
+    },
+  },
+};
+
+const subtitleVariants = {
+  hidden: { opacity: 0, x: -30 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 15,
+      delay: 0.1,
+    },
+  },
+};
+
 export default function Features() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
-    // [UPDATED] 'border-t-2 border-black' telah dihapus dari div ini
     <div className="relative bg-white z-0 px-4 sm:px-6 py-16 sm:py-24 lg:py-32 overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute top-10 right-10 w-32 h-32 bg-yellow-400/20 border-4 border-yellow-400/40 rotate-12 -z-10" />
+      <div className="absolute bottom-20 left-10 w-24 h-24 bg-blue-400/20 border-4 border-blue-400/40 -rotate-12 -z-10" />
+      
       <div className="max-w-7xl mx-auto">
-        {/* Judul Bagian - Lebih Ditekankan */}
+        {/* Judul Bagian */}
         <div className="text-left mb-12 sm:mb-16 lg:mb-20 max-w-2xl">
-          <h2
-            className={`text-4xl sm:text-5xl lg:text-6xl font-black text-black leading-tight transition-all duration-700 ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
+          <motion.h2
+            variants={titleVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            className="text-4xl sm:text-5xl lg:text-6xl font-black text-black leading-tight"
           >
             FITUR INTI KAMI.
-          </h2>
-          <p
-            className={`text-lg sm:text-xl text-gray-700 mt-4 transition-all duration-700 delay-100 ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
+          </motion.h2>
+          <motion.p
+            variants={subtitleVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            className="text-lg sm:text-xl text-gray-700 mt-4"
           >
             Lihat lebih detail <span className="font-bold text-black">apa</span>{" "}
             yang bisa SIKALORI lakukan untuk Anda. Setiap fitur dirancang untuk
             akurasi dan kemudahan.
-          </p>
+          </motion.p>
         </div>
 
-        {/* Grid Fitur (2x2) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 lg:gap-16">
-          {featureItems.map((item, idx) => {
+        {/* Grid Fitur (2x2) with Stagger Animation */}
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 lg:gap-12"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+        >
+          {featureItems.map((item) => {
             const Icon = item.icon;
-            // Delay animasi berurutan (staggered)
-            const delay = 100 * (idx + 3); // Mulai setelah judul (300ms)
 
             return (
-              <div
+              <motion.div
                 key={item.title}
-                className={`border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-500 ${
-                  mounted
-                    ? "opacity-100 scale-100" // Animasi 'Pop-in'
-                    : "opacity-0 scale-95"
-                }`}
-                style={{ transitionDelay: `${delay}ms` }}
+                variants={itemVariants}
+                whileHover={{ 
+                  scale: 1.02,
+                  y: -8,
+                  transition: { type: "spring", stiffness: 400, damping: 17 }
+                }}
+                className="group relative border-4 border-black bg-white cursor-pointer"
+                style={{
+                  boxShadow: `8px 8px 0px 0px rgba(0,0,0,1)`,
+                }}
               >
-                {/* Header Kartu - Desain Baru */}
+                {/* Colored accent line on top */}
+                <div className={`absolute top-0 left-0 right-0 h-1 ${item.color}`} />
+                
+                {/* Header Kartu */}
                 <div
-                  className={`flex items-center gap-4 sm:gap-5 p-5 sm:p-6 ${item.color} border-b-4 border-black`}
+                  className={`flex items-center gap-4 sm:gap-5 p-5 sm:p-6 ${item.color} border-b-4 border-black transition-all duration-300`}
                 >
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white flex items-center justify-center border-2 border-black flex-shrink-0">
+                  <motion.div 
+                    className="w-14 h-14 sm:w-16 sm:h-16 bg-white flex items-center justify-center border-3 border-black flex-shrink-0"
+                    style={{ boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)" }}
+                    whileHover={{ 
+                      rotate: [0, -10, 10, 0],
+                      transition: { duration: 0.5 }
+                    }}
+                  >
                     <Icon
-                      className="w-6 h-6 sm:w-7 sm:h-7 text-black" // Ikon hitam di dalam kotak putih
+                      className="w-7 h-7 sm:w-8 sm:h-8 text-black"
                       strokeWidth={2.5}
                     />
-                  </div>
-                  <h3 className="text-2xl sm:text-3xl font-black text-white">
+                  </motion.div>
+                  <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
                     {item.title}
                   </h3>
                 </div>
 
                 {/* Badan Kartu */}
-                <div className="bg-white p-5 sm:p-6">
-                  <p className="text-base sm:text-lg text-gray-800 leading-relaxed">
+                <div className="bg-white p-5 sm:p-6 relative overflow-hidden">
+                  {/* Hover background effect */}
+                  <div 
+                    className={`absolute inset-0 ${item.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
+                  />
+                  <p className="text-base sm:text-lg text-gray-800 leading-relaxed relative z-10">
                     {item.description}
                   </p>
                 </div>
-              </div>
+
+                {/* Corner decoration */}
+                <div 
+                  className={`absolute -bottom-2 -right-2 w-6 h-6 ${item.color} border-2 border-black opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                />
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </div>
   );

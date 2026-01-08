@@ -38,6 +38,69 @@ interface NutritionResult {
     }[];
 }
 
+// Animation Variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 15,
+    },
+  },
+};
+
+const headerVariants = {
+  hidden: { opacity: 0, x: -30 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 80,
+      damping: 12,
+    },
+  },
+};
+
+const mealContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const mealItemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 12,
+    },
+  },
+};
+
 export default function ScanPage() {
     const [mode, setMode] = useState<ScanMode>("select");
     const [loading, setLoading] = useState(false);
@@ -162,11 +225,19 @@ export default function ScanPage() {
                 body: formData,
             });
 
-            const aiData: NutritionResult = await response.json();
+            const data = await response.json();
             
             if (!response.ok) {
-                throw new Error("Gagal menganalisis makanan atau minuman kamu.");
+                if (response.status === 403 && data.error === "LIMIT_REACHED") {
+                    if (confirm("Kuota Harian Habis!\n\nKamu sudah scan 10x hari ini. Upgrade ke Premium untuk scan sepuasnya?\n\nKlik OK untuk Upgrade.")) {
+                        window.location.href = "/premium";
+                    }
+                    throw new Error("Kuota harian habis.");
+                }
+                throw new Error(data.error || "Gagal menganalisis makanan atau minuman kamu.");
             }
+
+            const aiData: NutritionResult = data;
 
             // 4. Simpan ke Tabel 'food_logs'
             const { error: dbError } = await supabase
@@ -213,7 +284,7 @@ export default function ScanPage() {
     if (!mounted) return null;
 
     return (
-        <div className="min-h-screen bg-[#F0F0F0] font-mono text-black relative overflow-hidden pb-20">
+        <div className="min-h-screen bg-white font-mono text-black relative overflow-hidden pb-20">
             {/* Brutal Accents */}
             <div className="fixed top-0 right-0 w-48 h-48 bg-yellow-400 border-b-8 border-l-8 border-black -mr-20 -mt-20 z-0" />
             <div className="fixed bottom-0 left-0 w-32 h-32 bg-blue-600 border-t-8 border-r-8 border-black -ml-16 -mb-16 z-0" />
@@ -240,39 +311,51 @@ export default function ScanPage() {
 
                     {/* SELECT MODE */}
                     {mode === "select" && (
-                        <motion.div key="select" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
-                            <div className="mb-12">
+                        <motion.div 
+                            key="select" 
+                            variants={containerVariants}
+                            initial="hidden" 
+                            animate="visible" 
+                            className="space-y-8"
+                        >
+                            <motion.div variants={headerVariants} className="mb-12">
                                 <h1 className="text-7xl md:text-8xl font-black uppercase tracking-tighter leading-none mb-2">
                                     Scan Kuy! 
                                 </h1>
-                                <p className="font-bold text-xl uppercase italic bg-yellow-400 inline-block px-2 text-black text-center">Analisis Makanan & Minumanmu</p>
+                                <p className="font-bold text-xl uppercase italic bg-yellow-400 inline-block px-2 text-black text-center">Analisis Makanan &amp; Minumanmu</p>
                                 <p className="mt-2 text-xs font-black uppercase tracking-widest opacity-40">Pilih cara input di bawah ini</p>
-                            </div>
+                            </motion.div>
 
-                            <div className="grid gap-6">
-                                <BrutalMenuBtn 
-                                    onClick={() => { setMode("camera"); startCamera(); }} 
-                                    color="bg-red-500" 
-                                    icon={<Camera size={32} />} 
-                                    label="KAMERA LANGSUNG" 
-                                    desc="Jepret makanan/minuman sekarang"
-                                />
-                                <BrutalMenuBtn 
-                                    color="bg-yellow-400" 
-                                    icon={<Upload size={32} />} 
-                                    label="DARI GALERI" 
-                                    desc="Pilih foto Galeri"
-                                    isUpload 
-                                    onChange={handleFileUpload}
-                                />
-                                <BrutalMenuBtn 
-                                    onClick={() => setMode("type")} 
-                                    color="bg-green-500" 
-                                    icon={<Type size={32} />} 
-                                    label="KETIK MANUAL" 
-                                    desc="Tulis nama menu kamu"
-                                />
-                            </div>
+                            <motion.div variants={containerVariants} className="grid gap-6">
+                                <motion.div variants={itemVariants}>
+                                    <BrutalMenuBtn 
+                                        onClick={() => { setMode("camera"); startCamera(); }} 
+                                        color="bg-red-500" 
+                                        icon={<Camera size={32} />} 
+                                        label="KAMERA LANGSUNG" 
+                                        desc="Jepret makanan/minuman sekarang"
+                                    />
+                                </motion.div>
+                                <motion.div variants={itemVariants}>
+                                    <BrutalMenuBtn 
+                                        color="bg-yellow-400" 
+                                        icon={<Upload size={32} />} 
+                                        label="DARI GALERI" 
+                                        desc="Pilih foto Galeri"
+                                        isUpload 
+                                        onChange={handleFileUpload}
+                                    />
+                                </motion.div>
+                                <motion.div variants={itemVariants}>
+                                    <BrutalMenuBtn 
+                                        onClick={() => setMode("type")} 
+                                        color="bg-green-500" 
+                                        icon={<Type size={32} />} 
+                                        label="KETIK MANUAL" 
+                                        desc="Tulis nama menu kamu"
+                                    />
+                                </motion.div>
+                            </motion.div>
                         </motion.div>
                     )}
 
@@ -324,20 +407,42 @@ export default function ScanPage() {
 
                      {/* MEAL SELECTION MODE */}
                      {mode === "meal_selection" && (
-                        <motion.div key="meal_selection" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-xl mx-auto">
-                            <button onClick={() => setMode("select")} className="mb-8 flex items-center gap-2 font-black uppercase text-sm hover:underline">
+                        <motion.div 
+                            key="meal_selection" 
+                            variants={mealContainerVariants}
+                            initial="hidden" 
+                            animate="visible" 
+                            className="max-w-xl mx-auto"
+                        >
+                            <motion.button 
+                                variants={mealItemVariants}
+                                onClick={() => setMode("select")} 
+                                className="mb-8 flex items-center gap-2 font-black uppercase text-sm hover:underline"
+                            >
                                 <ArrowLeft size={16} /> Batal
-                            </button>
-                            <h2 className="text-4xl md:text-5xl font-black uppercase text-center mb-2 leading-none">Kapan Kamu</h2>
-                            <h2 className="text-4xl md:text-5xl font-black uppercase italic text-center mb-8 bg-yellow-400 inline-block w-full">Makan Ini?</h2>
+                            </motion.button>
+                            <motion.div variants={mealItemVariants}>
+                                <h2 className="text-4xl md:text-5xl font-black uppercase text-center mb-2 leading-none">Kapan Kamu</h2>
+                                <h2 className="text-4xl md:text-5xl font-black uppercase italic text-center mb-8 bg-yellow-400 inline-block w-full">Makan Ini?</h2>
+                            </motion.div>
                             
-                            <div className="grid gap-4">
-                                <MealOption label="Makan Pagi" value="pagi" sub="06:00 - 10:00" color="bg-orange-300" onClick={() => tempInput && handleAnalyze(tempInput, 'pagi')} />
-                                <MealOption label="Makan Siang" value="siang" sub="11:00 - 15:00" color="bg-yellow-400" onClick={() => tempInput && handleAnalyze(tempInput, 'siang')} />
-                                <MealOption label="Makan Malam" value="malam" sub="18:00 - 21:00" color="bg-blue-400" onClick={() => tempInput && handleAnalyze(tempInput, 'malam')} />
-                                <MealOption label="Camilan / Snack" value="snack" sub="Kapan aja boleh" color="bg-pink-400" onClick={() => tempInput && handleAnalyze(tempInput, 'snack')} />
-                                <MealOption label="Minuman" value="minuman" sub="Haus ya?" color="bg-zinc-300" onClick={() => tempInput && handleAnalyze(tempInput, 'minuman')} />
-                            </div>
+                            <motion.div variants={mealContainerVariants} className="grid gap-4">
+                                <motion.div variants={mealItemVariants}>
+                                    <MealOption label="Makan Pagi" value="pagi" sub="06:00 - 10:00" color="bg-orange-300" onClick={() => tempInput && handleAnalyze(tempInput, 'pagi')} />
+                                </motion.div>
+                                <motion.div variants={mealItemVariants}>
+                                    <MealOption label="Makan Siang" value="siang" sub="11:00 - 15:00" color="bg-yellow-400" onClick={() => tempInput && handleAnalyze(tempInput, 'siang')} />
+                                </motion.div>
+                                <motion.div variants={mealItemVariants}>
+                                    <MealOption label="Makan Malam" value="malam" sub="18:00 - 21:00" color="bg-blue-400" onClick={() => tempInput && handleAnalyze(tempInput, 'malam')} />
+                                </motion.div>
+                                <motion.div variants={mealItemVariants}>
+                                    <MealOption label="Camilan / Snack" value="snack" sub="Kapan aja boleh" color="bg-pink-400" onClick={() => tempInput && handleAnalyze(tempInput, 'snack')} />
+                                </motion.div>
+                                <motion.div variants={mealItemVariants}>
+                                    <MealOption label="Minuman" value="minuman" sub="Haus ya?" color="bg-zinc-300" onClick={() => tempInput && handleAnalyze(tempInput, 'minuman')} />
+                                </motion.div>
+                            </motion.div>
                         </motion.div>
                     )}
 
@@ -368,8 +473,8 @@ export default function ScanPage() {
 
                                 <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative mb-10">
                                     <Info className="absolute -top-5 -right-5 w-12 h-12 bg-black text-white p-2 border-4 border-black" />
-                                    <h3 className="font-black uppercase text-xl mb-4 text-blue-600">AI_DESCRIPTION.txt</h3>
-                                    <p className="text-xl font-bold italic leading-tight">{result.description}</p>
+                                    <h3 className="font-black uppercase text-xl mb-4 text-blue-600">Analisis AI</h3>
+                                    <p className="text-sm font-bold italic leading-relaxed">{result.description}</p>
                                 </div>
 
                                 <button 

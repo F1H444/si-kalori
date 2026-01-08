@@ -7,9 +7,15 @@ export interface UserProfile {
   age: number;
   gender: 'male' | 'female';
   
+  // IDs & Status
+  id?: string;
+  full_name?: string;
+  is_premium?: boolean;
+
   // Goals & Activity
   goal: 'lose' | 'maintain' | 'gain' | 'healthy';
-  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'veryActive';
+  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'veryActive' | string; // Relaxed type for string matching
+  activity_level?: string; // DB field mapping
   
   // Optional
   targetWeight?: number; // kg

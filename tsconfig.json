@@ -26,7 +26,8 @@
       "@/*": [
         "./src/*"
       ]
-    }
+    },
+    "typeRoots": ["./node_modules/@types"]
   },
   "include": [
     "next-env.d.ts",
@@ -34,7 +35,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
-  ],
+, "src/app/api/payment/route.js"  ],
   "exclude": [
     "node_modules"
   ]

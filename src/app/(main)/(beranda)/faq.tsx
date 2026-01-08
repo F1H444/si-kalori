@@ -1,50 +1,54 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { HelpCircle, Plus, Minus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { HelpCircle, Plus, Minus, MessageCircle } from "lucide-react";
 
-// 1. Data untuk FAQ
 const faqData = [
   {
-    question: "Apakah Sikalori benar-benar gratis?",
+    question: "Apakah Sikalori gratis?",
     answer:
-      "Ya dong! Fitur utama kami, mulai dari scan makanan & minuman, tracking kalori, sampai database gizi, semuanya 100% gratis. Kami pengen semua orang bisa hidup sehat tanpa beban biaya.",
+      "Yup! Kamu bisa pakai Si Kalori gratis dengan batas 10 scan per hari. Kalau butuh unlimited scan, tinggal upgrade ke Premium (langganan bulanan) dan scan sepuasnya tanpa batas!",
+    color: "bg-[#FF5F5F]",
   },
   {
-    question: "Seberapa akurat deteksi AI dari foto?",
+    question: "Gimana cara AI menganalisis makanan?",
     answer:
-      "Akurasi kami saat ini mencapai 98% untuk makanan umum. Akurasi ini terus meningkat setiap hari seiring AI kami mempelajari lebih banyak data gambar yang dimasukkan oleh pengguna.",
+      "Cukup foto makananmu atau ketik nama menu, AI kami akan langsung menganalisis dan kasih info kalori, protein, karbohidrat, lemak, plus skor kesehatan. Prosesnya cuma beberapa detik!",
+    color: "bg-[#4ade80]",
   },
   {
     question: "Mendukung makanan lokal Indonesia nggak?",
     answer:
-      "Pastinya! Ini keunggulan kami. Database kami punya lebih dari 1 juta item, termasuk ribuan masakan lokal kayak Nasi Padang, Gado-Gado, Seblak, sampai berbagai jajanan pasar dan minuman kekinian.",
+      "Pastinya! AI kami bisa mengenali berbagai makanan Indonesia, dari Nasi Padang, Gado-Gado, Seblak, sampai minuman kekinian. Coba aja scan makanan favoritmu!",
+    color: "bg-[#FFD95A]",
   },
   {
     question: "Bisa buat diet 'Bulking' atau nambah berat badan?",
     answer:
-      "Bisa banget! Sikalori bukan cuma buat nurunin berat badan aja. Kamu bisa atur target kalori harianmu, entah itu buat jaga berat badan, bulking, atau cutting.",
+      "Bisa banget! Waktu daftar, kamu bisa pilih goal: turun badan, naik badan, atau maintain. Si Kalori bakal kasih target kalori harian yang sesuai sama goalmu.",
+    color: "bg-[#A076FF]",
   },
 ];
 
 export default function FaqSection() {
   const [mounted, setMounted] = useState(false);
-  // State untuk melacak item mana yang terbuka
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Fungsi untuk toggle FAQ
   const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
+  if (!mounted) return null;
+
   return (
     <div className="relative bg-white z-0 px-4 sm:px-6 py-16 sm:py-24 lg:py-32 overflow-hidden pt-32">
-      {/* Latar Belakang Grid */}
-      <div className="absolute inset-0 opacity-[0.02]">
+      {/* Background Grid - Tetap Sesuai Permintaan */}
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
         <div
           className="absolute inset-0"
           style={{
@@ -54,97 +58,105 @@ export default function FaqSection() {
         />
       </div>
 
-      {/* Aksen Geometris */}
       <div className="absolute top-1/4 left-0 w-2 h-24 sm:w-3 sm:h-40 bg-black" />
       <div className="absolute bottom-1/4 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-black opacity-[0.03]" />
 
-      <div className="relative z-10 max-w-3xl mx-auto">
-        {/* Judul Bagian */}
-        <div className="text-center mb-12 sm:mb-16 lg:mb-20">
-          <div
-            className={`inline-flex items-center gap-2 px-4 py-2 mb-6 sm:mb-8 bg-black text-white border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-500 ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8"
-            }`}
+      <motion.div 
+        className="relative z-10 max-w-3xl mx-auto"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+      >
+        {/* Header Section */}
+        <div className="text-center mb-20 mt-8">
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            className="inline-flex items-center gap-2 px-6 py-2 mb-8 bg-black text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
           >
-            <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
+            <HelpCircle className="w-5 h-5 text-[#FFD95A]" strokeWidth={3} />
             <span className="text-xs sm:text-sm font-black tracking-[0.2em]">
-              MASIH RAGU?
+              FAQ - TANYA JAWAB
             </span>
-          </div>
+          </motion.div>
 
-          <h2
-            className={`text-4xl sm:text-5xl lg:text-6xl font-black text-black leading-tight transition-all duration-700 delay-100 ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
+          <motion.h2
+            initial={{ scale: 0.9, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            className="text-5xl sm:text-6xl lg:text-7xl font-black text-black leading-tight uppercase italic"
           >
-            PERTANYAAN UMUM
-          </h2>
+            Punya <br />
+            <span className="bg-black text-white px-4 py-2 not-italic inline-block mt-2">Pertanyaan?</span>
+          </motion.h2>
         </div>
 
-        {/* Daftar Akordeon FAQ */}
-        <div className="space-y-6 sm:space-y-8">
+        {/* FAQ Accordion List */}
+        <div className="space-y-6">
           {faqData.map((item, index) => {
             const isOpen = openIndex === index;
 
             return (
-              <div
+              <motion.div
                 key={index}
-                className={`border-2 sm:border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-700 ${
-                  mounted
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-8"
-                }`}
-                style={{ transitionDelay: `${100 * (index + 2)}ms` }}
+                initial={{ x: -20, opacity: 0 }}
+                whileInView={{ x: 0, opacity: 1 }}
+                transition={{ delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="group"
               >
-                {/* Tombol Pertanyaan */}
-                <button
-                  onClick={() => toggleFAQ(index)}
-                  className="flex w-full items-center justify-between text-left p-4 sm:p-6 bg-white"
-                >
-                  <span className="text-base sm:text-lg lg:text-xl font-black text-black">
-                    {item.question}
-                  </span>
-                  {/* Ikon Brutalist Kotak */}
-                  <div
-                    className={`w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 flex items-center justify-center border-2 sm:border-4 border-black transition-all duration-300 ${
-                      isOpen ? "bg-red-500" : "bg-black group-hover:bg-gray-700"
-                    }`}
-                  >
-                    {isOpen ? (
-                      <Minus
-                        className="w-5 h-5 sm:w-6 sm:h-6 text-white"
-                        strokeWidth={4}
-                      />
-                    ) : (
-                      <Plus
-                        className="w-5 h-5 sm:w-6 sm:h-6 text-white"
-                        strokeWidth={4}
-                      />
-                    )}
-                  </div>
-                </button>
-
-                {/* Konten Jawaban (Animasi dengan grid-rows) */}
                 <div
-                  className={`grid overflow-hidden transition-all duration-500 ease-in-out ${
-                    isOpen
-                      ? "grid-rows-[1fr] opacity-100"
-                      : "grid-rows-[0fr] opacity-0"
-                  }`}
+                  className={`border-4 border-black transition-all duration-300 transform 
+                    ${isOpen 
+                      ? "shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] translate-x-1 translate-y-1" 
+                      : "shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1"
+                    }`}
                 >
-                  <div className="overflow-hidden">
-                    <div className="bg-gray-50 p-4 sm:p-6 border-t-2 sm:border-t-4 border-black">
-                      <p className="text-sm sm:text-base text-gray-700 font-bold leading-relaxed">
-                        {item.answer}
-                      </p>
+                  <button
+                    onClick={() => toggleFAQ(index)}
+                    className="flex w-full items-center justify-between text-left p-6 sm:p-8 bg-white focus:outline-none"
+                  >
+                    <span className="text-lg sm:text-xl lg:text-2xl font-black text-black leading-tight pr-4">
+                      {item.question}
+                    </span>
+                    
+                    {/* Brutalist Button Indicator */}
+                    <div
+                      className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 flex items-center justify-center border-4 border-black transition-all duration-300
+                        ${isOpen ? "bg-red-500 rotate-180" : "bg-black group-hover:bg-[#A076FF]"}`}
+                    >
+                      {isOpen ? (
+                        <Minus className="w-6 h-6 text-white" strokeWidth={4} />
+                      ) : (
+                        <Plus className="w-6 h-6 text-white" strokeWidth={4} />
+                      )}
                     </div>
-                  </div>
+                  </button>
+
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "circOut" }}
+                        className="overflow-hidden bg-white"
+                      >
+                        <div className="px-6 pb-8 sm:px-8 sm:pb-10 border-t-4 border-black pt-6">
+                          <div className={`p-4 sm:p-6 border-4 border-black ${item.color} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}>
+                            <p className="text-base sm:text-lg text-black font-bold leading-relaxed">
+                              {item.answer}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

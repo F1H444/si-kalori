@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Dumbbell,
   Heart,
@@ -9,9 +10,8 @@ import {
   User,
   Users,
   CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
-
-
 
 export default function TargetAudienceSection() {
   const [mounted, setMounted] = useState(false);
@@ -21,7 +21,7 @@ export default function TargetAudienceSection() {
     setMounted(true);
     const timer = setInterval(() => {
       setActiveCard((prev) => (prev + 1) % 4);
-    }, 3000);
+    }, 4000);
     return () => clearInterval(timer);
   }, []);
 
@@ -32,10 +32,10 @@ export default function TargetAudienceSection() {
       subtitle: "Gym & Olahraga",
       description:
         "Kamu yang rutin nge-gym dan butuh tracking protein, karbohidrat, lemak untuk bulking atau cutting? Si Kalori bantu kamu hitung makro dengan akurat!",
-      color: "bg-red-500",
+      color: "bg-[#FF5F5F]",
       painPoint: "Bingung hitung makro manual?",
-      solution: "Scan makanan → Tau semua nutrisi",
-      stats: "85% pengguna gym aktif",
+      solution: "Scan makanan → Langsung tau semua nutrisinya",
+      stats: "Tracking protein, karbo, lemak",
     },
     {
       icon: Scale,
@@ -43,21 +43,21 @@ export default function TargetAudienceSection() {
       subtitle: "Turun atau Naik BB",
       description:
         "Mau turunkan berat badan atau malah naikin? Apapun goalmu, tracking kalori harian adalah kunci. Si Kalori bikin prosesnya jadi gampang dan konsisten.",
-      color: "bg-yellow-500",
+      color: "bg-[#FFD95A]",
       painPoint: "Diet sering gagal di tengah jalan?",
-      solution: "Kontrol kalori jadi mudah & fun",
-      stats: "Rata-rata turun 8kg dalam 3 bulan",
+      solution: "Target kalori personal sesuai goal",
+      stats: "Defisit, surplus, atau maintain",
     },
     {
       icon: Heart,
       title: "HIDUP SEHAT",
-      subtitle: "Diabetes, Kolesterol, Jantung",
+      subtitle: "Aware Nutrisi",
       description:
-        "Punya kondisi kesehatan khusus dan perlu kontrol asupan nutrisi ketat? Si Kalori membantu kamu monitor gula, sodium, dan nutrisi penting lainnya.",
-      color: "bg-blue-500",
-      painPoint: "Takut salah makan?",
-      solution: "Cek nutrisi sebelum makan",
-      stats: "Cocok untuk diet rendah gula & garam",
+        "Pengen lebih aware sama apa yang kamu makan sehari-hari? Si Kalori kasih info nutrisi lengkap dan skor kesehatan buat setiap makananmu.",
+      color: "bg-[#569AFF]",
+      painPoint: "Ga tau makanan sehat atau nggak?",
+      solution: "Health score di setiap scan",
+      stats: "Kalori + Protein + Karbo + Lemak",
     },
     {
       icon: Utensils,
@@ -65,184 +65,218 @@ export default function TargetAudienceSection() {
       subtitle: "Professionals & Mahasiswa",
       description:
         "Ga ada waktu ribet hitung kalori manual? Cukup foto makanan kamu, Si Kalori langsung kasih info lengkap. Hemat waktu, tetap sehat!",
-      color: "bg-green-500",
+      color: "bg-[#4ade80]",
       painPoint: "Ga sempat tracking makan?",
-      solution: "Scan cepat, 3 detik kelar",
-      stats: "Hemat 15 menit per hari",
+      solution: "Foto → Langsung dapat hasilnya",
+      stats: "Analisis dalam hitungan detik",
     },
   ];
 
+  // Animation Variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 30, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring" as const,
+        stiffness: 120,
+        damping: 12,
+      },
+    },
+  };
+
+  if (!mounted) return null;
+
   return (
     <div className="relative min-h-screen bg-white overflow-hidden py-12 sm:py-16 lg:py-24">
-      {/* Brutal Grid Background */}
-      <div className="absolute inset-0 opacity-[0.02]">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(to right, #000 1px, transparent 1px)`,
-            backgroundSize: "40px 40px",
-          }}
-        />
-      </div>
-
-      {/* Geometric Accents */}
-      <div className="absolute top-20 left-0 w-2 h-32 sm:w-3 sm:h-48 lg:w-[6px] lg:h-64 bg-black" />
-      <div className="absolute top-1/3 right-10 w-16 h-16 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-black opacity-[0.03]" />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
+      {/* Background & Geometric Accents di bawah ini telah dihapus sesuai permintaan */}
+      
+      <motion.div
+        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-100px" }}
+      >
         {/* Section Header */}
         <div className="text-center mb-12 sm:mb-16 lg:mb-20">
-          <div
-            className={`inline-flex items-center gap-2 px-4 py-2 mb-6 sm:mb-8 bg-black text-white border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-500 ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8"
-            }`}
+          <motion.div
+            variants={itemVariants}
+            className="inline-flex items-center gap-2 px-4 py-2 mb-6 bg-black text-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
           >
-            <Users className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
-            <span className="text-xs sm:text-sm font-black tracking-[0.2em]">
+            <Users className="w-4 h-4" strokeWidth={3} />
+            <span className="text-xs font-black tracking-[0.2em]">
               UNTUK SIAPA?
             </span>
-          </div>
+          </motion.div>
 
-          <h2
-            className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[0.9] mb-4 sm:mb-6 transition-all duration-700 ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-            }`}
+          <motion.h2
+            variants={itemVariants}
+            className="text-4xl sm:text-6xl lg:text-8xl font-black leading-[0.85] mb-6"
           >
-            <span className="block text-black mb-2 sm:mb-3">SI KALORI</span>
-            <span className="inline-block bg-black text-white px-4 py-2 sm:px-6 sm:py-3 lg:px-8 lg:py-4 border-2 sm:border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)]">
+            <span className="block text-black">SI KALORI</span>
+            <span className="inline-block bg-black text-white px-4 py-2 mt-2 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,0.15)]">
               UNTUK KAMU!
             </span>
-          </h2>
+          </motion.h2>
 
-          <p
-            className={`text-base sm:text-lg lg:text-xl text-gray-700 max-w-3xl mx-auto font-bold leading-relaxed transition-all duration-700 delay-100 ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-            }`}
+          <motion.p
+            variants={itemVariants}
+            className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto font-bold mt-8"
           >
             Apapun goalmu, Si Kalori siap jadi partner terbaik untuk tracking
-            nutrisi dan mencapai target kesehatanmu
-          </p>
+            nutrisi dan mencapai target kesehatanmu.
+          </motion.p>
         </div>
 
         {/* Audience Cards Grid */}
-        <div className="grid sm:grid-cols-2 gap-6 sm:gap-8 lg:gap-10 mb-12 sm:mb-16">
+        <motion.div
+          className="grid sm:grid-cols-2 gap-8 lg:gap-10 mb-16"
+          variants={containerVariants}
+        >
           {audiences.map((audience, idx) => {
             const Icon = audience.icon;
             const isActive = activeCard === idx;
 
             return (
-              <div
+              <motion.div
                 key={idx}
-                className={`relative transition-all duration-500 ${
-                  mounted ? "opacity-100" : "opacity-0"
-                }`}
-                style={{
-                  transitionDelay: `${200 + idx * 100}ms`,
-                  transform: isActive ? "scale(1.02)" : "scale(1)",
-                }}
+                variants={itemVariants}
+                whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+                className="relative group"
               >
                 <div
-                  className={`bg-white border-2 sm:border-4 border-black p-6 sm:p-8 lg:p-10 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] sm:hover:translate-x-[4px] sm:hover:translate-y-[4px] transition-all cursor-pointer group h-full flex flex-col`}
+                  className={`relative h-full bg-white border-4 border-black p-6 sm:p-10 transition-all duration-300
+                    ${
+                      isActive
+                        ? "shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] -translate-x-1 -translate-y-1"
+                        : "shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+                    }
+                    group-hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] group-hover:-translate-x-1 group-hover:-translate-y-1`}
                 >
-                  {/* Icon & Badge */}
-                  <div className="flex items-start justify-between mb-4 sm:mb-6">
+                  {/* Icon Box */}
+                  <div className="flex items-start justify-between mb-8">
                     <div
-                      className={`w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 ${audience.color} border-2 sm:border-4 border-black flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex-shrink-0`}
+                      className={`${audience.color} w-16 h-16 sm:w-20 sm:h-20 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center`}
                     >
                       <Icon
-                        className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white"
+                        className="w-8 h-8 sm:w-10 sm:h-10 text-white"
                         strokeWidth={2.5}
                       />
                     </div>
-                    {isActive && (
-                      <div className="px-3 py-1 bg-black text-white border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,0.3)] flex-shrink-0">
-                        <span className="text-xs font-black tracking-wider">
-                          COCOK!
-                        </span>
-                      </div>
-                    )}
+
+                    <AnimatePresence>
+                      {isActive && (
+                        <motion.div
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 10 }}
+                          className="px-4 py-1 bg-black text-white border-2 border-black font-black text-xs tracking-tighter shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]"
+                        >
+                          TARGET AUDIENCE
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
-                  {/* Title */}
-                  <div className="mb-3 sm:mb-4">
-                    <h3 className="text-xl sm:text-2xl lg:text-3xl font-black leading-tight text-black mb-1">
+                  {/* Content */}
+                  <div className="mb-6">
+                    <h3 className="text-2xl sm:text-3xl font-black text-black mb-1 italic uppercase">
                       {audience.title}
                     </h3>
-                    <p className="text-sm sm:text-base font-black text-gray-600">
+                    <p className="text-sm font-black text-gray-500 uppercase tracking-widest">
                       {audience.subtitle}
                     </p>
                   </div>
 
-                  {/* Description */}
-                  <p className="text-sm sm:text-base text-gray-700 font-bold leading-relaxed mb-4 sm:mb-6 flex-grow">
+                  <p className="text-gray-800 font-bold leading-snug mb-8 text-base sm:text-lg">
                     {audience.description}
                   </p>
 
-                  {/* Pain Point & Solution */}
-                  <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-                    <div className="bg-red-50 border-l-4 border-red-500 p-3 sm:p-4">
-                      <p className="text-xs sm:text-sm font-black text-red-700">
-                        ❌ {audience.painPoint}
+                  {/* Pain Points Section */}
+                  <div className="space-y-3 mb-8">
+                    <div className="flex items-center gap-3 bg-red-50 border-2 border-black p-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                      <span className="text-lg">❌</span>
+                      <p className="text-xs sm:text-sm font-black text-black leading-tight">
+                        {audience.painPoint}
                       </p>
                     </div>
-                    <div className="bg-green-50 border-l-4 border-green-500 p-3 sm:p-4">
-                      <p className="text-xs sm:text-sm font-black text-green-700">
-                        ✅ {audience.solution}
+                    <div className="flex items-center gap-3 bg-green-50 border-2 border-black p-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                      <span className="text-lg">✅</span>
+                      <p className="text-xs sm:text-sm font-black text-black leading-tight">
+                        {audience.solution}
                       </p>
                     </div>
                   </div>
 
-                  {/* Stats */}
-                  <div className="border-t-2 sm:border-t-4 border-black pt-3 sm:pt-4">
+                  {/* Footer Stats */}
+                  <div className="flex items-center justify-between pt-6 border-t-4 border-black mt-auto">
                     <div className="flex items-center gap-2">
                       <CheckCircle2
-                        className="w-4 h-4 sm:w-5 sm:h-5 text-black"
+                        className="w-5 h-5 text-black"
                         strokeWidth={3}
                       />
-                      <span className="text-xs sm:text-sm font-black text-black">
+                      <span className="text-xs sm:text-sm font-black uppercase tracking-tight">
                         {audience.stats}
                       </span>
                     </div>
+                    <ArrowRight
+                      className={`w-6 h-6 transition-all duration-300 ${
+                        isActive
+                          ? "translate-x-0 opacity-100"
+                          : "-translate-x-4 opacity-0"
+                      }`}
+                    />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
 
         {/* Universal Message */}
-        <div
-          className={`bg-black text-white border-2 sm:border-4 border-black p-6 sm:p-8 lg:p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] mb-12 sm:mb-16 transition-all duration-700 delay-600 ${
-            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-          }`}
+        <motion.div
+          variants={itemVariants}
+          whileInView={{
+            scale: [0.98, 1.02, 1],
+            transition: { duration: 0.5 },
+          }}
+          className="bg-[#A076FF] text-white border-4 border-black p-8 sm:p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden"
         >
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white flex items-center justify-center border-2 sm:border-4 border-white flex-shrink-0">
-              <User
-                className="w-6 h-6 sm:w-8 sm:h-8 text-black"
-                strokeWidth={3}
-              />
+          {/* Subtle Internal Pattern */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 translate-x-16 -translate-y-16 rotate-45" />
+
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+            <div className="w-20 h-20 bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center flex-shrink-0 -rotate-3">
+              <User className="w-10 h-10 text-black" strokeWidth={3} />
             </div>
-            <div className="flex-grow">
-              <h3 className="text-xl sm:text-2xl lg:text-3xl font-black mb-2 sm:mb-3">
+
+            <div className="text-center md:text-left">
+              <h3 className="text-3xl sm:text-4xl font-black mb-4 leading-none">
                 TIDAK MASUK KATEGORI DI ATAS?
               </h3>
-              <p className="text-sm sm:text-base font-bold leading-relaxed">
-                Ga masalah! Si Kalori cocok untuk{" "}
-                <span className="bg-white text-black px-2 py-1 font-black">
+              <p className="text-lg font-bold leading-tight opacity-95 max-w-2xl">
+                Tenang! Si Kalori didesain untuk{" "}
+                <span className="bg-black text-white px-2 py-0.5 mx-1 inline-block rotate-1">
                   SIAPA SAJA
                 </span>{" "}
-                yang ingin lebih aware dengan asupan makanan sehari-hari. Dari
-                remaja sampai lansia, dari pemula sampai expert - semua bisa
-                pakai Si Kalori dengan mudah!
+                yang peduli dengan kesehatan. Dari pemula hingga pro, semua bisa
+                mulai hidup lebih sadar nutrisi hari ini!
               </p>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* [DIHAPUS] Bottom Decorative Elements */}
-      {/* <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 bg-black opacity-[0.03]" /> */}
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

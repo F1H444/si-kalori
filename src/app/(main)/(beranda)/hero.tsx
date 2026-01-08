@@ -2,13 +2,31 @@
 
 import { useState, useEffect } from "react";
 import { Camera, Zap, TrendingUp, Check, Play } from "lucide-react";
+import { motion, type Variants } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 // Ganti nama komponen menjadi HomePage agar sesuai dengan app/page.tsx
 export default function BrutalHero() {
-  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Check auth status on mount
   useEffect(() => {
-    setMounted(true);
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session?.user);
+      setIsLoading(false);
+    };
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const benefits = [
@@ -21,6 +39,51 @@ export default function BrutalHero() {
     { num: "1Jt+", label: "Menu & Produk" },
     { num: "98%", label: "Akurasi AI" },
   ];
+
+  // Animation Variants
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: [0.215, 0.610, 0.355, 1.000] as const,
+      },
+    },
+  };
+
+  const rightColVariants: Variants = {
+    hidden: { opacity: 0, x: 50 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        duration: 0.8,
+        ease: "easeOut" as const,
+        delay: 0.2,
+      },
+    },
+  };
+
+  const handleCTAClick = () => {
+    if (isLoggedIn) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
+    }
+  };
 
   return (
     // Fragment untuk membungkus Navbar dan Hero
@@ -48,16 +111,14 @@ export default function BrutalHero() {
           {/* Layout 2-kolom */}
           <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
             {/* --- KOLOM KIRI: Teks & Stats --- */}
-            <div className="space-y-8 sm:space-y-10">
-              {/* --- Top Badge "SI KALORI" telah dihapus dari sini --- */}
-
+            <motion.div
+              className="space-y-8 sm:space-y-10"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
               {/* Main Headline */}
-              <h1
-                className={`transition-all duration-700 ${mounted
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-12"
-                  }`}
-              >
+              <motion.h1 variants={itemVariants}>
                 <span className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.85] text-black mb-3 sm:mb-4">
                   KELOLA
                 </span>
@@ -69,32 +130,27 @@ export default function BrutalHero() {
                     DENGAN CERDAS
                   </span>
                 </div>
-              </h1>
+              </motion.h1>
 
               {/* Paragraf */}
-              <p
-                className={`text-lg sm:text-xl text-gray-700 leading-relaxed max-w-xl transition-all duration-700 delay-100 ${mounted
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-12"
-                  }`}
+              <motion.p
+                variants={itemVariants}
+                className="text-lg sm:text-xl text-gray-700 leading-relaxed max-w-xl"
               >
                 Scan makanan & minumanmu. AI kami langsung hitung kalori dan nutrisinya. Yuk, capai target sehatmu bareng Sikalori!
-              </p>
+              </motion.p>
 
               {/* Tombol CTAs */}
-              <div
-                className={`flex flex-col sm:flex-row gap-3 sm:gap-4 transition-all duration-700 delay-200 ${mounted
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-12"
-                  }`}
+              <motion.div
+                variants={itemVariants}
+                className="flex flex-col sm:flex-row gap-3 sm:gap-4"
               >
                 <button
-                  onClick={() => {
-                    const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem("user_session");
-                    window.location.href = isLoggedIn ? "/dashboard" : "/login";
-                  }}
-                  className="group relative px-8 py-4 sm:px-10 sm:py-5 bg-black text-white font-black text-sm sm:text-base border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] sm:hover:translate-x-[3px] sm:hover:translate-y-[3px] active:translate-x-[4px] active:translate-y-[4px] sm:active:translate-x-[6px] sm:active:translate-y-[6px] transition-all duration-150">
-                  {typeof window !== 'undefined' && localStorage.getItem("user_session") ? "KE DASHBOARD" : "MULAI GRATIS"}
+                  onClick={handleCTAClick}
+                  disabled={isLoading}
+                  className="group relative px-8 py-4 sm:px-10 sm:py-5 bg-black text-white font-black text-sm sm:text-base border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] sm:hover:translate-x-[3px] sm:hover:translate-y-[3px] active:translate-x-[4px] active:translate-y-[4px] sm:active:translate-x-[6px] sm:active:translate-y-[6px] transition-all duration-150 disabled:opacity-50"
+                >
+                  {isLoading ? "MEMUAT..." : isLoggedIn ? "KE DASHBOARD" : "SCAN SEKARANG"}
                 </button>
                 <button className="group px-8 py-4 sm:px-10 sm:py-5 bg-white text-black font-black text-sm sm:text-base border-2 sm:border-4 border-black hover:bg-black hover:text-white transition-all duration-200">
                   <span className="flex items-center justify-center gap-2">
@@ -102,15 +158,12 @@ export default function BrutalHero() {
                     LIHAT CARA KERJA
                   </span>
                 </button>
-              </div>
+              </motion.div>
 
               {/* Stats Grid */}
-              <div
-                // [FIXED] Tanda titik dua ':' ditambahkan di sini
-                className={`grid grid-cols-2 gap-4 sm:gap-8 pt-6 sm:pt-8 transition-all duration-700 delay-300 ${mounted
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-12"
-                  }`}
+              <motion.div
+                variants={itemVariants}
+                className="grid grid-cols-2 gap-4 sm:gap-8 pt-6 sm:pt-8"
               >
                 {stats.map((stat) => (
                   <div
@@ -125,17 +178,19 @@ export default function BrutalHero() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
             {/* --- KOLOM KANAN: Visual & Fitur --- */}
-            <div className="space-y-6">
+            <motion.div
+              className="space-y-6"
+              variants={rightColVariants}
+              initial="hidden"
+              animate="visible"
+            >
               {/* Kartu Fitur Utama */}
               <div
-                className={`bg-white border-2 sm:border-4 border-black p-6 sm:p-8 lg:p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all duration-700 delay-200 ${mounted
-                    ? "opacity-100 translate-x-0"
-                    : "opacity-0 translate-x-12"
-                  }`}
+                className="bg-white border-2 sm:border-4 border-black p-6 sm:p-8 lg:p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-black flex items-center justify-center">
@@ -177,18 +232,20 @@ export default function BrutalHero() {
               </div>
 
               {/* Grid 3 Kartu Benefit Kecil */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+              <motion.div
+                className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
                 {benefits.map((benefit, idx) => {
                   const Icon = benefit.icon;
                   return (
-                    <div
-                      key={benefit.text} // [FIXED] Key diubah ke 'benefit.text'
+                    <motion.div
+                      key={benefit.text}
+                      variants={itemVariants}
                       className={`${benefit.color
-                        } border-2 sm:border-4 border-black p-5 sm:p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all duration-700 ${mounted
-                          ? "opacity-100 translate-y-0"
-                          : "opacity-0 translate-y-12"
-                        }`}
-                      style={{ transitionDelay: `${300 + idx * 100}ms` }}
+                        } border-2 sm:border-4 border-black p-5 sm:p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all duration-200`}
                     >
                       <Icon
                         className="w-8 h-8 sm:w-10 sm:h-10 text-white mb-3"
@@ -197,11 +254,11 @@ export default function BrutalHero() {
                       <h4 className="text-lg sm:text-xl font-black text-white leading-tight">
                         {benefit.text}
                       </h4>
-                    </div>
+                    </motion.div>
                   );
                 })}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
       </div>

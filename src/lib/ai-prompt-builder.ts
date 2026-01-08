@@ -10,19 +10,19 @@ export function buildPersonalizedPrompt(profile?: UserProfile): string {
 Anda adalah asisten ahli nutrisi AI. Analisis input (bisa berupa gambar atau teks) yang berisi makanan atau minuman, lalu berikan data nutrisinya.
 Anda HARUS memberikan hasil dalam format JSON murni dengan skema berikut:
 {
-  "name": "Nama Makanan atau Minuman (dalam Bahasa Indonesia yang santai)",
+  "name": "Nama Makanan/Minuman (spesifik & akurat)",
   "calories": 100,
   "protein": "10g",
   "carbs": "20g",
   "fat": "5g",
   "health_score": 8,
-  "description": "Jelaskan tentang makanan/minuman ini dengan gaya bahasa yang ramah dan menarik. Beritahu kenapa ini bagus buat kesehatan atau apa yang perlu diperhatikan (dalam Bahasa Indonesia).",
+  "description": "Analisis singkat, padat, dan akurat tentang kandungan nutrisi makanan ini. Berikan insight kenapa ini sehat atau kurang sehat (maksimal 2-3 kalimat).",
   "healthier_options": [
     {
-      "name": "Nama Alternatif yang Lebih Sehat",
-      "image_keyword": "English Name of Food (untuk pencarian gambar)",
+      "name": "Nama Alternatif Sehat (Indonesia)",
+      "image_keyword": "English Keyword for Image Search",
       "calories": 80,
-      "reason": "Kasih alasan kenapa ini pilihan yang lebih baik dengan gaya bahasa santai (dalam Bahasa Indonesia)"
+      "reason": "Alasan singkat kenapa ini lebih baik."
     }
   ]
 }

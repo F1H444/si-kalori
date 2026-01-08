@@ -36,9 +36,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F0F0F0]">
+    <div className="flex h-screen bg-[#F0F0F0] overflow-hidden">
       <Sidebar forceShow={true} />
-      <div className="flex-1 max-w-[100vw] overflow-hidden">
+      <div className="flex-1 max-w-[100vw] h-full">
          <AdminDashboard activeTab={activeTab} />
       </div>
     </div>

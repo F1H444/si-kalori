@@ -7,20 +7,70 @@ import {
   Loader2,
   Meh,
   Info,
-  Calendar
+  Calendar,
+  X
 } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ScanLog } from "@/types/user";
 
+// Animation Variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 15,
+    },
+  },
+};
+
+const headerVariants = {
+  hidden: { opacity: 0, x: -50 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 80,
+      damping: 15,
+    },
+  },
+};
+
 
 export default function RiwayatPage() {
   const [logs, setLogs] = useState<ScanLog[]>([]);
-
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
+  
+  // Modal state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    logId: string | null;
+    logName: string;
+  }>({
+    isOpen: false,
+    logId: null,
+    logName: "",
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -53,19 +103,39 @@ export default function RiwayatPage() {
     fetchLogs();
   }, []);
 
-  const deleteLog = async (id: string) => {
-    if (!confirm("Hapus riwayat makan ini?")) return;
+  const openDeleteModal = (id: string, name: string) => {
+    setDeleteModal({
+      isOpen: true,
+      logId: id,
+      logName: name,
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({
+      isOpen: false,
+      logId: null,
+      logName: "",
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal.logId) return;
+    
+    setIsDeleting(true);
     try {
       const { error } = await supabase
         .from("food_logs")
         .delete()
-        .eq("id", id);
+        .eq("id", deleteModal.logId);
       
       if (error) throw error;
-      setLogs(logs.filter(log => log.id !== id));
+      setLogs(logs.filter(log => log.id !== deleteModal.logId));
+      closeDeleteModal();
     } catch (error) {
       console.error("Error deleting log:", error);
-      alert("Gagal menghapus.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -81,7 +151,7 @@ export default function RiwayatPage() {
 
   if (!mounted || loading) {
     return (
-      <div className="min-h-screen bg-[#F0F0F0] flex items-center justify-center p-8 font-mono text-black">
+      <div className="min-h-screen bg-white flex items-center justify-center p-8 font-mono text-black">
         <div className="bg-white border-[8px] border-black p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-center">
           <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" />
           <p className="font-black text-2xl uppercase tracking-tighter">MENGAMBIL DATA...</p>
@@ -91,17 +161,113 @@ export default function RiwayatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F0F0] p-4 md:p-10 font-mono text-black">
+    <div className="min-h-screen bg-white p-4 md:p-10 font-mono text-black">
+      {/* DELETE CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {deleteModal.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeDeleteModal}
+              className="absolute inset-0 bg-black/60 cursor-pointer"
+            />
+
+            {/* Modal Content */}
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="relative bg-white border-4 border-black p-6 md:p-8 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-md w-full"
+            >
+              {/* Close Button */}
+              <button
+                onClick={closeDeleteModal}
+                className="absolute top-4 right-4 p-2 hover:bg-gray-100 transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Modal Header */}
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-red-500 border-4 border-black mx-auto mb-4 flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <Trash2 className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">
+                  Hapus Riwayat?
+                </h3>
+              </div>
+
+              {/* Modal Body */}
+              <div className="bg-gray-100 border-4 border-black p-4 mb-6">
+                <p className="text-sm font-bold text-gray-600 uppercase mb-1">
+                  Item yang akan dihapus:
+                </p>
+                <p className="text-xl font-black uppercase tracking-tight truncate">
+                  {deleteModal.logName}
+                </p>
+              </div>
+
+              <p className="text-center font-bold text-gray-600 mb-6">
+                Data yang dihapus tidak bisa dikembalikan.
+              </p>
+
+              {/* Modal Actions */}
+              <div className="flex gap-4">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={closeDeleteModal}
+                  disabled={isDeleting}
+                  className="flex-1 bg-white text-black border-4 border-black p-4 font-black uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-50"
+                >
+                  Batal
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={confirmDelete}
+                  disabled={isDeleting}
+                  className="flex-1 bg-red-500 text-white border-4 border-black p-4 font-black uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Menghapus...
+                    </>
+                  ) : (
+                    "Ya, Hapus"
+                  )}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* HEADER SECTION */}
-      <header className="max-w-6xl mx-auto mb-16">
+      <motion.header 
+        className="max-w-6xl mx-auto mb-16"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-          <div className="space-y-4">
+          <motion.div variants={headerVariants} className="space-y-4">
             <h1 className="text-7xl md:text-9xl font-black uppercase leading-[0.8] tracking-tighter">
               RIWAYAT<br /><span className="text-blue-600 italic">KONSUMSI</span>
             </h1>
-          </div>
+          </motion.div>
 
-          <div className="relative w-full md:w-[400px]">
+          <motion.div variants={itemVariants} className="relative w-full md:w-[400px]">
             <input 
               type="text" 
               placeholder="CARI DATA..." 
@@ -110,15 +276,26 @@ export default function RiwayatPage() {
               className="w-full bg-white border-4 border-black p-5 font-black text-xl uppercase placeholder:text-gray-300 focus:outline-none shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] focus:shadow-none focus:translate-x-1 focus:translate-y-1 transition-all"
             />
             <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-8 h-8 text-black" />
-          </div>
+          </motion.div>
         </div>
-      </header>
+      </motion.header>
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <StatBox label="Total Menu" value={logs.length} color="bg-white" />
-        <StatBox label="Total Kalori" value={`${totalCalories}`} color="bg-yellow-400" />
-        <StatBox label="Status Akun" value="Aktif" color="bg-black text-white" />
-      </div>
+      <motion.div 
+        className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={itemVariants}>
+          <StatBox label="Total Menu" value={logs.length} color="bg-white" />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatBox label="Total Kalori" value={`${totalCalories}`} color="bg-yellow-400" />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatBox label="Status Akun" value="Aktif" color="bg-black text-white" />
+        </motion.div>
+      </motion.div>
 
 
       {/* LIST AREA */}
@@ -197,7 +374,7 @@ export default function RiwayatPage() {
 
                       {/* Right Side: Action */}
                       <button 
-                        onClick={() => deleteLog(log.id)}
+                        onClick={() => openDeleteModal(log.id, log.food_name)}
                         className="bg-red-500 text-white p-4 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:bg-black transition-all shrink-0 w-full md:w-auto flex items-center justify-center"
                       >
                         <Trash2 size={24} />

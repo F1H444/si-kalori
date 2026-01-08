@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 // 1. Hapus 'Link' dari lucide-react
 import { ArrowRight, Github, Twitter, Instagram } from "lucide-react";
-// 2. Import Link dari next/link
-// import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 
 export default function Footer() {
@@ -47,12 +46,10 @@ export default function Footer() {
 
             {/* Tombol Aksi */}
             <div className="flex-shrink-0">
-              {/* 3. Gunakan Link sebagai pembungkus utama dengan style tombol */}
-              {/* 3. Gunakan Button dengan onClick handler untuk logika dinamis */}
               <button
-                onClick={() => {
-                  const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem("user_session");
-                  window.location.href = isLoggedIn ? "/scan" : "/login";
+                onClick={async () => {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  window.location.href = session ? "/scan" : "/login";
                 }}
                 className="group relative inline-flex items-center justify-center 
                 bg-black text-white 
@@ -66,7 +63,7 @@ export default function Footer() {
                 active:translate-x-[8px] active:translate-y-[8px] 
                 transition-all duration-150 w-full lg:w-auto"
               >
-                <span>{typeof window !== 'undefined' && localStorage.getItem("user_session") ? "SCAN SEKARANG" : "MULAI GRATIS"}</span>
+                <span>Mulai Sekarang</span>
                 <ArrowRight
                   className="w-5 h-5 sm:w-7 sm:h-7 ml-3 sm:ml-4 group-hover:translate-x-2 transition-transform duration-200"
                   strokeWidth={4}

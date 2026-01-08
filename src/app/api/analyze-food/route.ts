@@ -16,18 +16,64 @@ export async function POST(req: NextRequest) {
         let userProfile: UserProfile | undefined;
 
         // --- GET PROFILE FROM SUPABASE ---
+        // --- GET PROFILE & CHECK LIMITS ---
         if (userEmail) {
             try {
-                const profile = await getProfileByEmail(userEmail);
-                if (profile && profile.weight && profile.height) {
-                    userProfile = profile;
-                    console.log('User profile loaded from Supabase:', {
-                        email: userEmail,
-                        goal: profile.goal,
-                    });
+                // Fetch profile to get ID, Goal, and Premium Status
+                const { data: profile, error } = await (await import("@/lib/supabase")).supabase
+                    .from("profiles")
+                    .select("id, goal, is_premium, daily_target")
+                    .eq("email", userEmail)
+                    .single();
+
+                if (error || !profile) {
+                    throw new Error("User profile not found");
                 }
+
+                // CHECK LIMIT IF NOT PREMIUM
+                if (!profile.is_premium) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    const { count, error: countError } = await (await import("@/lib/supabase")).supabase
+                        .from("food_logs")
+                        .select("*", { count: 'exact', head: true })
+                        .eq("user_id", profile.id)
+                        .gte("created_at", today.toISOString());
+
+                    if (countError) {
+                        console.error("Error counting logs:", countError);
+                    } else if ((count || 0) >= 10) {
+                        return NextResponse.json(
+                            { error: "LIMIT_REACHED", message: "Harian gratis habis. Upgrade ke Premium untuk scan unlimited!" },
+                            { status: 403 }
+                        );
+                    }
+                }
+
+                // Construct UserProfile object for prompt builder
+                // We use defaults for missing fields since we only fetched partial data
+                 userProfile = {
+                    id: profile.id,
+                    goal: profile.goal || "maintain",
+                    is_premium: profile.is_premium,
+                    recommendedCalories: profile.daily_target || 2000,
+                    // Fillers to satisfy type if needed, though prompt builder might handle partials
+                    age: 25,
+                    gender: "male",
+                    height: 170,
+                    weight: 60,
+                    activityLevel: "moderate",
+                    full_name: "User"
+                };
+
+                console.log('User profile loaded:', {
+                    email: userEmail,
+                    is_premium: profile.is_premium,
+                });
+                
             } catch (err) {
-                console.log("No profile found in Supabase:", (err as Error).message);
+                console.log("Profile check failed:", (err as Error).message);
             }
         }
 

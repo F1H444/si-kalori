@@ -17,6 +17,7 @@ interface UserData {
   gender?: string;
   goal?: string;
   activity_level?: string;
+  is_premium?: boolean;
 }
 
 interface AdminDashboardProps {
@@ -159,7 +160,10 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       );
     }).length;
 
-    return { totalUsers, activeToday };
+    const premiumUsers = users.filter(u => u.is_premium).length;
+    const estimatedRevenue = premiumUsers * 16000;
+
+    return { totalUsers, activeToday, premiumUsers, estimatedRevenue };
   }, [users]);
 
   const demographics = useMemo(() => {
@@ -224,14 +228,14 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
   }, [users, totalScans]);
 
   const filteredUsers = users.filter(user =>
-    (user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    (user.full_name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+    (user.email?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
 
 
   if (loading) {
       return (
-        <div className="flex-1 flex items-center justify-center p-8">
+        <div className="fixed inset-0 z-[99] flex items-center justify-center bg-white/80 backdrop-blur-sm">
             <div className="text-center">
               <div className="bg-black p-8 border-8 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] inline-block">
                 <Loader2 className="w-16 h-16 text-white animate-spin mx-auto mb-4" />
@@ -250,7 +254,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white flex relative overflow-hidden" suppressHydrationWarning>
+    <div className="h-full bg-white flex relative overflow-hidden" suppressHydrationWarning>
       {/* Grid Background */}
       <div className="absolute inset-0 opacity-[0.02]">
         <div
@@ -275,7 +279,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
           {/* Overview Tab */}
           {activeTab === "overview" && (
             <div className="space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 <StatCard
                   title="TOTAL PENGGUNA"
                   value={stats.totalUsers}
@@ -295,6 +299,20 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                   value={totalScans}
                   color="bg-blue-400"
                   delay={200}
+                  mounted={mounted}
+                />
+                <StatCard
+                  title="PENGGUNA PREMIUM"
+                  value={stats.premiumUsers}
+                  color="bg-[#4ADE80]"
+                  delay={300}
+                  mounted={mounted}
+                />
+                <StatCard
+                  title="ESTIMASI PENDAPATAN"
+                  value={`Rp ${(stats.estimatedRevenue / 1000).toLocaleString('id-ID')}K`}
+                  color="bg-yellow-400"
+                  delay={400}
                   mounted={mounted}
                 />
               </div>
