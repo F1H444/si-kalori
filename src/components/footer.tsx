@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-// 1. Hapus 'Link' dari lucide-react
 import { ArrowRight, Github, Twitter, Instagram } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-
 
 export default function Footer() {
   const [mounted, setMounted] = useState(false);
@@ -20,20 +18,17 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="relative bg-black border-t-8 border-black overflow-hidden">
-      {/* --- ZONA 1: AKSI (KUNING) --- */}
+    /* mt-20 sm:mt-32 memberikan jarak dari konten di atasnya agar tidak bertabrakan */
+    /* border-t-8 border-black tetap dipertahankan sesuai permintaan Anda */
+    <footer className="relative bg-black border-t-8 border-black mt-20 sm:mt-32 overflow-hidden">
+      
+      {/* --- ZONA 1: AKSI (KUNING POLOS) --- */}
       <div
-        className={`relative bg-yellow-400 text-black p-8 sm:p-12 lg:p-16 transition-all duration-700 ease-out ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-          }`}
+        className={`relative bg-yellow-400 text-black p-8 sm:p-12 lg:p-16 transition-all duration-700 ease-out ${
+          mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+        }`}
       >
-        {/* Latar Belakang Grid (Hitam di atas Kuning) */}
-        <div
-          className="absolute inset-0 opacity-[0.05]"
-          style={{
-            backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(to right, #000 1px, transparent 1px)`,
-            backgroundSize: "40px 40px",
-          }}
-        />
+        {/* Grid Background sudah dihapus agar background menjadi kuning polos */}
 
         <div className="relative z-10 max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
@@ -76,8 +71,9 @@ export default function Footer() {
 
       {/* --- ZONA 2: INFO (HITAM) --- */}
       <div
-        className={`bg-black text-gray-400 p-8 sm:p-10 transition-all duration-700 delay-100 ease-out ${mounted ? "opacity-100" : "opacity-0"
-          }`}
+        className={`bg-black text-gray-400 p-8 sm:p-10 transition-all duration-700 delay-100 ease-out ${
+          mounted ? "opacity-100" : "opacity-0"
+        }`}
       >
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-6">
           {/* Hak Cipta */}

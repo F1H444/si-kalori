@@ -52,7 +52,7 @@ export default function CaraKerja() {
       setActiveStep((prev) => (prev + 1) % steps.length);
     }, 4000);
     return () => clearInterval(timer);
-  }, []);
+  }, [steps.length]);
 
   // Variasi Animasi Framer Motion
   const containerVariants = {
@@ -80,7 +80,6 @@ export default function CaraKerja() {
 
   return (
     <section className="relative bg-white p-4 sm:p-6 lg:p-8 py-20 sm:py-32 overflow-hidden">
-      {/* Background Polos Tanpa Grid/Elemen Melayang */}
       <div className="relative z-10 max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
           
@@ -99,9 +98,10 @@ export default function CaraKerja() {
               </span>
             </div>
 
-            <h2 className="text-5xl sm:text-7xl lg:text-8xl font-black text-black leading-[0.85] tracking-tighter">
+            {/* PERUBAHAN DI SINI: leading diubah ke [1.1] dan penambahan margin y pada span */}
+            <h2 className="text-5xl sm:text-7xl lg:text-8xl font-black text-black leading-[1.1] tracking-tighter">
               GAMPANG <br />
-              <span className="inline-block bg-yellow-400 text-black px-4 py-2 mt-2 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+              <span className="inline-block bg-yellow-400 text-black px-4 py-2 my-3 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                 BANGET
               </span>
               <br />KOK!
@@ -112,14 +112,13 @@ export default function CaraKerja() {
             </p>
 
             <div className="flex gap-4">
-               {/* Progress indicator sederhana */}
                {steps.map((_, i) => (
                  <div key={i} className={`h-2 transition-all duration-500 border-2 border-black ${activeStep === i ? "w-12 bg-black" : "w-4 bg-gray-200"}`} />
                ))}
             </div>
           </motion.div>
 
-          {/* KOLOM KANAN: STEPS DENGAN STAGGER */}
+          {/* KOLOM KANAN: STEPS */}
           <motion.div 
             variants={containerVariants}
             initial="hidden"
@@ -140,7 +139,6 @@ export default function CaraKerja() {
                     isActive ? "scale-[1.03] -translate-x-2" : "hover:shadow-none hover:translate-x-1 hover:translate-y-1"
                   }`}
                 >
-                  {/* Active Indicator Bar */}
                   <AnimatePresence>
                     {isActive && (
                       <motion.div 
@@ -154,7 +152,6 @@ export default function CaraKerja() {
                   </AnimatePresence>
 
                   <div className="relative z-10 flex items-center gap-6">
-                    {/* Nomor Langkah */}
                     <div className={`flex-shrink-0 w-16 h-16 flex items-center justify-center border-4 border-black transition-all duration-500 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
                       isActive ? `${step.color} rotate-[12deg] -translate-y-2` : "bg-white group-hover:rotate-6"
                     }`}>
@@ -163,7 +160,6 @@ export default function CaraKerja() {
                       </span>
                     </div>
 
-                    {/* Teks Konten */}
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className={`text-2xl font-black uppercase tracking-tight transition-colors ${
@@ -185,7 +181,6 @@ export default function CaraKerja() {
                       </p>
                     </div>
 
-                    {/* Ikon */}
                     <div className={`transition-all duration-500 ${isActive ? "scale-125 rotate-0" : "opacity-20 -rotate-12 group-hover:opacity-40"}`}>
                       <Icon
                         className={`w-10 h-10 ${isActive ? step.textColor : "text-black"}`}

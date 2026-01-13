@@ -9,11 +9,12 @@ import {
   ArrowLeft,
   Mail,
   Key,
+  User,
   ArrowRight,
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import type { User } from "@supabase/supabase-js";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 // Declare Google Sign-In types
 declare global {
@@ -22,9 +23,10 @@ declare global {
   }
 }
 
-export default function Login() {
+export default function Register() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -49,41 +51,6 @@ export default function Login() {
     animate: { y: 0, opacity: 1 },
   };
 
-  const syncProfileToDatabase = useCallback(
-    async (user: User) => {
-      try {
-        const { data: profile, error: upsertError } = await supabase
-          .from("users")
-          .upsert(
-            {
-              id: user.id,
-              email: user.email,
-              full_name:
-                user.user_metadata?.full_name ||
-                user.email?.split("@")[0] ||
-                "User SiKalori",
-              last_login: new Date().toISOString(),
-            },
-            { onConflict: "id" },
-          )
-          .select("daily_target")
-          .single();
-
-        if (upsertError) throw upsertError;
-
-        if (!profile?.daily_target) {
-          router.replace("/onboarding");
-        } else {
-          router.replace("/dashboard");
-        }
-      } catch (err: any) {
-        console.error("Sync Error:", err.message);
-        router.replace("/onboarding");
-      }
-    },
-    [router],
-  );
-
   const handleGoogleResponse = useCallback(
     async (response: any) => {
       setLoading(true);
@@ -100,16 +67,21 @@ export default function Login() {
         }
 
         if (data.user) {
-          await syncProfileToDatabase(data.user);
+          // Profile is auto-created by database trigger
+          // Logout user to prevent auto-login after register
+          await supabase.auth.signOut();
+
+          // Redirect to login page
+          router.replace("/login");
         }
       } catch (error: any) {
         setLoading(false);
       }
     },
-    [syncProfileToDatabase],
+    [router],
   );
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
 
@@ -117,20 +89,28 @@ export default function Login() {
     setError("");
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword(
-        {
-          email,
-          password,
+      const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
         },
-      );
+      });
 
       if (authError) throw authError;
 
       if (data.user) {
-        await syncProfileToDatabase(data.user);
+        // Profile is auto-created by database trigger
+        // Logout user to prevent auto-login after register
+        await supabase.auth.signOut();
+
+        // Redirect to login page
+        router.replace("/login");
       }
     } catch (err: any) {
-      setError("Email atau password kamu salah nih. Coba cek lagi ya!");
+      setError(err.message || "Gagal mendaftar. Coba lagi ya!");
       setLoading(false);
     }
   };
@@ -156,7 +136,7 @@ export default function Login() {
             theme: "filled_black",
             size: "large",
             width: container.offsetWidth, // Use actual container width
-            text: "continue_with",
+            text: "signup_with",
             shape: "square",
           });
         }
@@ -223,13 +203,13 @@ export default function Login() {
           <div className="bg-black text-white p-8 md:p-12 flex flex-col justify-between md:w-[45%] border-b-8 md:border-b-0 md:border-r-8 border-black">
             <div>
               <div className="bg-yellow-400 text-black inline-flex items-center gap-2 px-3 py-1 text-[10px] font-black uppercase mb-8 border-2 border-white shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]">
-                <ShieldCheck size={14} strokeWidth={3} /> Akses Aman
+                <ShieldCheck size={14} strokeWidth={3} /> Daftar Gratis
               </div>
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-black italic tracking-tighter leading-none mb-6">
                 SIKALORI
               </h1>
               <p className="text-sm font-black uppercase leading-tight text-yellow-400 max-w-[220px]">
-                Yuk, masuk biar bisa pantau nutrisi kamu tiap hari!
+                Daftar sekarang dan mulai perjalanan hidup sehatmu!
               </p>
             </div>
 
@@ -242,7 +222,28 @@ export default function Login() {
 
           {/* Sisi Kanan: Form */}
           <div className="p-8 md:p-12 md:w-[55%] flex flex-col justify-center bg-white">
-            <form onSubmit={handleEmailLogin} className="space-y-5">
+            <form onSubmit={handleEmailRegister} className="space-y-5">
+              <motion.div variants={itemVariants} className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-widest block">
+                  Nama Lengkap
+                </label>
+                <div className="relative">
+                  <User
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-black"
+                    size={18}
+                    strokeWidth={3}
+                  />
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="masukkan nama lengkap"
+                    className="w-full border-4 border-black p-4 pl-12 font-black focus:outline-none focus:bg-yellow-50 transition-colors shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-sm placeholder:text-gray-400"
+                  />
+                </div>
+              </motion.div>
+
               <motion.div variants={itemVariants} className="space-y-1">
                 <label className="text-xs font-black uppercase tracking-widest block">
                   Alamat Email
@@ -266,7 +267,7 @@ export default function Login() {
 
               <motion.div variants={itemVariants} className="space-y-1">
                 <label className="text-xs font-black uppercase tracking-widest block">
-                  Password Rahasia
+                  Password
                 </label>
                 <div className="relative">
                   <Key
@@ -279,7 +280,7 @@ export default function Login() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="masukkan password"
+                    placeholder="buat password"
                     className="w-full border-4 border-black p-4 pl-12 font-black focus:outline-none focus:bg-yellow-50 transition-colors shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-sm"
                   />
                 </div>
@@ -301,7 +302,7 @@ export default function Login() {
                 disabled={loading}
                 className="w-full bg-black text-white p-5 font-black uppercase tracking-widest shadow-[8px_8px_0px_0px_rgba(255,222,89,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all flex items-center justify-center gap-3 group text-sm border-2 border-black"
               >
-                MASUK SEKARANG{" "}
+                DAFTAR SEKARANG{" "}
                 <ArrowRight
                   className="group-hover:translate-x-2 transition-transform"
                   size={20}
@@ -329,12 +330,12 @@ export default function Login() {
               </div>
 
               <p className="text-xs font-black uppercase text-center text-black tracking-tight">
-                Belum punya akun?{" "}
+                Sudah punya akun?{" "}
                 <Link
-                  href="/register"
+                  href="/login"
                   className="text-blue-600 underline decoration-[3px] underline-offset-4 hover:bg-yellow-200 transition-colors px-1"
                 >
-                  Daftar di sini, gampang kok!
+                  Masuk di sini!
                 </Link>
               </p>
             </motion.div>

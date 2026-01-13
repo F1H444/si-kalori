@@ -94,15 +94,17 @@ export default function PremiumPage() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
         const { data: profile } = await supabase
-          .from("profiles")
+          .from("users")
           .select("is_premium")
           .eq("id", session.user.id)
           .single();
-        
+
         if (profile?.is_premium) {
           setIsPremium(true);
         }
@@ -132,29 +134,31 @@ export default function PremiumPage() {
     }
 
     setLoading(true);
-    
+
     try {
-      const response = await fetch('/api/payment', { method: 'POST' });
+      const response = await fetch("/api/payment", { method: "POST" });
       const data = await response.json();
-      
+
       if (!response.ok) {
         if (response.status === 401 || response.status === 500) {
-           throw new Error("Gagal memproses pembayaran. Periksa konfigurasi Key Midtrans.");
+          throw new Error(
+            "Gagal memproses pembayaran. Periksa konfigurasi Key Midtrans.",
+          );
         }
         throw new Error(data.error || "Gagal inisialisasi pembayaran");
       }
 
       if ((window as any).snap) {
         (window as any).snap.pay(data.token, {
-          onSuccess: async function(result: any) {
+          onSuccess: async function (result: any) {
             console.log("Payment Result:", result);
-            
+
             // Call Verification API (Bypasses RLS & Checks Midtrans)
             try {
-              const verifyReq = await fetch('/api/payment/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order_id: result.order_id })
+              const verifyReq = await fetch("/api/payment/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ order_id: result.order_id }),
               });
 
               if (verifyReq.ok) {
@@ -165,22 +169,24 @@ export default function PremiumPage() {
                 throw new Error("Verifikasi pembayaran gagal di server.");
               }
             } catch (vErr) {
-               console.error("Verification Error:", vErr);
-               alert("Pembayaran sukses tapi gagal verifikasi. Silakan refresh.");
-               window.location.href = "/dashboard"; // Still redirect as it might be a false negative or webhook will catch up
+              console.error("Verification Error:", vErr);
+              alert(
+                "Pembayaran sukses tapi gagal verifikasi. Silakan refresh.",
+              );
+              window.location.href = "/dashboard"; // Still redirect as it might be a false negative or webhook will catch up
             }
           },
-          onPending: function(result: any) {
+          onPending: function (result: any) {
             alert("Menunggu pembayaran...");
             console.log(result);
           },
-          onError: function(result: any) {
+          onError: function (result: any) {
             alert("Pembayaran gagal!");
             console.log(result);
           },
-          onClose: function() {
+          onClose: function () {
             // alert('Pembayaran dibatalkan.');
-          }
+          },
         });
       } else {
         alert("Gagal memuat sistem pembayaran. Coba refresh halaman.");
@@ -199,62 +205,60 @@ export default function PremiumPage() {
       icon: <Zap className="w-6 h-6 sm:w-8 sm:h-8" />,
       title: "Tanpa Batas Scan",
       desc: "Scan makanan sepuasnya tanpa kuota harian.",
-      color: "bg-yellow-500"
+      color: "bg-yellow-500",
     },
     {
       icon: <Star className="w-6 h-6 sm:w-8 sm:h-8" />,
       title: "Analisis AI Expert",
       desc: "Saran gizi mendalam yang dipersonalisasi.",
-      color: "bg-red-500"
+      color: "bg-red-500",
     },
     {
       icon: <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8" />,
       title: "Laporan Mingguan",
       desc: "Grafik progres kesehatan lebih mendetail.",
-      color: "bg-green-500"
-    }
+      color: "bg-green-500",
+    },
   ];
 
-  const checkItems = ["Akses Seluruh Fitur AI", "Update Berkala Tanpa Biaya", "Tanpa Iklan Pengganggu"];
+  const checkItems = [
+    "Akses Seluruh Fitur AI",
+    "Update Berkala Tanpa Biaya",
+    "Tanpa Iklan Pengganggu",
+  ];
 
   return (
     <div className="h-screen bg-white overflow-hidden flex flex-col">
       <Navbar />
-      
-      {/* Brutal Grid Background */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(to right, #000 1px, transparent 1px)`,
-            backgroundSize: "40px 40px",
-          }}
-        />
-      </div>
 
       <main className="flex-1 flex items-center justify-center pt-16 pb-10 px-4 relative z-10">
-        <motion.div 
+        <motion.div
           className="max-w-6xl w-full mx-auto"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-            
             {/* KOLOM KIRI: Judul & Fitur */}
-            <motion.div variants={containerVariants} className="space-y-6 sm:space-y-10">
+            <motion.div
+              variants={containerVariants}
+              className="space-y-6 sm:space-y-10"
+            >
               <motion.div variants={headerVariants}>
                 <motion.div
                   variants={itemVariants}
                   className="inline-block bg-black text-white px-4 py-1 mb-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]"
                 >
-                  <span className="font-black text-xs sm:text-sm uppercase tracking-widest">SI KALORI PLUS</span>
+                  <span className="font-black text-xs sm:text-sm uppercase tracking-widest">
+                    SI KALORI PLUS
+                  </span>
                 </motion.div>
-                <motion.h1 
+                <motion.h1
                   variants={headerVariants}
                   className="text-5xl sm:text-6xl lg:text-8xl font-black leading-[0.85] text-black uppercase"
                 >
-                  UPGRADE<br />
+                  UPGRADE
+                  <br />
                   <span className="text-yellow-500">LEVEL.</span>
                 </motion.h1>
               </motion.div>
@@ -267,15 +271,19 @@ export default function PremiumPage() {
                     whileHover={{ x: 5 }}
                     className="flex items-center gap-5 group"
                   >
-                    <motion.div 
+                    <motion.div
                       whileHover={{ scale: 1.1, rotate: 5 }}
                       className={`${f.color} border-2 sm:border-4 border-black p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:translate-x-1 group-hover:translate-y-1 group-hover:shadow-none transition-all`}
                     >
                       <div className="text-white">{f.icon}</div>
                     </motion.div>
                     <div>
-                      <h3 className="text-xl sm:text-2xl font-black uppercase leading-none mb-1">{f.title}</h3>
-                      <p className="text-sm sm:text-base font-bold text-gray-600 uppercase italic">{f.desc}</p>
+                      <h3 className="text-xl sm:text-2xl font-black uppercase leading-none mb-1">
+                        {f.title}
+                      </h3>
+                      <p className="text-sm sm:text-base font-bold text-gray-600 uppercase italic">
+                        {f.desc}
+                      </p>
                     </div>
                   </motion.div>
                 ))}
@@ -289,54 +297,69 @@ export default function PremiumPage() {
               className="bg-white border-[6px] sm:border-[8px] border-black p-8 sm:p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden"
             >
               {/* Akses dekoratif khas Brutalist */}
-              <motion.div 
+              <motion.div
                 initial={{ rotate: 0 }}
                 animate={{ rotate: 12 }}
-                transition={{ delay: 0.5, type: "spring" as const, stiffness: 100 }}
+                transition={{
+                  delay: 0.5,
+                  type: "spring" as const,
+                  stiffness: 100,
+                }}
                 className="absolute -top-6 -right-6 bg-yellow-400 w-24 h-24 border-4 border-black flex items-end justify-center pb-2"
               >
-                 <Crown className="w-10 h-10 text-black" />
+                <Crown className="w-10 h-10 text-black" />
               </motion.div>
-              
+
               <div className="relative z-10">
-                <motion.h2 
+                <motion.h2
                   variants={itemVariants}
                   className="text-2xl sm:text-3xl font-black uppercase mb-1 italic tracking-tighter"
                 >
                   LANGGANAN BULANAN
                 </motion.h2>
-                <motion.p 
+                <motion.p
                   variants={itemVariants}
                   className="font-bold mb-8 uppercase text-xs sm:text-sm border-b-4 border-black pb-2 inline-block"
                 >
                   Bebas berhenti kapan saja
                 </motion.p>
-                
-                <motion.div 
+
+                <motion.div
                   variants={itemVariants}
                   className="mb-10 flex items-baseline"
                 >
-                  <span className="text-2xl sm:text-3xl font-black uppercase italic mr-1">Rp</span>
-                  <motion.span 
+                  <span className="text-2xl sm:text-3xl font-black uppercase italic mr-1">
+                    Rp
+                  </span>
+                  <motion.span
                     initial={{ opacity: 0, scale: 0.5 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.6, type: "spring" as const, stiffness: 80 }}
+                    transition={{
+                      delay: 0.6,
+                      type: "spring" as const,
+                      stiffness: 80,
+                    }}
                     className="text-7xl sm:text-8xl lg:text-9xl font-black tracking-tighter italic"
                   >
                     16
                   </motion.span>
-                  <span className="text-2xl sm:text-3xl font-black uppercase italic">.000<span className="text-sm lowercase">/bln</span></span>
+                  <span className="text-2xl sm:text-3xl font-black uppercase italic">
+                    .000<span className="text-sm lowercase">/bln</span>
+                  </span>
                 </motion.div>
 
-                <motion.div variants={containerVariants} className="space-y-4 mb-10">
+                <motion.div
+                  variants={containerVariants}
+                  className="space-y-4 mb-10"
+                >
                   {checkItems.map((item, idx) => (
-                    <motion.div 
-                      key={idx} 
+                    <motion.div
+                      key={idx}
                       variants={checkItemVariants}
                       whileHover={{ x: 5 }}
                       className="flex items-center gap-3 font-black uppercase text-xs sm:text-sm italic"
                     >
-                      <motion.div 
+                      <motion.div
                         whileHover={{ scale: 1.2 }}
                         className="bg-black text-white p-1 border-2 border-black"
                       >
@@ -354,40 +377,33 @@ export default function PremiumPage() {
                   onClick={handleUpgrade}
                   disabled={loading || isPremium || !scriptLoaded}
                   className={`w-full py-5 sm:py-7 font-black text-xl sm:text-3xl uppercase italic border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[8px] active:translate-y-[8px] transition-all flex items-center justify-center gap-4 ${
-                    isPremium ? 'bg-green-500 cursor-default' : 'bg-black text-white hover:bg-gray-800'
-                  } ${!scriptLoaded ? 'opacity-70 cursor-wait' : ''}`}
+                    isPremium
+                      ? "bg-green-500 cursor-default"
+                      : "bg-black text-white hover:bg-gray-800"
+                  } ${!scriptLoaded ? "opacity-70 cursor-wait" : ""}`}
                 >
                   {loading ? (
                     <Loader2 className="w-8 h-8 animate-spin" />
                   ) : isPremium ? (
-                    'SUDAH PREMIUM'
+                    "SUDAH PREMIUM"
                   ) : !scriptLoaded ? (
-                    'Memuat Sistem...'
+                    "Memuat Sistem..."
                   ) : (
-                    'Bayar Sekarang'
+                    "Bayar Sekarang"
                   )}
                 </motion.button>
               </div>
             </motion.div>
-
           </div>
         </motion.div>
       </main>
 
-      {/* Aksen Geometris Samping */}
-       <motion.div 
-         initial={{ height: 0 }}
-         animate={{ height: 128 }}
-         transition={{ delay: 0.8, duration: 0.5 }}
-         className="absolute top-1/2 right-0 w-1 bg-black hidden lg:block" 
-       />
-      
-       <Script 
-         src="https://app.sandbox.midtrans.com/snap/snap.js"
-         data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ""} 
-         strategy="lazyOnload" 
-         onLoad={() => setScriptLoaded(true)}
-       />
+      <Script
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ""}
+        strategy="lazyOnload"
+        onLoad={() => setScriptLoaded(true)}
+      />
     </div>
   );
 }

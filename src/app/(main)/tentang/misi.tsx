@@ -50,10 +50,6 @@ export default function MissionSection() {
         viewport={{ once: true, margin: "-100px" }}
         className="bg-yellow-400 border-4 border-black p-6 sm:p-12 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden"
       >
-        {/* Background Pattern */}
-        <div className="absolute top-0 right-0 w-40 h-40 bg-black/5 rotate-45 translate-x-20 -translate-y-20" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/5 rotate-45 -translate-x-16 translate-y-16" />
-
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -72,15 +68,13 @@ export default function MissionSection() {
             variants={itemVariants}
             className="text-lg sm:text-xl font-bold text-black leading-relaxed mb-6"
           >
-            &quot;Membantu setiap orang memahami nutrisi makanan mereka dengan mudah
-            dan akurat. Dengan teknologi AI, kami mengubah cara tracking kalori
-            dari yang ribet menjadi semudah foto atau ketik nama menu.&quot;
+            &quot;Membantu setiap orang memahami nutrisi makanan mereka dengan
+            mudah dan akurat. Dengan teknologi AI, kami mengubah cara tracking
+            kalori dari yang ribet menjadi semudah foto atau ketik nama
+            menu.&quot;
           </motion.p>
 
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-wrap gap-3"
-          >
+          <motion.div variants={itemVariants} className="flex flex-wrap gap-3">
             <span className="bg-black text-white px-3 py-1 font-black text-sm uppercase">
               Mudah & Cepat
             </span>
@@ -110,8 +104,9 @@ export default function MissionSection() {
             Visi Kami
           </h3>
           <p className="font-bold text-gray-800 leading-relaxed">
-            Menjadi platform analisis nutrisi terpercaya yang membantu masyarakat
-            Indonesia hidup lebih sehat melalui pemahaman gizi yang tepat.
+            Menjadi platform analisis nutrisi terpercaya yang membantu
+            masyarakat Indonesia hidup lebih sehat melalui pemahaman gizi yang
+            tepat.
           </p>
         </motion.div>
 
@@ -123,8 +118,8 @@ export default function MissionSection() {
             Mengapa Si Kalori?
           </h3>
           <p className="font-bold leading-relaxed opacity-90">
-            Karena tracking nutrisi seharusnya tidak ribet. Cukup foto atau ketik,
-            AI kami yang analisis. Simpel.
+            Karena tracking nutrisi seharusnya tidak ribet. Cukup foto atau
+            ketik, AI kami yang analisis. Simpel.
           </p>
         </motion.div>
       </motion.div>

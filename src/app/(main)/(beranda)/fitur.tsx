@@ -62,8 +62,8 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { 
-    opacity: 0, 
+  hidden: {
+    opacity: 0,
     y: 60,
     scale: 0.9,
   },
@@ -110,10 +110,6 @@ const subtitleVariants = {
 export default function Features() {
   return (
     <div className="relative bg-white z-0 px-4 sm:px-6 py-16 sm:py-24 lg:py-32 overflow-hidden">
-      {/* Background Decorations */}
-      <div className="absolute top-10 right-10 w-32 h-32 bg-yellow-400/20 border-4 border-yellow-400/40 rotate-12 -z-10" />
-      <div className="absolute bottom-20 left-10 w-24 h-24 bg-blue-400/20 border-4 border-blue-400/40 -rotate-12 -z-10" />
-      
       <div className="max-w-7xl mx-auto">
         {/* Judul Bagian */}
         <div className="text-left mb-12 sm:mb-16 lg:mb-20 max-w-2xl">
@@ -140,7 +136,7 @@ export default function Features() {
         </div>
 
         {/* Grid Fitur (2x2) with Stagger Animation */}
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 lg:gap-12"
           variants={containerVariants}
           initial="hidden"
@@ -154,10 +150,10 @@ export default function Features() {
               <motion.div
                 key={item.title}
                 variants={itemVariants}
-                whileHover={{ 
+                whileHover={{
                   scale: 1.02,
                   y: -8,
-                  transition: { type: "spring", stiffness: 400, damping: 17 }
+                  transition: { type: "spring", stiffness: 400, damping: 17 },
                 }}
                 className="group relative border-4 border-black bg-white cursor-pointer"
                 style={{
@@ -165,18 +161,20 @@ export default function Features() {
                 }}
               >
                 {/* Colored accent line on top */}
-                <div className={`absolute top-0 left-0 right-0 h-1 ${item.color}`} />
-                
+                <div
+                  className={`absolute top-0 left-0 right-0 h-1 ${item.color}`}
+                />
+
                 {/* Header Kartu */}
                 <div
                   className={`flex items-center gap-4 sm:gap-5 p-5 sm:p-6 ${item.color} border-b-4 border-black transition-all duration-300`}
                 >
-                  <motion.div 
+                  <motion.div
                     className="w-14 h-14 sm:w-16 sm:h-16 bg-white flex items-center justify-center border-3 border-black flex-shrink-0"
                     style={{ boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)" }}
-                    whileHover={{ 
+                    whileHover={{
                       rotate: [0, -10, 10, 0],
-                      transition: { duration: 0.5 }
+                      transition: { duration: 0.5 },
                     }}
                   >
                     <Icon
@@ -192,7 +190,7 @@ export default function Features() {
                 {/* Badan Kartu */}
                 <div className="bg-white p-5 sm:p-6 relative overflow-hidden">
                   {/* Hover background effect */}
-                  <div 
+                  <div
                     className={`absolute inset-0 ${item.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
                   />
                   <p className="text-base sm:text-lg text-gray-800 leading-relaxed relative z-10">
@@ -201,7 +199,7 @@ export default function Features() {
                 </div>
 
                 {/* Corner decoration */}
-                <div 
+                <div
                   className={`absolute -bottom-2 -right-2 w-6 h-6 ${item.color} border-2 border-black opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
                 />
               </motion.div>

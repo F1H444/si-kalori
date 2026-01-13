@@ -19,7 +19,10 @@ export async function POST(request: Request) {
     const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
     if (!serverKey) {
       console.error("MIDTRANS_SERVER_KEY is missing");
-      return NextResponse.json({ error: "Server Configuration Error" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Server Configuration Error" },
+        { status: 500 },
+      );
     }
 
     const payload = order_id + status_code + gross_amount + serverKey;
@@ -52,8 +55,8 @@ export async function POST(request: Request) {
     ) {
       isSuccess = false;
     } else if (transaction_status === "pending") {
-       // Keep as pending
-       return NextResponse.json({ message: "Transaction is pending" });
+      // Keep as pending
+      return NextResponse.json({ message: "Transaction is pending" });
     }
 
     // 3. Update Transaction Record
@@ -65,12 +68,15 @@ export async function POST(request: Request) {
 
     if (fetchError || !transaction) {
       console.error("Transaction not found:", order_id);
-      return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Transaction not found" },
+        { status: 404 },
+      );
     }
-    
+
     // Avoid duplicate processing
-    if (transaction.status === 'success' && isSuccess) {
-         return NextResponse.json({ message: "Already processed" });
+    if (transaction.status === "success" && isSuccess) {
+      return NextResponse.json({ message: "Already processed" });
     }
 
     const newStatus = isSuccess ? "success" : transaction_status; // Use 'success' or raw midtrans status (e.g. 'expire')
@@ -91,19 +97,18 @@ export async function POST(request: Request) {
 
     // 4. Update User Premium Status if Success
     if (isSuccess) {
-      const { error: profileError } = await supabase
-        .from("profiles")
+      await supabase
+        .from("users")
         .update({ is_premium: true })
         .eq("id", transaction.user_id);
-
-      if (profileError) {
-        console.error("Failed to update user profile:", profileError);
-      }
     }
 
     return NextResponse.json({ message: "OK" });
   } catch (err) {
     console.error("Webhook Error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

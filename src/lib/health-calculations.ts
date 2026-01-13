@@ -86,7 +86,7 @@ export function calculateAllMetrics(
 ): Pick<UserProfile, 'bmi' | 'bmr' | 'tdee' | 'recommendedCalories'> {
   const bmi = calculateBMI(weight, height);
   const bmr = calculateBMR(weight, height, age, gender);
-  const tdee = calculateTDEE(bmr, activityLevel);
+  const tdee = calculateTDEE(bmr, activityLevel as keyof typeof activityMultipliers);
   const recommendedCalories = calculateRecommendedCalories(tdee, goal);
   
   return {

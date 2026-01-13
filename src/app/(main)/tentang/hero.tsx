@@ -75,7 +75,7 @@ export default function HeroSection() {
           variants={itemVariants}
           className="text-lg sm:text-xl font-bold text-gray-700 max-w-3xl mx-auto leading-relaxed mb-10"
         >
-          Si Kalori adalah aplikasi tracking nutrisi berbasis AI yang membantu kamu
+          Si Kalori adalah sebuah website tracking nutrisi berbasis AI yang membantu kamu
           memahami kandungan gizi makanan dengan mudah. Cukup foto atau tulis nama menu,
           langsung dapat info kalori, protein, karbo, dan lemak secara akurat.
         </motion.p>

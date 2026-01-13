@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 export default function AdminPage() {
   const searchParams = useSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
-  
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -37,9 +37,11 @@ export default function AdminPage() {
 
   return (
     <div className="flex h-screen bg-[#F0F0F0] overflow-hidden">
-      <Sidebar forceShow={true} />
-      <div className="flex-1 max-w-[100vw] h-full">
-         <AdminDashboard activeTab={activeTab} />
+      <div className="shrink-0">
+        <Sidebar forceShow={true} />
+      </div>
+      <div className="flex-1 min-w-0 h-full overflow-hidden">
+        <AdminDashboard activeTab={activeTab} />
       </div>
     </div>
   );

@@ -286,7 +286,6 @@ export default function ScanPage() {
     return (
         <div className="min-h-screen bg-white font-mono text-black relative overflow-hidden pb-20">
             {/* Brutal Accents */}
-            <div className="fixed top-0 right-0 w-48 h-48 bg-yellow-400 border-b-8 border-l-8 border-black -mr-20 -mt-20 z-0" />
             <div className="fixed bottom-0 left-0 w-32 h-32 bg-blue-600 border-t-8 border-r-8 border-black -ml-16 -mb-16 z-0" />
 
             <div className={`relative z-10 mx-auto px-4 pt-24 ${mode === 'result' ? 'max-w-6xl' : 'max-w-2xl'}`}>

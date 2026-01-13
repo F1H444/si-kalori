@@ -15,14 +15,18 @@ export default function BrutalHero() {
   // Check auth status on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setIsLoggedIn(!!session?.user);
       setIsLoading(false);
     };
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session?.user);
     });
 
@@ -59,7 +63,7 @@ export default function BrutalHero() {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.215, 0.610, 0.355, 1.000] as const,
+        ease: [0.215, 0.61, 0.355, 1.0] as const,
       },
     },
   };
@@ -101,9 +105,6 @@ export default function BrutalHero() {
           />
         </div>
 
-        {/* Aksen Geometris Samping */}
-        <div className="absolute top-1/2 right-0 w-1 h-24 sm:w-1 sm:h-32 lg:w-[4px] lg:h-[150px] bg-black" />
-
         {/* [UPDATED] Padding atas ditambah lagi (pt-40 sm:pt-48)
             agar kontennya lebih ke bawah dari navbar.
         */}
@@ -137,7 +138,8 @@ export default function BrutalHero() {
                 variants={itemVariants}
                 className="text-lg sm:text-xl text-gray-700 leading-relaxed max-w-xl"
               >
-                Scan makanan & minumanmu. AI kami langsung hitung kalori dan nutrisinya. Yuk, capai target sehatmu bareng Sikalori!
+                Scan makanan & minumanmu. AI kami langsung hitung kalori dan
+                nutrisinya. Yuk, capai target sehatmu bareng Sikalori!
               </motion.p>
 
               {/* Tombol CTAs */}
@@ -150,7 +152,11 @@ export default function BrutalHero() {
                   disabled={isLoading}
                   className="group relative px-8 py-4 sm:px-10 sm:py-5 bg-black text-white font-black text-sm sm:text-base border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] sm:hover:translate-x-[3px] sm:hover:translate-y-[3px] active:translate-x-[4px] active:translate-y-[4px] sm:active:translate-x-[6px] sm:active:translate-y-[6px] transition-all duration-150 disabled:opacity-50"
                 >
-                  {isLoading ? "MEMUAT..." : isLoggedIn ? "KE DASHBOARD" : "SCAN SEKARANG"}
+                  {isLoading
+                    ? "MEMUAT..."
+                    : isLoggedIn
+                      ? "KE DASHBOARD"
+                      : "SCAN SEKARANG"}
                 </button>
                 <button className="group px-8 py-4 sm:px-10 sm:py-5 bg-white text-black font-black text-sm sm:text-base border-2 sm:border-4 border-black hover:bg-black hover:text-white transition-all duration-200">
                   <span className="flex items-center justify-center gap-2">
@@ -189,9 +195,7 @@ export default function BrutalHero() {
               animate="visible"
             >
               {/* Kartu Fitur Utama */}
-              <div
-                className="bg-white border-2 sm:border-4 border-black p-6 sm:p-8 lg:p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]"
-              >
+              <div className="bg-white border-2 sm:border-4 border-black p-6 sm:p-8 lg:p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-black flex items-center justify-center">
                     <Camera
@@ -210,7 +214,8 @@ export default function BrutalHero() {
                   SCAN APA SAJA
                 </h3>
                 <p className="text-black font-bold text-base sm:text-lg leading-relaxed mb-4">
-                  Ambil foto makanan atau minuman, dapatkan info gizi lengkap dalam hitungan detik.
+                  Ambil foto makanan atau minuman, dapatkan info gizi lengkap
+                  dalam hitungan detik.
                 </p>
 
                 <div className="space-y-2 sm:space-y-3 pt-4 border-t-2 border-gray-200">
@@ -244,8 +249,9 @@ export default function BrutalHero() {
                     <motion.div
                       key={benefit.text}
                       variants={itemVariants}
-                      className={`${benefit.color
-                        } border-2 sm:border-4 border-black p-5 sm:p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all duration-200`}
+                      className={`${
+                        benefit.color
+                      } border-2 sm:border-4 border-black p-5 sm:p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all duration-200`}
                     >
                       <Icon
                         className="w-8 h-8 sm:w-10 sm:h-10 text-white mb-3"

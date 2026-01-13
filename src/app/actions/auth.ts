@@ -4,16 +4,18 @@ import { type User } from "@supabase/supabase-js";
 export async function syncUserProfile(user: User) {
   const supabase = await createClient();
 
-  // 1. Sync data to 'profiles' table
+  // 1. Sync data to 'users' table
   const { data: profile, error } = await supabase
-    .from("profiles")
-    .upsert({
-      id: user.id,
-      email: user.email,
-      full_name: user.user_metadata?.full_name || "User SiKalori",
-      picture: user.user_metadata?.avatar_url,
-      last_login: new Date().toISOString(),
-    }, { onConflict: "id" })
+    .from("users")
+    .upsert(
+      {
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || "User SiKalori",
+        last_login: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    )
     .select("daily_target")
     .single();
 

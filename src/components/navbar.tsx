@@ -2,10 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { 
-  Menu, X, LogOut, User as UserIcon, 
-  Crown, LayoutDashboard, Settings, 
-  ChevronDown 
+import {
+  Menu,
+  X,
+  LogOut,
+  User as UserIcon,
+  Crown,
+  LayoutDashboard,
+  Settings,
+  ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
@@ -15,7 +20,6 @@ import { motion, AnimatePresence } from "framer-motion";
 interface User {
   name: string;
   email: string;
-  picture?: string;
   isPremium?: boolean;
 }
 
@@ -48,26 +52,45 @@ export default function Navbar() {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
 
-    const fetchProfile = async (userId: string, email?: string) => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+    let isSubscribed = true;
 
-      if (profile) {
-        setUser({
-          name: profile.full_name || email || 'User',
-          email: profile.email || email || '',
-          picture: profile.picture || undefined,
-          isPremium: profile.is_premium || false,
-        });
+    const fetchProfile = async (userId: string, email?: string) => {
+      try {
+        const { data: profile, error } = await supabase
+          .from("users")
+          .select("full_name, email, is_premium")
+          .eq("id", userId)
+          .single();
+
+        if (!isSubscribed) return;
+
+        if (profile) {
+          setUser({
+            name: profile.full_name || email || "User",
+            email: profile.email || email || "",
+            isPremium: profile.is_premium || false,
+          });
+        } else {
+          // If no profile found, still show name from auth
+          setUser({
+            name: email?.split("@")[0] || "User",
+            email: email || "",
+            isPremium: false,
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+      } finally {
+        if (isSubscribed) setLoading(false);
       }
-      setLoading(false);
     };
 
-    const checkInitialSession = async () => {
+    const checkAuth = async () => {
+      // Get session immediately from cache if available
       const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!isSubscribed) return;
+
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email);
       } else {
@@ -76,9 +99,13 @@ export default function Navbar() {
       }
     };
 
-    checkInitialSession();
+    checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isSubscribed) return;
+
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email);
       } else {
@@ -88,6 +115,7 @@ export default function Navbar() {
     });
 
     return () => {
+      isSubscribed = false;
       subscription.unsubscribe();
       window.removeEventListener("scroll", handleScroll);
     };
@@ -110,16 +138,15 @@ export default function Navbar() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <nav 
+          <nav
             className={`relative transition-all duration-500 border-[3px] border-black rounded-[2rem] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-visible ${
-              scrolled 
-                ? "bg-white/80 backdrop-blur-xl py-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" 
+              scrolled
+                ? "bg-white/80 backdrop-blur-xl py-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                 : "bg-white py-4"
             }`}
           >
             {/* GRID CONTAINER UNTUK MEMASTIKAN TENGAH PRESISI */}
             <div className="flex items-center justify-between px-6 sm:px-10 h-14 sm:h-16">
-              
               {/* 1. BAGIAN KIRI: LOGO */}
               <div className="flex-1 flex justify-start">
                 <Link
@@ -140,8 +167,8 @@ export default function Navbar() {
                       key={link.name}
                       href={link.href}
                       className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
-                        pathname === link.href 
-                          ? "bg-black text-white shadow-[4px_4px_0px_0px_rgba(253,224,71,1)]" 
+                        pathname === link.href
+                          ? "bg-black text-white shadow-[4px_4px_0px_0px_rgba(253,224,71,1)]"
                           : "hover:bg-black/5 text-gray-600"
                       }`}
                     >
@@ -169,46 +196,69 @@ export default function Navbar() {
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         className="flex items-center gap-2 p-1.5 bg-white border-2 border-black rounded-full shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                       >
-                        <div className="w-9 h-9 bg-yellow-400 border-2 border-black rounded-full overflow-hidden relative">
-                          {user.picture ? (
-                            <NextImage src={user.picture} alt="Avatar" fill className="object-cover" />
-                          ) : (
-                            <UserIcon className="p-1.5 w-full h-full text-black" />
-                          )}
+                        <div className="w-9 h-9 bg-yellow-400 border-2 border-black rounded-full overflow-hidden relative flex items-center justify-center">
+                          <UserIcon className="p-2 w-full h-full" />
                         </div>
                         <span className="hidden sm:block text-xs font-black uppercase pr-2 pl-1">
                           {user.name.split(" ")[0]}
                         </span>
-                        <ChevronDown size={16} className={`hidden sm:block transition-transform duration-300 mr-2 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                        <ChevronDown
+                          size={16}
+                          className={`hidden sm:block transition-transform duration-300 mr-2 ${isDropdownOpen ? "rotate-180" : ""}`}
+                        />
                       </button>
 
                       <AnimatePresence>
                         {isDropdownOpen && (
-                          <motion.div 
+                          <motion.div
                             initial={{ opacity: 0, y: 15, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                            className="absolute right-0 top-[calc(100%+15px)] w-72 bg-white border-[3px] border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] rounded-[2rem] p-5 z-50"
+                            className="absolute right-0 top-[calc(100%+20px)] w-72 bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] rounded-3xl p-6 z-50"
                           >
-                            <div className="flex flex-col items-center text-center mb-5 p-4 bg-gray-50 rounded-[1.5rem] border-2 border-black/5">
-                              <p className="font-black text-base uppercase leading-tight">{user.name}</p>
-                              <p className="text-[10px] font-bold text-gray-400 mt-1">{user.email}</p>
+                            {/* Header dengan Divider Brutal */}
+                            <div className="flex flex-col items-center text-center pb-5 mb-5 border-b-4 border-black/10">
+                              <p className="font-black text-xl uppercase tracking-tighter leading-tight text-black">
+                                {user.name}
+                              </p>
+                              <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest bg-gray-50 px-2 py-1 rounded-md border border-black/5 leading-none">
+                                {user.email}
+                              </p>
                             </div>
 
-                            <div className="space-y-2">
-                              <DropdownItem href="/dashboard" icon={<LayoutDashboard size={18} />} label="Dashboard" />
-                              <DropdownItem href="/settings" icon={<Settings size={18} />} label="Pengaturan" />
-                              
-                              <Link href="/premium" className={`flex items-center justify-between p-3 border-2 border-black rounded-2xl font-black text-xs uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all mt-4 ${user.isPremium ? 'bg-green-400' : 'bg-yellow-400'}`}>
+                            <div className="space-y-3">
+                              <DropdownItem
+                                href="/dashboard"
+                                icon={<LayoutDashboard size={20} />}
+                                label="Dashboard"
+                              />
+                              <DropdownItem
+                                href="/settings"
+                                icon={<Settings size={20} />}
+                                label="Pengaturan"
+                              />
+
+                              {/* Tombol Premium Brutal */}
+                              <Link
+                                href="/premium"
+                                className={`flex items-center justify-between p-4 border-4 border-black rounded-2xl font-black text-sm uppercase shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all mt-6 ${
+                                  user.isPremium
+                                    ? "bg-green-400 text-black border-green-600"
+                                    : "bg-yellow-400 text-black"
+                                }`}
+                              >
                                 <span className="flex items-center gap-2">
-                                  <Crown size={16} strokeWidth={3} />
-                                  {user.isPremium ? 'Status: Premium' : 'Beli Premium'}
+                                  <Crown size={18} strokeWidth={3} />
+                                  {user.isPremium
+                                    ? "Premium Aktif"
+                                    : "Upgrade"}
                                 </span>
                               </Link>
 
+                              {/* Logout dengan gaya elegan tapi brutal */}
                               <button
                                 onClick={handleLogout}
-                                className="w-full flex items-center justify-center gap-2 p-3 text-red-500 bg-red-50 hover:bg-red-500 hover:text-white rounded-2xl transition-all font-black text-xs uppercase mt-2 border-2 border-transparent hover:border-black"
+                                className="w-full flex items-center justify-center gap-2 p-4 text-red-500 bg-red-50 hover:bg-black hover:text-white rounded-2xl transition-all font-black text-xs uppercase mt-3 border-2 border-transparent hover:border-black active:scale-95"
                               >
                                 <LogOut size={16} strokeWidth={3} /> Keluar
                               </button>
@@ -231,7 +281,11 @@ export default function Navbar() {
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   className="lg:hidden w-11 h-11 flex items-center justify-center bg-black text-white rounded-full border-2 border-black transition-all active:scale-90"
                 >
-                  {isMobileMenuOpen ? <X size={20} strokeWidth={3} /> : <Menu size={20} strokeWidth={3} />}
+                  {isMobileMenuOpen ? (
+                    <X size={20} strokeWidth={3} />
+                  ) : (
+                    <Menu size={20} strokeWidth={3} />
+                  )}
                 </button>
               </div>
             </div>
@@ -249,8 +303,10 @@ export default function Navbar() {
             className="fixed inset-0 z-[60] bg-white p-6 lg:hidden flex flex-col"
           >
             <div className="flex justify-between items-center mb-10">
-              <div className="px-5 py-2 bg-black text-white font-black italic rounded-full text-sm">SI KALORI</div>
-              <button 
+              <div className="px-5 py-2 bg-black text-white font-black italic rounded-full text-sm">
+                SI KALORI
+              </div>
+              <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="w-12 h-12 flex items-center justify-center bg-yellow-400 border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
               >
@@ -270,7 +326,9 @@ export default function Navbar() {
                     href={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`text-4xl font-black uppercase tracking-tighter transition-all hover:text-yellow-500 ${
-                      pathname === link.href ? "text-yellow-500 underline decoration-[6px] underline-offset-8" : "text-black"
+                      pathname === link.href
+                        ? "text-yellow-500 underline decoration-[6px] underline-offset-8"
+                        : "text-black"
                     }`}
                   >
                     {link.name}
@@ -282,12 +340,19 @@ export default function Navbar() {
             <div className="mt-auto pb-10">
               {user ? (
                 <div className="p-6 bg-gray-100 rounded-[2rem] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full border-2 border-black overflow-hidden relative bg-white">
-                    {user.picture ? <NextImage src={user.picture} alt="P" fill /> : <UserIcon className="p-3 w-full h-full" />}
+                  <div className="w-14 h-14 rounded-full border-2 border-black overflow-hidden relative bg-white flex items-center justify-center">
+                    <UserIcon className="p-3 w-full h-full" />
                   </div>
                   <div>
-                    <p className="font-black text-lg leading-none uppercase">{user.name}</p>
-                    <button onClick={handleLogout} className="text-red-500 font-bold text-xs underline mt-1">LOGOUT SEKARANG</button>
+                    <p className="font-black text-lg leading-none uppercase">
+                      {user.name}
+                    </p>
+                    <button
+                      onClick={handleLogout}
+                      className="text-red-500 font-bold text-xs underline mt-1"
+                    >
+                      LOGOUT SEKARANG
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -305,10 +370,18 @@ export default function Navbar() {
   );
 }
 
-function DropdownItem({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+function DropdownItem({
+  href,
+  icon,
+  label,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+}) {
   return (
-    <Link 
-      href={href} 
+    <Link
+      href={href}
       className="flex items-center gap-3 p-3 hover:bg-black hover:text-white rounded-2xl transition-all font-bold text-xs uppercase border-2 border-transparent hover:border-black group"
     >
       <span className="text-gray-400 group-hover:text-yellow-400">{icon}</span>

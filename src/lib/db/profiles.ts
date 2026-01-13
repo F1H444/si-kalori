@@ -1,10 +1,12 @@
 import { supabase } from "@/lib/supabase";
 import type { UserProfile } from "@/types/user";
 
-export async function getProfileByEmail(email: string): Promise<UserProfile | null> {
+export async function getProfileByEmail(
+  email: string,
+): Promise<UserProfile | null> {
   try {
     const { data, error } = await supabase
-      .from("profiles")
+      .from("users")
       .select("*")
       .eq("email", email)
       .single();

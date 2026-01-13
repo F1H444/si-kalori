@@ -101,7 +101,7 @@ export default function TargetAudienceSection() {
   return (
     <div className="relative min-h-screen bg-white overflow-hidden py-12 sm:py-16 lg:py-24">
       {/* Background & Geometric Accents di bawah ini telah dihapus sesuai permintaan */}
-      
+
       <motion.div
         className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6"
         initial="hidden"
@@ -253,9 +253,6 @@ export default function TargetAudienceSection() {
           }}
           className="bg-[#A076FF] text-white border-4 border-black p-8 sm:p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden"
         >
-          {/* Subtle Internal Pattern */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 translate-x-16 -translate-y-16 rotate-45" />
-
           <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
             <div className="w-20 h-20 bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center flex-shrink-0 -rotate-3">
               <User className="w-10 h-10 text-black" strokeWidth={3} />
