@@ -69,7 +69,12 @@ export default function Login() {
           .select("daily_target")
           .single();
 
-        if (upsertError) throw upsertError;
+        if (upsertError) {
+          console.error("Upsert Error (Database level):", upsertError);
+          throw upsertError;
+        }
+
+        console.log("Profile Sync Successful:", profile);
 
         if (!profile?.daily_target) {
           router.replace("/onboarding");
@@ -77,7 +82,8 @@ export default function Login() {
           router.replace("/dashboard");
         }
       } catch (err: any) {
-        console.error("Sync Error:", err.message);
+        console.error("Sync Profile Error Details:", err);
+        setError(`Gagal menyimpan profil: ${err.message}`);
         router.replace("/onboarding");
       }
     },
@@ -95,14 +101,17 @@ export default function Login() {
         });
 
         if (error) {
+          console.error("Supabase Auth Error:", error);
           setError(error.message);
           throw error;
         }
 
         if (data.user) {
+          console.log("Auth Success, syncing profile for:", data.user.id);
           await syncProfileToDatabase(data.user);
         }
       } catch (error: any) {
+        console.error("Critical Auth Handle Error:", error);
         setLoading(false);
       }
     },
@@ -112,6 +121,11 @@ export default function Login() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      setError("Konfigurasi Supabase belum lengkap di server. Pastikan environment variables sudah diatur!");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -130,7 +144,11 @@ export default function Login() {
         await syncProfileToDatabase(data.user);
       }
     } catch (err: any) {
-      setError("Email atau password kamu salah nih. Coba cek lagi ya!");
+      if (err.message === 'Failed to fetch') {
+        setError("Gagal menghubungi server (Failed to fetch). Cek koneksi atau konfigurasi URL Supabase kamu.");
+      } else {
+        setError("Email atau password kamu salah nih. Coba cek lagi ya!");
+      }
       setLoading(false);
     }
   };

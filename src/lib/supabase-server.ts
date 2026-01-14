@@ -5,8 +5,8 @@ export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key',
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://missing.supabase.co',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'missing-key',
     {
       cookies: {
         getAll() {
@@ -23,6 +23,9 @@ export async function createClient() {
             // user sessions.
           }
         },
+      },
+      cookieOptions: {
+        maxAge: undefined,
       },
     }
   );
