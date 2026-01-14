@@ -1,8 +1,8 @@
-# ⚡ SIKALORI - Smart Nutrition Tracker
+# SIKALORI - Smart Nutrition Tracker
 
 <div align="center">
-  
-<img width="1918" height="952" alt="Screenshot 2026-01-01 215745" src="https://github.com/user-attachments/assets/25760a63-2bbc-492b-8d43-1c597c281512" />
+
+![Screenshot_14-1-2026_232636_sikalori vercel app](https://github.com/user-attachments/assets/33297ee5-8195-4509-9671-843a64375d83)
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-green?style=for-the-badge&logo=supabase)](https://supabase.com/)
