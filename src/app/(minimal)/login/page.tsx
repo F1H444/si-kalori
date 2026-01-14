@@ -154,8 +154,7 @@ export default function Login() {
   };
 
   useEffect(() => {
-    const googleClientId =
-      "947157028356-ijdk5tmms7acg41nqc2vtk1shtirmlk8.apps.googleusercontent.com";
+    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "947157028356-ijdk5tmms7acg41nqc2vtk1shtirmlk8.apps.googleusercontent.com";
 
     const loadGoogle = () => {
       if (window.google) {

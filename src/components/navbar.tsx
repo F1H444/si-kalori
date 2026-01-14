@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import {
   Menu,
@@ -28,13 +28,17 @@ interface NavLink {
   href: string;
 }
 
-export default function Navbar() {
+interface NavbarProps {
+  initialUser?: User | null;
+}
+
+export default function Navbar({ initialUser = null }: NavbarProps) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(initialUser);
+  const [loading, setLoading] = useState(initialUser === null);
   const [scrolled, setScrolled] = useState(false);
 
   const baseLinks: NavLink[] = [
@@ -86,13 +90,38 @@ export default function Navbar() {
     };
 
     const checkAuth = async () => {
-      // Get session immediately from cache if available
+      // If we already have initialUser, we don't need to check immediately
+      // unless onAuthStateChange triggers. This speeds up first interaction.
+      if (initialUser) {
+        setLoading(false);
+        // Set session flag even if initialUser is provided
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("sikalori_session_active", "true");
+        }
+        return;
+      }
+
+      // Check for session flag in sessionStorage to enforce auto-logout on new tab/browser
+      if (typeof window !== "undefined") {
+        const isSessionActive = sessionStorage.getItem("sikalori_session_active");
+        
+        if (!isSessionActive) {
+          // If no flag, it's a new tab/browser session. Clear local auth.
+          await supabase.auth.signOut({ scope: 'local' });
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!isSubscribed) return;
 
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email);
+        // Set flag if session is found
+        sessionStorage.setItem("sikalori_session_active", "true");
       } else {
         setUser(null);
         setLoading(false);
@@ -103,14 +132,22 @@ export default function Navbar() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isSubscribed) return;
 
       if (session?.user) {
+        // If it's a new login or session refresh, update profile
         await fetchProfile(session.user.id, session.user.email);
+        
+        // Also ensure flag is set on valid sign-in
+        if (event === "SIGNED_IN") {
+          sessionStorage.setItem("sikalori_session_active", "true");
+        }
       } else {
         setUser(null);
         setLoading(false);
+        // Clear flag on sign out
+        sessionStorage.removeItem("sikalori_session_active");
       }
     });
 
@@ -119,16 +156,51 @@ export default function Navbar() {
       subscription.unsubscribe();
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [initialUser]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsDropdownOpen(false);
-    window.location.href = "/";
+  const handleLogout = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    try {
+      console.log("Logout triggered - Clearing session...");
+      setIsDropdownOpen(false);
+      
+      // 1. Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // 2. Clear all possible storage remnants
+      if (typeof window !== "undefined") {
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Clear cookies related to supabase
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+      }
+      
+      // 3. Reset local state immediately
+      setUser(null);
+      setLoading(false);
+      
+    } catch (error) {
+      console.error("Error signing out:", error);
+    } finally {
+      // 4. Force hard reload to home to clear server-side initialUser prop
+      window.location.href = "/";
+    }
   };
 
-  if (!mounted) return null;
+  // IMPORTANT: We still want to show a placeholder or nothing if not mounted to avoid hydration mismatch
+  // but since we are passing initialUser, we can render the SHELL on the server.
+  // However, the "mounted" check is used for Framer Motion and Scroll events.
+  // Let's make it smarter: show nothing only if we don't have initialUser and not mounted.
+  if (!mounted && !initialUser) return null;
 
   return (
     <>
@@ -257,8 +329,9 @@ export default function Navbar() {
 
                               {/* Logout dengan gaya elegan tapi brutal */}
                               <button
+                                type="button"
                                 onClick={handleLogout}
-                                className="w-full flex items-center justify-center gap-2 p-4 text-red-500 bg-red-50 hover:bg-black hover:text-white rounded-2xl transition-all font-black text-xs uppercase mt-3 border-2 border-transparent hover:border-black active:scale-95"
+                                className="w-full flex items-center justify-center gap-2 p-4 text-red-500 bg-red-50 hover:bg-black hover:text-white rounded-2xl transition-all font-black text-xs uppercase mt-3 border-2 border-transparent hover:border-black active:scale-95 cursor-pointer relative z-[60]"
                               >
                                 <LogOut size={16} strokeWidth={3} /> Keluar
                               </button>
@@ -348,8 +421,9 @@ export default function Navbar() {
                       {user.name}
                     </p>
                     <button
+                      type="button"
                       onClick={handleLogout}
-                      className="text-red-500 font-bold text-xs underline mt-1"
+                      className="text-red-500 font-bold text-xs underline mt-1 cursor-pointer"
                     >
                       LOGOUT SEKARANG
                     </button>
@@ -376,7 +450,7 @@ function DropdownItem({
   label,
 }: {
   href: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
 }) {
   return (

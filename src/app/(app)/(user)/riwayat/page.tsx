@@ -14,6 +14,7 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ScanLog } from "@/types/user";
+import { HistorySkeleton } from "@/components/Skeleton";
 
 // Animation Variants
 const containerVariants = {
@@ -164,16 +165,7 @@ export default function RiwayatPage() {
   }, 0);
 
 
-  if (!mounted || loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-8 font-mono text-black">
-        <div className="bg-white border-[8px] border-black p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-center">
-          <Loader2 className="w-16 h-16 animate-spin mx-auto mb-4" />
-          <p className="font-black text-2xl uppercase tracking-tighter">MENGAMBIL DATA...</p>
-        </div>
-      </div>
-    );
-  }
+  if (!mounted || loading) return <HistorySkeleton />;
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-10 font-mono text-black">

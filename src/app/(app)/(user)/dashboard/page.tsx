@@ -14,6 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { DashboardSkeleton } from "@/components/Skeleton";
 
 // Animation Variants
 const containerVariants = {
@@ -99,20 +100,8 @@ export default function UserDashboard() {
     fetchUserData();
   }, [router]);
 
-  // --- TAMPILAN LOADING BARU (NEO-BRUTALIST CIRCLE) ---
-  if (loading)
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center font-mono p-6">
-        <div className="relative flex items-center justify-center">
-          {/* Lingkaran Statis Belakang */}
-          <div className="w-24 h-24 rounded-full border-[6px] border-black opacity-10"></div>
-          {/* Lingkaran Animasi Depan */}
-          <div className="absolute w-24 h-24 rounded-full border-[6px] border-black border-t-yellow-400 animate-[spin_0.8s_linear_infinite]"></div>
-          {/* Titik Tengah */}
-          <div className="absolute w-4 h-4 bg-black rounded-full shadow-[2px_2px_0px_0px_rgba(250,204,21,1)]"></div>
-        </div>
-      </div>
-    );
+  // --- TAMPILAN LOADING BARU (NEO-BRUTALIST SKELETON) ---
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <div className="min-h-screen bg-white text-black font-mono p-4 md:p-10 selection:bg-yellow-400">
