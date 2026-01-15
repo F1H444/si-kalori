@@ -3,9 +3,12 @@
 import { useState, useEffect } from "react";
 import { Camera, Scan, Brain, CheckCircle, Eye, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLoading } from "@/context/LoadingContext";
+import { TextScramble } from "@/components/ui/text-scramble";
 
 export default function CaraKerja() {
   const [activeStep, setActiveStep] = useState(0);
+  const { isLoading: globalLoading } = useLoading();
 
   const steps = [
     {
@@ -100,11 +103,18 @@ export default function CaraKerja() {
 
             {/* PERUBAHAN DI SINI: leading diubah ke [1.1] dan penambahan margin y pada span */}
             <h2 className="text-5xl sm:text-7xl lg:text-8xl font-black text-black leading-[1.1] tracking-tighter">
-              GAMPANG <br />
-              <span className="inline-block bg-yellow-400 text-black px-4 py-2 my-3 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+              <TextScramble text="GAMPANG" delay={0.1} /> <br />
+              <span className="inline-block bg-yellow-400 text-black px-4 py-2 my-3 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
+                <motion.div 
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.6, duration: 0.8, ease: "circOut" }}
+                  className="absolute inset-0 bg-white opacity-20 -z-10 origin-left"
+                />
                 BANGET
               </span>
-              <br />KOK!
+              <br /><TextScramble text="KOK!" delay={0.4} />
             </h2>
 
             <p className="text-xl text-gray-800 font-bold max-w-lg leading-relaxed border-l-8 border-black pl-6 italic">
@@ -122,7 +132,7 @@ export default function CaraKerja() {
           <motion.div 
             variants={containerVariants}
             initial="hidden"
-            whileInView="visible"
+            whileInView={!globalLoading ? "visible" : "hidden"}
             viewport={{ once: true, margin: "-50px" }}
             className="space-y-6"
           >

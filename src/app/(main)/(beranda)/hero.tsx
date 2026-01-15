@@ -1,269 +1,255 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Camera, Zap, TrendingUp, Check, Play } from "lucide-react";
-import { motion, type Variants } from "framer-motion";
+import { 
+  Camera, Zap, TrendingUp, Check, Play, 
+  Apple, Droplets, Leaf, Utensils, Flame, 
+  Pizza, Grape, Coffee, Cookie, Beef, Fish, Cherry, Egg 
+} from "lucide-react";
+import { motion, type Variants, useScroll, useTransform } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useLoading } from "@/context/LoadingContext";
+import { TextScramble } from "@/components/ui/text-scramble";
 
-// Ganti nama komponen menjadi HomePage agar sesuai dengan app/page.tsx
-export default function BrutalHero() {
+export default function HomePage() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { isLoading: globalLoading } = useLoading();
+  const [localAuthLoading, setLocalAuthLoading] = useState(true);
 
-  // Check auth status on mount
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 500], [0, 150]);
+  const rotateGrid = useTransform(scrollY, [0, 500], [0, 5]);
+
   useEffect(() => {
     const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       setIsLoggedIn(!!session?.user);
-      setIsLoading(false);
+      setLocalAuthLoading(false);
     };
     checkAuth();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session?.user);
     });
-
     return () => subscription.unsubscribe();
   }, []);
-
-  const benefits = [
-    { icon: Camera, text: "Scan Cerdas", color: "bg-red-500" },
-    { icon: Zap, text: "Analisis Instan", color: "bg-yellow-500" },
-    { icon: TrendingUp, text: "Progress Harian", color: "bg-green-500" },
-  ];
 
   const stats = [
     { num: "1Jt+", label: "Menu & Produk" },
     { num: "98%", label: "Akurasi AI" },
   ];
 
-  // Animation Variants
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-        delayChildren: 0.05,
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
   const itemVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.4,
-        ease: [0.215, 0.61, 0.355, 1.0] as const,
-      },
-    },
-  };
-
-  const rightColVariants: Variants = {
-    hidden: { opacity: 0, x: 50 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: {
-        duration: 0.5,
-        ease: "easeOut" as const,
-        delay: 0.1,
-      },
-    },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
 
   const handleCTAClick = () => {
-    if (isLoggedIn) {
-      router.push("/dashboard");
-    } else {
-      router.push("/login");
-    }
+    isLoggedIn ? router.push("/dashboard") : router.push("/login");
   };
 
-  return (
-    // Fragment untuk membungkus Navbar dan Hero
-    <>
-      {/* Konten Hero Section */}
-      <div className="relative bg-white overflow-hidden">
-        {/* Brutal Grid Background */}
-        <div className="absolute inset-0 opacity-[0.02]">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(to right, #000 1px, transparent 1px)`,
-              backgroundSize: "40px 40px",
-            }}
-          />
-        </div>
+  // Variasi untuk animasi melayang (floating)
+  const floatingAnimation = (delay: number = 0) => ({
+    initial: { y: 0 },
+    animate: {
+      y: [0, -15, 0],
+      transition: {
+        duration: 4,
+        repeat: Infinity,
+        ease: "easeInOut" as const,
+        delay: delay,
+      },
+    },
+  });
 
-        {/* [UPDATED] Padding atas ditambah lagi (pt-40 sm:pt-48)
-            agar kontennya lebih ke bawah dari navbar.
-        */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-32 sm:pt-40 pb-24 sm:pb-32 lg:pb-32">
-          {/* Layout 2-kolom */}
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+  return (
+    <>
+      <div className="relative bg-white overflow-hidden min-h-[90svh] flex items-center px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 max-w-7xl mx-auto pt-32 pb-20 w-full">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+            
             {/* --- KOLOM KIRI: Teks & Stats --- */}
-            <motion.div
-              className="space-y-8 sm:space-y-10"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {/* Main Headline */}
-              <motion.h1 variants={itemVariants}>
-                <span className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.85] text-black mb-3 sm:mb-4">
-                  KELOLA
-                </span>
-                <span className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.85] text-black mb-4 sm:mb-6">
-                  KALORI
-                </span>
-                <div className="inline-block bg-black text-white px-4 py-3 sm:px-6 sm:py-3 lg:px-8 lg:py-4 border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]">
-                  <span className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-black">
-                    DENGAN CERDAS
-                  </span>
+            <motion.div className="space-y-8" variants={containerVariants} initial="hidden" animate="visible">
+              <motion.h1 
+                variants={itemVariants}
+                animate={!globalLoading ? "visible" : "hidden"}
+              >
+                <div className="block text-6xl md:text-7xl lg:text-8xl font-black leading-[0.85] text-black mb-4">
+                  <TextScramble text="KELOLA" delay={0.1} />
+                </div>
+                <div className="block text-6xl md:text-7xl lg:text-8xl font-black leading-[0.85] text-black mb-6">
+                  <TextScramble text="KALORI" delay={0.3} />
+                </div>
+                <div className="inline-block bg-black text-white px-6 py-3 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] relative">
+                  <span className="text-xl sm:text-2xl font-black">DENGAN CERDAS</span>
                 </div>
               </motion.h1>
 
-              {/* Paragraf */}
-              <motion.p
-                variants={itemVariants}
-                className="text-lg sm:text-xl text-gray-700 leading-relaxed max-w-xl"
-              >
-                Scan makanan & minumanmu. AI kami langsung hitung kalori dan
-                nutrisinya. Yuk, capai target sehatmu bareng Sikalori!
+              <motion.p variants={itemVariants} className="text-xl text-gray-700 max-w-lg font-medium leading-relaxed">
+                Pantau nutrisi, buat rencana makan, dan capai tujuan kesehatanmu dengan teknologi AI Sikalori.
               </motion.p>
 
-              {/* Tombol CTAs */}
-              <motion.div
-                variants={itemVariants}
-                className="flex flex-col sm:flex-row gap-3 sm:gap-4"
-              >
-                <button
-                  onClick={handleCTAClick}
-                  disabled={isLoading}
-                  className="group relative px-8 py-4 sm:px-10 sm:py-5 bg-black text-white font-black text-sm sm:text-base border-2 sm:border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] sm:hover:translate-x-[3px] sm:hover:translate-y-[3px] active:translate-x-[4px] active:translate-y-[4px] sm:active:translate-x-[6px] sm:active:translate-y-[6px] transition-all duration-150 disabled:opacity-50"
+              <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4">
+                <button 
+                  onClick={handleCTAClick} 
+                  disabled={localAuthLoading || globalLoading}
+                  className="px-8 py-4 bg-green-500 text-white font-black border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
                 >
-                  {isLoading
-                    ? "MEMUAT..."
-                    : isLoggedIn
-                      ? "KE DASHBOARD"
-                      : "SCAN SEKARANG"}
+                  {localAuthLoading ? "MEMUAT..." : (isLoggedIn ? "KE DASHBOARD" : "MULAI SEKARANG")}
                 </button>
-                <button className="group px-8 py-4 sm:px-10 sm:py-5 bg-white text-black font-black text-sm sm:text-base border-2 sm:border-4 border-black hover:bg-black hover:text-white transition-all duration-200">
-                  <span className="flex items-center justify-center gap-2">
-                    <Play className="w-4 h-4 sm:w-5 sm:h-5" />
-                    LIHAT CARA KERJA
-                  </span>
+                <button className="px-8 py-4 bg-white text-black font-black border-4 border-black hover:bg-black hover:text-white transition-all">
+                  PELAJARI LANJUT
                 </button>
               </motion.div>
 
-              {/* Stats Grid */}
-              <motion.div
-                variants={itemVariants}
-                className="grid grid-cols-2 gap-4 sm:gap-8 pt-6 sm:pt-8"
-              >
+              <motion.div variants={itemVariants} className="grid grid-cols-2 gap-8 pt-4">
                 {stats.map((stat) => (
-                  <div
-                    key={stat.label}
-                    className="border-l-4 border-black pl-4 sm:pl-6"
-                  >
-                    <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-black leading-none mb-1 sm:mb-2">
-                      {stat.num}
-                    </div>
-                    <div className="text-sm sm:text-base font-bold text-gray-600 uppercase tracking-wide">
-                      {stat.label}
-                    </div>
+                  <div key={stat.label} className="border-l-4 border-black pl-4">
+                    <div className="text-4xl font-black text-black leading-none mb-1">{stat.num}</div>
+                    <div className="text-sm font-bold text-gray-500 uppercase tracking-wider">{stat.label}</div>
                   </div>
                 ))}
               </motion.div>
             </motion.div>
 
-            {/* --- KOLOM KANAN: Visual & Fitur --- */}
-            <motion.div
-              className="space-y-6"
-              variants={rightColVariants}
-              initial="hidden"
-              animate="visible"
+            {/* --- KOLOM KANAN: Visual Food Orbit --- */}
+            <motion.div 
+              className="relative h-[550px] sm:h-[650px] flex items-center justify-center"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={!globalLoading ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.8 }}
             >
-              {/* Kartu Fitur Utama */}
-              <div className="bg-white border-2 sm:border-4 border-black p-6 sm:p-8 lg:p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-black flex items-center justify-center">
-                    <Camera
-                      className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white"
-                      strokeWidth={2.5}
-                    />
-                  </div>
-                  <div className="px-3 py-1 sm:px-4 sm:py-2 bg-green-500 border-2 sm:border-4 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                    <span className="text-xs sm:text-sm font-black tracking-wider text-white">
-                      ACTIVE
-                    </span>
-                  </div>
-                </div>
-
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2 sm:mb-3 leading-tight text-black">
-                  SCAN APA SAJA
-                </h3>
-                <p className="text-black font-bold text-base sm:text-lg leading-relaxed mb-4">
-                  Ambil foto makanan atau minuman, dapatkan info gizi lengkap
-                  dalam hitungan detik.
-                </p>
-
-                <div className="space-y-2 sm:space-y-3 pt-4 border-t-2 border-gray-200">
-                  {[
-                    "Hitung Kalori Instan",
-                    "Rincian Gizi Lengkap",
-                    "Deteksi Porsi Akurat",
-                  ].map((item) => (
-                    <div key={item} className="flex items-center gap-3">
-                      <div className="w-7 h-7 bg-black flex items-center justify-center flex-shrink-0">
-                        <Check className="w-4 h-4 text-white" strokeWidth={3} />
-                      </div>
-                      <span className="text-sm sm:text-base font-black text-black">
-                        {item}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Grid 3 Kartu Benefit Kecil */}
-              <motion.div
-                className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
+              {/* Central Element (Plate) */}
+              <motion.div 
+                {...floatingAnimation(0)}
+                className="relative z-30 w-52 h-52 sm:w-64 sm:h-64 bg-white rounded-full border-8 border-black shadow-[20px_20px_0px_0px_rgba(0,0,0,0.05)] flex items-center justify-center p-4"
               >
-                {benefits.map((benefit, idx) => {
-                  const Icon = benefit.icon;
-                  return (
-                    <motion.div
-                      key={benefit.text}
-                      variants={itemVariants}
-                      className={`${
-                        benefit.color
-                      } border-2 sm:border-4 border-black p-5 sm:p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all duration-200`}
-                    >
-                      <Icon
-                        className="w-8 h-8 sm:w-10 sm:h-10 text-white mb-3"
-                        strokeWidth={2.5}
-                      />
-                      <h4 className="text-lg sm:text-xl font-black text-white leading-tight">
-                        {benefit.text}
-                      </h4>
-                    </motion.div>
-                  );
-                })}
+                <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-full">
+                  {/* Food on Plate */}
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 1, type: "spring" }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      {/* Fried Egg (Telor Ceplok) - Center Only */}
+                      <div className="w-32 h-32 sm:w-40 sm:h-40 bg-yellow-400/20 rounded-full border-4 border-black/10 flex items-center justify-center">
+                        <Egg className="w-16 h-16 sm:w-20 sm:h-20 text-yellow-500 fill-yellow-400 rotate-12" strokeWidth={2.5} />
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Spoon & Fork next to plate (Using Utensils but styled) */}
+                <motion.div 
+                   {...floatingAnimation(0.5)}
+                   className="absolute -left-12 sm:-left-16 top-1/2 -translate-y-1/2 bg-white p-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rotate-[-15deg]"
+                >
+                  <Utensils className="w-8 h-8 text-black" />
+                </motion.div>
+                <motion.div 
+                   {...floatingAnimation(0.7)}
+                   className="absolute -right-12 sm:-right-16 top-1/2 -translate-y-1/2 bg-white p-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rotate-[15deg] scale-x-[-1]"
+                >
+                  <Utensils className="w-8 h-8 text-black" />
+                </motion.div>
+
+                {/* Calorie Badge on Plate */}
+                <div className="absolute -bottom-4 right-0 z-40 bg-yellow-400 border-4 border-black px-4 py-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="text-xs font-black uppercase tracking-widest text-black leading-none pb-1">Nutrisi</div>
+                  <div className="text-xl font-black text-black leading-none">450 Kkal</div>
+                </div>
               </motion.div>
+
+              {/* Orbiting Items - THE TIGHT PERFECT CIRCULAR ORBIT */}
+              
+              {/* 12:00 - Cookie (Moved Down) */}
+              <motion.div 
+                {...floatingAnimation(0.2)}
+                className="absolute top-[12%] sm:top-[15%] left-1/2 -translate-x-1/2 z-40 bg-amber-700 p-2.5 sm:p-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -rotate-6"
+              >
+                <Cookie className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              </motion.div>
+
+              {/* 01:12 - Cherry (Moved Down/In) */}
+              <motion.div 
+                {...floatingAnimation(0.8)}
+                className="absolute top-[18%] left-[72%] sm:left-[70%] -translate-x-1/2 -translate-y-1/2 z-40 bg-pink-500 p-2.5 sm:p-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rotate-12"
+              >
+                <Cherry className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              </motion.div>
+
+              {/* 02:24 - Apple (Standard Outer) */}
+              <motion.div 
+                {...floatingAnimation(1.4)}
+                className="absolute top-[40%] right-[-2%] sm:right-[2%] -translate-y-1/2 z-40 bg-red-400 p-3 sm:p-4 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-2xl rotate-12"
+              >
+                <Apple className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              </motion.div>
+
+              {/* 03:36 - Coffee (Standard Outer) */}
+              <motion.div 
+                {...floatingAnimation(2.0)}
+                className="absolute bottom-[35%] right-[2%] sm:right-[6%] z-40 bg-amber-900 p-3 sm:p-4 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rotate-3"
+              >
+                <Coffee className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              </motion.div>
+
+              {/* 04:48 - Water (Moved Up/In) */}
+              <motion.div 
+                {...floatingAnimation(2.6)}
+                className="absolute bottom-[8%] right-[22%] sm:bottom-[12%] sm:right-[25%] z-40 bg-blue-400 p-3 sm:p-4 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-full -rotate-12"
+              >
+                <Droplets className="w-8 h-8 sm:w-9 sm:h-9 text-white" />
+              </motion.div>
+
+              {/* 06:00 - Fish (Moved Up) */}
+              <motion.div 
+                {...floatingAnimation(0.5)}
+                className="absolute bottom-[2%] sm:bottom-[5%] left-1/2 -translate-x-1/2 z-50 bg-cyan-500 p-3.5 sm:p-4 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rotate-6"
+              >
+                <Fish className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              </motion.div>
+
+              {/* 07:12 - Leaf (Moved Up/In) */}
+              <motion.div 
+                {...floatingAnimation(1.1)}
+                className="absolute bottom-[8%] left-[22%] sm:bottom-[12%] sm:left-[25%] z-40 bg-green-500 p-3.5 sm:p-4 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rotate-12"
+              >
+                <Leaf className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              </motion.div>
+
+              {/* 08:24 - Beef (Standard Outer) */}
+              <motion.div 
+                {...floatingAnimation(1.7)}
+                className="absolute bottom-[35%] left-[2%] sm:left-[6%] z-50 bg-red-600 p-3.5 sm:p-4 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] -rotate-6"
+              >
+                <Beef className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              </motion.div>
+
+              {/* 09:36 - Pizza (Standard Outer) */}
+              <motion.div 
+                {...floatingAnimation(2.3)}
+                className="absolute top-[40%] left-[-2%] sm:left-[2%] -translate-y-1/2 z-40 bg-orange-400 p-3 sm:p-4 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] -rotate-12"
+              >
+                <Pizza className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              </motion.div>
+
+              {/* 10:48 - Grape (Moved Down/In) */}
+              <motion.div 
+                {...floatingAnimation(2.9)}
+                className="absolute top-[18%] left-[28%] sm:left-[30%] -translate-x-1/2 -translate-y-1/2 z-10 bg-purple-600 p-2.5 sm:p-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -rotate-12"
+              >
+                <Grape className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </motion.div>
+
             </motion.div>
           </div>
         </div>

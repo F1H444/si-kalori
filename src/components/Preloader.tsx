@@ -2,18 +2,21 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useLoading } from "@/context/LoadingContext";
 
 export default function Preloader() {
   const [loading, setLoading] = useState(true);
+  const { setIsLoading } = useLoading();
 
   useEffect(() => {
     // Durasi total loading dipangkas agar tidak mengganggu UX
     const timer = setTimeout(() => {
       setLoading(false);
+      setIsLoading(false); // Global sync
     }, 1500); 
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [setIsLoading]);
 
   return (
     <AnimatePresence mode="wait">

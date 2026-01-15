@@ -22,6 +22,7 @@ export const metadata: Metadata = {
 
 import SmoothScroll from "@/components/SmoothScroll";
 import Preloader from "@/components/Preloader";
+import { LoadingProvider } from "@/context/LoadingContext";
 
 export default function RootLayout({
   children,
@@ -34,10 +35,12 @@ export default function RootLayout({
         suppressHydrationWarning={true}
         className={`${lexend.variable} ${geistMono.variable} antialiased font-sans`}
       >
-        <Preloader />
-        <SmoothScroll>
-          {children}
-        </SmoothScroll>
+        <LoadingProvider>
+          <Preloader />
+          <SmoothScroll>
+            {children}
+          </SmoothScroll>
+        </LoadingProvider>
       </body>
     </html>
   );

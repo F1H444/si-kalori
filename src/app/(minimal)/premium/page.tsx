@@ -228,10 +228,10 @@ export default function PremiumPage() {
   ];
 
   return (
-    <div className="h-screen bg-white overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col font-mono">
       <Navbar />
 
-      <main className="flex-1 flex items-center justify-center pt-16 pb-10 px-4 relative z-10">
+      <main className="flex-1 flex items-center justify-center pt-28 pb-10 px-4 sm:px-6 relative z-10">
         <motion.div
           className="max-w-6xl w-full mx-auto"
           variants={containerVariants}

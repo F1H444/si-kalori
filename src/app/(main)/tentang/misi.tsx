@@ -2,8 +2,10 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { useLoading } from "@/context/LoadingContext";
 
 export default function MissionSection() {
+  const { isLoading: globalLoading } = useLoading();
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -46,7 +48,7 @@ export default function MissionSection() {
       <motion.div
         variants={scaleVariants}
         initial="hidden"
-        whileInView="visible"
+        whileInView={!globalLoading ? "visible" : "hidden"}
         viewport={{ once: true, margin: "-100px" }}
         className="bg-yellow-400 border-4 border-black p-6 sm:p-12 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden"
       >
@@ -81,7 +83,7 @@ export default function MissionSection() {
             <span className="bg-white text-black px-3 py-1 font-black text-sm uppercase border-2 border-black">
               Data Akurat
             </span>
-            <span className="bg-green-500 text-white px-3 py-1 font-black text-sm uppercase">
+            <span className="bg-black text-white px-3 py-1 font-black text-sm uppercase">
               AI-Powered
             </span>
           </motion.div>
@@ -91,7 +93,7 @@ export default function MissionSection() {
       {/* Vision Section */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        whileInView={!globalLoading ? { opacity: 1, y: 0 } : {}}
         viewport={{ once: true, margin: "-50px" }}
         transition={{ delay: 0.3, type: "spring", stiffness: 80 }}
         className="mt-8 grid md:grid-cols-2 gap-6"

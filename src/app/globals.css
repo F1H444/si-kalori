@@ -5,8 +5,6 @@
   --foreground: #171717;
 }
 
-
-
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -51,9 +49,16 @@ a:active,
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 .animate-shake {
@@ -61,10 +66,31 @@ a:active,
 }
 
 @keyframes slide-in {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }

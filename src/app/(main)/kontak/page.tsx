@@ -3,8 +3,11 @@
 import React, { useState, useRef } from "react";
 import { motion, Variants } from "framer-motion";
 import emailjs from "@emailjs/browser";
+import { useLoading } from "@/context/LoadingContext";
+import { TextScramble } from "@/components/ui/text-scramble";
 
 export default function ContactPage() {
+  const { isLoading: globalLoading } = useLoading();
   const form = useRef<HTMLFormElement>(null);
   const [status, setStatus] = useState<
     "idle" | "sending" | "success" | "error"
@@ -71,7 +74,7 @@ export default function ContactPage() {
     <section className="min-h-screen bg-white text-black font-mono selection:bg-black selection:text-white pt-32 pb-20 md:pt-48 md:pb-32">
       <motion.div
         initial="hidden"
-        whileInView="visible"
+        animate={!globalLoading ? "visible" : "hidden"}
         viewport={{ once: true }}
         variants={containerVariants}
         className="w-full max-w-4xl mx-auto px-4 md:px-8 relative z-10"
@@ -83,11 +86,17 @@ export default function ContactPage() {
         >
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="inline-block border-4 border-black bg-white p-4 md:p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-shadow duration-300"
+            className="inline-block border-4 border-black bg-white p-4 md:p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[10px_10px_0px_0px_rgba(250,204,21,1)] transition-all duration-300 relative overflow-hidden group"
           >
-            <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none">
-              Kontak{" "}
-              <span className="inline-block bg-yellow-400 px-2">Kami</span>
+            <motion.div 
+              initial={{ scaleX: 0 }}
+              animate={!globalLoading ? { scaleX: 1 } : {}}
+              transition={{ delay: 0.6, duration: 0.8, ease: "circOut" }}
+              className="absolute inset-0 bg-yellow-400 -z-10 origin-left"
+            />
+            <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none relative z-10">
+              <TextScramble text="Kontak" delay={0.1} /> <br className="md:hidden" />
+              <span className="inline-block md:ml-4 group-hover:text-white transition-colors">Kami</span>
             </h1>
           </motion.div>
           <motion.p
