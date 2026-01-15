@@ -41,8 +41,8 @@ export default function FeaturesSection() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.12,
-        delayChildren: 0.2,
+        staggerChildren: 0.05,
+        delayChildren: 0.05,
       },
     },
   };
@@ -54,7 +54,7 @@ export default function FeaturesSection() {
       x: 0,
       transition: {
         type: "spring" as const,
-        stiffness: 100,
+        stiffness: 200,
         damping: 15,
       },
     },
@@ -67,7 +67,7 @@ export default function FeaturesSection() {
       y: 0,
       transition: {
         type: "spring" as const,
-        stiffness: 100,
+        stiffness: 200,
         damping: 12,
       },
     },
@@ -144,7 +144,7 @@ export default function FeaturesSection() {
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ delay: 0.4, type: "spring", stiffness: 80 }}
+        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
         className="mt-12 bg-black text-white border-4 border-black p-8 sm:p-10 shadow-[8px_8px_0px_0px_rgba(34,197,94,1)]"
       >
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">

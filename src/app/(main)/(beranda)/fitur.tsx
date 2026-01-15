@@ -55,8 +55,8 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.2,
+      staggerChildren: 0.05,
+      delayChildren: 0.1,
     },
   },
 };
@@ -73,9 +73,9 @@ const itemVariants = {
     scale: 1,
     transition: {
       type: "spring" as const,
-      stiffness: 100,
-      damping: 12,
-      duration: 0.6,
+      stiffness: 200,
+      damping: 15,
+      duration: 0.4,
     },
   },
 };
@@ -87,7 +87,7 @@ const titleVariants = {
     x: 0,
     transition: {
       type: "spring" as const,
-      stiffness: 100,
+      stiffness: 150,
       damping: 15,
     },
   },
@@ -100,9 +100,9 @@ const subtitleVariants = {
     x: 0,
     transition: {
       type: "spring" as const,
-      stiffness: 100,
+      stiffness: 150,
       damping: 15,
-      delay: 0.1,
+      delay: 0.05,
     },
   },
 };

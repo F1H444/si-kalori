@@ -88,7 +88,7 @@ export default function FaqSection() {
                 key={index}
                 initial={{ x: -20, opacity: 0 }}
                 whileInView={{ x: 0, opacity: 1 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: index * 0.05 }}
                 viewport={{ once: true }}
                 className="group"
               >
@@ -127,7 +127,7 @@ export default function FaqSection() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: "circOut" }}
+                        transition={{ duration: 0.2, ease: "circOut" }}
                         className="overflow-hidden bg-white"
                       >
                         <div className="px-6 pb-8 sm:px-8 sm:pb-10 border-t-4 border-black pt-6">

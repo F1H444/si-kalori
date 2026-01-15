@@ -50,8 +50,8 @@ export default function BrutalHero() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
+        staggerChildren: 0.05,
+        delayChildren: 0.05,
       },
     },
   };
@@ -62,7 +62,7 @@ export default function BrutalHero() {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.6,
+        duration: 0.4,
         ease: [0.215, 0.61, 0.355, 1.0] as const,
       },
     },
@@ -74,9 +74,9 @@ export default function BrutalHero() {
       opacity: 1,
       x: 0,
       transition: {
-        duration: 0.8,
+        duration: 0.5,
         ease: "easeOut" as const,
-        delay: 0.2,
+        delay: 0.1,
       },
     },
   };

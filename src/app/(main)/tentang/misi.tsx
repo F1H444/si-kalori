@@ -9,8 +9,8 @@ export default function MissionSection() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
+        staggerChildren: 0.05,
+        delayChildren: 0.05,
       },
     },
   };
@@ -22,7 +22,7 @@ export default function MissionSection() {
       x: 0,
       transition: {
         type: "spring" as const,
-        stiffness: 100,
+        stiffness: 200,
         damping: 12,
       },
     },
@@ -35,7 +35,7 @@ export default function MissionSection() {
       scale: 1,
       transition: {
         type: "spring" as const,
-        stiffness: 80,
+        stiffness: 200,
         damping: 15,
       },
     },

@@ -78,7 +78,7 @@ export default function TargetAudienceSection() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15,
+        staggerChildren: 0.05,
       },
     },
   };
@@ -90,7 +90,7 @@ export default function TargetAudienceSection() {
       opacity: 1,
       transition: {
         type: "spring" as const,
-        stiffness: 120,
+        stiffness: 200,
         damping: 12,
       },
     },
@@ -251,7 +251,7 @@ export default function TargetAudienceSection() {
             scale: [0.98, 1.02, 1],
             transition: { duration: 0.5 },
           }}
-          className="bg-[#A076FF] text-white border-4 border-black p-8 sm:p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden"
+          className="bg-yellow-400 text-black border-4 border-black p-8 sm:p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden"
         >
           <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
             <div className="w-20 h-20 bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center flex-shrink-0 -rotate-3">
@@ -264,7 +264,7 @@ export default function TargetAudienceSection() {
               </h3>
               <p className="text-lg font-bold leading-tight opacity-95 max-w-2xl">
                 Tenang! Si Kalori didesain untuk{" "}
-                <span className="bg-black text-white px-2 py-0.5 mx-1 inline-block rotate-1">
+                <span className="bg-white text-black px-2 py-0.5 mx-1 inline-block rotate-1 border-2 border-black">
                   SIAPA SAJA
                 </span>{" "}
                 yang peduli dengan kesehatan. Dari pemula hingga pro, semua bisa

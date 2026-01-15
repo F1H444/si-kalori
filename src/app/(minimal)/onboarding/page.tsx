@@ -39,21 +39,21 @@ const ModernPicker = ({
   const decrement = () => value > min && onChange(value - 1);
 
   return (
-    <div className="flex flex-col items-center w-full max-w-2xl mx-auto px-4">
+    <div className="flex flex-col items-center w-full max-w-2xl mx-auto px-2 sm:px-4">
       <div className="flex items-center justify-center w-full gap-4 sm:gap-10">
         <button
           onClick={decrement}
-          className="shrink-0 w-14 h-14 sm:w-20 sm:h-20 rounded-full border-2 border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all active:scale-90"
+          className="shrink-0 w-12 h-12 sm:w-20 sm:h-20 rounded-full border-2 border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all active:scale-90"
         >
-          <Minus size={32} />
+          <Minus className="w-6 h-6 sm:w-8 sm:h-8" />
         </button>
 
-        <div className="flex flex-col items-center min-w-[120px]">
+        <div className="flex flex-col items-center min-w-[100px] sm:min-w-[120px]">
           <div className="flex items-baseline gap-1">
-            <span className="text-7xl sm:text-9xl font-black tracking-tighter tabular-nums">
+            <span className="text-6xl sm:text-9xl font-black tracking-tighter tabular-nums">
               {value}
             </span>
-            <span className="text-xl sm:text-2xl font-bold text-gray-400 uppercase italic">
+            <span className="text-lg sm:text-2xl font-bold text-gray-400 uppercase italic">
               {unit}
             </span>
           </div>
@@ -61,9 +61,9 @@ const ModernPicker = ({
 
         <button
           onClick={increment}
-          className="shrink-0 w-14 h-14 sm:w-20 sm:h-20 rounded-full border-2 border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all active:scale-90"
+          className="shrink-0 w-12 h-12 sm:w-20 sm:h-20 rounded-full border-2 border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all active:scale-90"
         >
-          <Plus size={32} />
+          <Plus className="w-6 h-6 sm:w-8 sm:h-8" />
         </button>
       </div>
       <input
@@ -234,7 +234,7 @@ export default function Onboarding() {
         />
       </div>
 
-      <main className="flex-1 flex flex-col p-6 pt-16 items-center justify-center max-w-4xl mx-auto w-full">
+      <main className="flex-1 flex flex-col p-4 pt-20 sm:p-6 sm:pt-24 items-center justify-center max-w-4xl mx-auto w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -252,11 +252,11 @@ export default function Onboarding() {
               >
                 <motion.h2
                   variants={itemVariants}
-                  className="text-4xl sm:text-6xl font-black italic tracking-tighter uppercase"
+                  className="text-3xl sm:text-5xl lg:text-7xl font-black italic tracking-tighter uppercase"
                 >
                   Apa target utama kamu?
                 </motion.h2>
-                <motion.div variants={containerVariants} className="grid gap-4">
+                <motion.div variants={containerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                   {Object.entries(goalLabels).map(([key, label]) => (
                     <motion.button
                       key={key}
@@ -286,13 +286,13 @@ export default function Onboarding() {
               >
                 <motion.h2
                   variants={itemVariants}
-                  className="text-4xl sm:text-6xl font-black italic tracking-tighter uppercase"
+                  className="text-3xl sm:text-5xl lg:text-7xl font-black italic tracking-tighter uppercase"
                 >
                   Jenis Kelamin
                 </motion.h2>
                 <motion.div
                   variants={containerVariants}
-                  className="flex gap-4 justify-center"
+                  className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center"
                 >
                   {["male", "female"].map((g) => (
                     <motion.button
@@ -322,7 +322,7 @@ export default function Onboarding() {
               >
                 <motion.h2
                   variants={itemVariants}
-                  className="text-4xl sm:text-6xl font-black italic tracking-tighter uppercase"
+                  className="text-3xl sm:text-5xl lg:text-7xl font-black italic tracking-tighter uppercase"
                 >
                   Usia Kamu
                 </motion.h2>
@@ -346,7 +346,7 @@ export default function Onboarding() {
               >
                 <motion.h2
                   variants={itemVariants}
-                  className="text-4xl sm:text-6xl font-black italic tracking-tighter uppercase"
+                  className="text-3xl sm:text-5xl lg:text-7xl font-black italic tracking-tighter uppercase"
                 >
                   Berat Badan
                 </motion.h2>
@@ -370,7 +370,7 @@ export default function Onboarding() {
               >
                 <motion.h2
                   variants={itemVariants}
-                  className="text-4xl sm:text-6xl font-black italic tracking-tighter uppercase"
+                  className="text-3xl sm:text-5xl lg:text-7xl font-black italic tracking-tighter uppercase"
                 >
                   Tinggi Badan
                 </motion.h2>
@@ -394,11 +394,11 @@ export default function Onboarding() {
               >
                 <motion.h2
                   variants={itemVariants}
-                  className="text-4xl sm:text-6xl font-black italic tracking-tighter uppercase"
+                  className="text-3xl sm:text-5xl lg:text-7xl font-black italic tracking-tighter uppercase"
                 >
                   Tingkat Aktivitas
                 </motion.h2>
-                <motion.div variants={containerVariants} className="grid gap-4">
+                <motion.div variants={containerVariants} className="grid gap-3 md:gap-4">
                   {Object.entries(activityLabels).map(([key, label]) => (
                     <motion.button
                       key={key}
@@ -436,7 +436,7 @@ export default function Onboarding() {
                 </motion.div>
                 <motion.h2
                   variants={itemVariants}
-                  className="text-4xl sm:text-6xl font-black italic tracking-tighter uppercase"
+                  className="text-3xl sm:text-5xl lg:text-7xl font-black italic tracking-tighter uppercase"
                 >
                   Rencana Harian Kamu
                 </motion.h2>
@@ -496,7 +496,7 @@ export default function Onboarding() {
           <button
             onClick={nextStep}
             disabled={loading}
-            className="flex-1 h-20 bg-black text-white font-black text-2xl flex items-center justify-center gap-3 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
+            className="flex-1 h-16 sm:h-20 bg-black text-white font-black text-lg sm:text-2xl flex items-center justify-center gap-2 sm:gap-3 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
           >
             {loading ? (
               <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />

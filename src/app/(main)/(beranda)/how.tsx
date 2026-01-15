@@ -60,7 +60,7 @@ export default function CaraKerja() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
+        staggerChildren: 0.1,
       },
     },
   };
@@ -72,7 +72,7 @@ export default function CaraKerja() {
       x: 0,
       transition: {
         type: "spring" as const,
-        stiffness: 100,
+        stiffness: 200,
         damping: 15,
       },
     },
@@ -88,7 +88,7 @@ export default function CaraKerja() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.4 }}
             className="space-y-8"
           >
             <div className="inline-flex items-center gap-3 px-5 py-3 bg-black text-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">

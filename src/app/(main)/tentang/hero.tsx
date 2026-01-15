@@ -5,13 +5,14 @@ import { motion } from "framer-motion";
 
 export default function HeroSection() {
   // Animation Variants
+  // Animation Variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15,
-        delayChildren: 0.2,
+        staggerChildren: 0.05,
+        delayChildren: 0.05,
       },
     },
   };
@@ -23,7 +24,7 @@ export default function HeroSection() {
       y: 0,
       transition: {
         type: "spring" as const,
-        stiffness: 100,
+        stiffness: 200,
         damping: 12,
       },
     },
