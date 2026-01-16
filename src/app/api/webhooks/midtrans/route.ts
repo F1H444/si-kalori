@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase-server";
+import { createAdminClient } from "@/lib/supabase-admin";
 import crypto from "crypto";
 
 export async function POST(request: Request) {
@@ -36,7 +36,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid Signature" }, { status: 403 });
     }
 
-    const supabase = await createClient();
+    // Use Admin Client to bypass RLS
+    const supabase = createAdminClient();
 
     // 2. Determine Success Status
     let isSuccess = false;

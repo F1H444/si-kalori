@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Midtrans from "midtrans-client";
-import { createClient } from "@/lib/supabase-server";
+import { createAdminClient } from "@/lib/supabase-admin";
 
 export async function POST(request: Request) {
   try {
@@ -69,8 +69,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Update Database Securely
-    const supabase = await createClient();
+    // 3. Update Database Securely (Bypass RLS)
+    const supabase = createAdminClient();
 
     // Update Transaction
     const { error: txError } = await supabase
