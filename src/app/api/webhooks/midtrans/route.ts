@@ -95,12 +95,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Database Error" }, { status: 500 });
     }
 
-    // 4. Update User Premium Status if Success
+    // 4. Update Premium Table if Success
     if (isSuccess) {
-      await supabase
-        .from("users")
-        .update({ is_premium: true })
-        .eq("id", transaction.user_id);
+      // Calculate expiration date (30 days from now)
+      const startDate = new Date();
+      const expiredAt = new Date(startDate);
+      expiredAt.setDate(startDate.getDate() + 30);
+
+      // Upsert into premium table
+      const { error: premiumError } = await supabase.from("premium").upsert(
+        {
+          user_id: transaction.user_id,
+          status: "active",
+          start_date: startDate.toISOString(),
+          expired_at: expiredAt.toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
+
+      if (premiumError) {
+        console.error("Failed to update premium table:", premiumError);
+        // We don't return 500 here to avoid Midtrans retrying if the main transaction status is already updated.
+        // But we log it for manual intervention if needed.
+      }
     }
 
     return NextResponse.json({ message: "OK" });

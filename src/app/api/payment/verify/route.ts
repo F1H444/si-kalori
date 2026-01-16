@@ -91,19 +91,30 @@ export async function POST(request: Request) {
       console.log(
         `[VERIFY] Updating Profile for User ID: ${transaction.user_id}`,
       );
-      const { error } = await supabase
-        .from("users")
-        .update({ is_premium: true })
-        .eq("id", transaction.user_id);
+
+      // Calculate expiration date (30 days from now)
+      const startDate = new Date();
+      const expiredAt = new Date(startDate);
+      expiredAt.setDate(startDate.getDate() + 30);
+
+      const { error } = await supabase.from("premium").upsert(
+        {
+          user_id: transaction.user_id,
+          status: "active",
+          start_date: startDate.toISOString(),
+          expired_at: expiredAt.toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
 
       if (error) {
-        console.error("[VERIFY] Profile Update Error", error);
+        console.error("[VERIFY] Premium Update Error", error);
         return NextResponse.json(
-          { error: "Failed to update profile" },
+          { error: "Failed to update premium table" },
           { status: 500 },
         );
       }
-      console.log("[VERIFY] Profile Updated Successfully");
+      console.log("[VERIFY] Premium Table Updated Successfully");
     } else {
       console.error("[VERIFY] Transaction record not found for retrieval");
     }
