@@ -35,6 +35,7 @@ import {
   ArrowDown,
   ArrowRight,
   Camera,
+  Settings,
 } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
 
