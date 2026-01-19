@@ -24,7 +24,9 @@
     "midtrans-client": "^1.4.3",
     "next": "^16.1.1",
     "react": "^19.2.3",
+    "react-confetti": "^6.4.0",
     "react-dom": "^19.2.3",
+    "react-use": "^17.6.0",
     "tailwind-merge": "^3.4.0",
     "xendit-node": "^7.0.0"
   },

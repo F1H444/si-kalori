@@ -5,6 +5,8 @@ import crypto from "crypto";
 export async function POST(request: Request) {
   try {
     const notificationJson = await request.json();
+    console.log("[WEBHOOK] Received notification:", JSON.stringify(notificationJson));
+
     const {
       order_id,
       status_code,
@@ -13,6 +15,8 @@ export async function POST(request: Request) {
       transaction_status,
       fraud_status,
     } = notificationJson;
+
+    console.log(`[WEBHOOK] Processing Order ID: ${order_id}`);
 
     // 1. Verify Signature Key
     // Formula: SHA512(order_id + status_code + gross_amount + ServerKey)
@@ -92,12 +96,14 @@ export async function POST(request: Request) {
       .eq("order_id", order_id);
 
     if (updateError) {
-      console.error("Failed to update transaction:", updateError);
+      console.error("[WEBHOOK] Failed to update transaction:", updateError);
       return NextResponse.json({ error: "Database Error" }, { status: 500 });
     }
+    console.log(`[WEBHOOK] Transaction updated to ${newStatus}`);
 
     // 4. Update Premium Table if Success
     if (isSuccess) {
+      console.log("[WEBHOOK] Status is success, updating premium table...");
       // Calculate expiration date (30 days from now)
       const startDate = new Date();
       const expiredAt = new Date(startDate);
@@ -115,9 +121,11 @@ export async function POST(request: Request) {
       );
 
       if (premiumError) {
-        console.error("Failed to update premium table:", premiumError);
+        console.error("[WEBHOOK] Failed to update premium table:", premiumError);
         // We don't return 500 here to avoid Midtrans retrying if the main transaction status is already updated.
         // But we log it for manual intervention if needed.
+      } else {
+        console.log("[WEBHOOK] Premium table updated successfully");
       }
     }
 

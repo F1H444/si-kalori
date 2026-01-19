@@ -70,6 +70,11 @@ export default function Login() {
 
         if (upsertError) throw upsertError;
 
+        // Set session flag to prevent Navbar from auto-logging out on first navigation
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("sikalori_session_active", "true");
+        }
+
         if (!profile?.daily_target) {
           router.replace("/onboarding");
         } else {

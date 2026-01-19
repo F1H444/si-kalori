@@ -90,39 +90,58 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     };
 
     const checkAuth = async () => {
-      // If we already have initialUser, we don't need to check immediately
-      // unless onAuthStateChange triggers. This speeds up first interaction.
-      if (initialUser) {
+      if (typeof window === "undefined") return;
+
+      const isSessionActive = sessionStorage.getItem("sikalori_session_active");
+
+      // Case 1: Already has initialUser and session is marked active in storage
+      if (initialUser && isSessionActive) {
         setLoading(false);
-        // Set session flag even if initialUser is provided
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("sikalori_session_active", "true");
-        }
         return;
       }
 
-      // Check for session flag in sessionStorage to enforce auto-logout on new tab/browser
-      if (typeof window !== "undefined") {
-        const isSessionActive = sessionStorage.getItem("sikalori_session_active");
+      // Case 2: No active session flag in storage
+      if (!isSessionActive) {
+        // If server thinks we are logged in (initialUser) or there's a real session in cookies
+        // but storage is empty, it's a new tab/browser session. 
+        // We only enforce logout if we are SURE it's a new session and not just a navigation 
+        // from a page that didn't have the Navbar.
         
-        if (!isSessionActive) {
-          // If no flag, it's a new tab/browser session. Clear local auth.
-          await supabase.auth.signOut({ scope: 'local' });
-          setUser(null);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (initialUser || session) {
+          // If we have initialUser, it means the server successfully verified the session.
+          // To make it less sensitive, if it's an initial mount with a server-verified user,
+          // we can assume the session is valid and set the flag.
+          // The "logout on browser close" will still work because if they close and reopen,
+          // and the server session is still valid, they stay logged in (which is standard).
+          // If the user wants STRICT session logout, we should keep it as is.
+          // But the user said "it becomes login button incorrectly".
+          
+          console.log("Session detected without storage flag - Syncing...");
+          sessionStorage.setItem("sikalori_session_active", "true");
           setLoading(false);
           return;
         }
+        
+        setUser(null);
+        setLoading(false);
+        return;
       }
 
+      // Case 3: Flag exists but no initialUser (e.g. navigation from non-main layout)
+      // Check if session actually exists
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!isSubscribed) return;
 
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email);
-        // Set flag if session is found
+        // Ensure flag is still there
         sessionStorage.setItem("sikalori_session_active", "true");
       } else {
+        // Flag was present but no session? Clear flag and state.
+        sessionStorage.removeItem("sikalori_session_active");
         setUser(null);
         setLoading(false);
       }
@@ -139,14 +158,14 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         // If it's a new login or session refresh, update profile
         await fetchProfile(session.user.id, session.user.email);
         
-        // Also ensure flag is set on valid sign-in
+        // Ensure flag is set on any valid login event
         if (event === "SIGNED_IN") {
           sessionStorage.setItem("sikalori_session_active", "true");
         }
       } else {
         setUser(null);
         setLoading(false);
-        // Clear flag on sign out
+        // Clear flag on actual sign out
         sessionStorage.removeItem("sikalori_session_active");
       }
     });

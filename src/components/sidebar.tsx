@@ -31,6 +31,22 @@ export default function Sidebar({
   const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // Synchronize session flag to prevent Navbar sensitivity during navigation
+  useState(() => {
+    if (typeof window !== "undefined") {
+      const checkAndSync = async () => {
+        const isSessionActive = sessionStorage.getItem("sikalori_session_active");
+        if (!isSessionActive) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            sessionStorage.setItem("sikalori_session_active", "true");
+          }
+        }
+      };
+      checkAndSync();
+    }
+  });
+
   // Hide sidebar on root admin page unless forced (for login screen clarity)
   if (pathname === "/admin" && !forceShow) {
     return null;
