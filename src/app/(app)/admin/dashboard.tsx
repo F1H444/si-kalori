@@ -54,6 +54,7 @@ interface UserData {
   created_at: string;
   last_login?: string | null;
   scan_count?: number;
+  premium_expired_at?: string | null;
 }
 
 interface AdminDashboardProps {
@@ -82,6 +83,48 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     showAnalytics: true,
   });
 
+  const togglePremium = async (userId: string, currentStatus: boolean) => {
+    try {
+      const newStatus = !currentStatus;
+      
+      // 1. Update users table
+      const { error: userError } = await supabase
+        .from("users")
+        .update({ is_premium: newStatus })
+        .eq("id", userId);
+
+      if (userError) throw userError;
+
+      // 2. Update/Insert premium table
+      if (newStatus) {
+        // Granting premium (30 days)
+        const startDate = new Date();
+        const expiredAt = new Date(startDate);
+        expiredAt.setDate(startDate.getDate() + 30);
+
+        await supabase.from("premium").upsert(
+          {
+            user_id: userId,
+            status: "active",
+            start_date: startDate.toISOString(),
+            expired_at: expiredAt.toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+      } else {
+        // Revoking premium
+        await supabase.from("premium").update({ status: "canceled" }).eq("user_id", userId);
+      }
+
+      // Refresh list
+      await fetchUsers();
+      console.log(`✅ Premium ${newStatus ? 'granted' : 'revoked'} for user ${userId}`);
+    } catch (err) {
+      console.error("Failed to toggle premium:", err);
+      alert("Gagal mengubah status premium.");
+    }
+  };
+
   const fetchUsers = useCallback(async () => {
     try {
       console.log("🔍 Fetching users from Supabase...");
@@ -99,12 +142,22 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
         throw profileError;
       }
 
+      // Fetch Premium Info to get expiration dates
+      const { data: premiumData } = await supabase
+        .from("premium")
+        .select("user_id, expired_at");
+
+      const enrichedProfiles = (profiles || []).map(p => ({
+        ...p,
+        premium_expired_at: premiumData?.find(pr => pr.user_id === p.id)?.expired_at || null
+      }));
+
       console.log(
-        "✅ Users fetched successfully:",
-        profiles?.length || 0,
+        "✅ Users enriched successfully:",
+        enrichedProfiles.length,
         "users",
       );
-      setUsers(profiles || []);
+      setUsers(enrichedProfiles);
 
       // Fetch Total Scans from food_logs & scan_logs (Robust Detection)
       setDetectingScans(true);
@@ -1074,6 +1127,12 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                             Total Scan
                           </div>
                         </th>
+                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Settings className="w-4 h-4" />
+                            Aksi
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1133,10 +1192,17 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                             {/* Status Premium */}
                             <td className="p-5">
                               {user.is_premium ? (
-                                <span className="inline-flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 border-3 border-black font-black text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                                  <Crown className="w-4 h-4" />
-                                  Premium
-                                </span>
+                                <div className="space-y-1">
+                                  <span className="inline-flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 border-3 border-black font-black text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                    <Crown className="w-4 h-4" />
+                                    Premium
+                                  </span>
+                                  {user.premium_expired_at && (
+                                    <p className="text-[10px] font-black text-red-500 uppercase mt-1">
+                                      Habis: {new Date(user.premium_expired_at).toLocaleDateString('id-ID')}
+                                    </p>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="inline-block bg-gray-200 text-gray-700 px-4 py-2 border-2 border-gray-400 font-bold text-sm">
                                   Free
@@ -1324,6 +1390,20 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                                   <Camera className="w-4 h-4" />0 scan
                                 </span>
                               )}
+                            </td>
+
+                            {/* Tombol Aksi */}
+                            <td className="p-5">
+                              <button
+                                onClick={() => togglePremium(user.id, user.is_premium || false)}
+                                className={`px-4 py-2 font-black text-xs uppercase border-3 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all whitespace-nowrap ${
+                                  user.is_premium 
+                                    ? "bg-red-50 text-red-600 hover:bg-red-100" 
+                                    : "bg-green-50 text-green-600 hover:bg-green-100"
+                                }`}
+                              >
+                                {user.is_premium ? "Cabut Premium" : "Beri Premium"}
+                              </button>
                             </td>
                           </tr>
                         ))

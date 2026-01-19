@@ -122,10 +122,20 @@ export async function POST(request: Request) {
 
       if (premiumError) {
         console.error("[WEBHOOK] Failed to update premium table:", premiumError);
-        // We don't return 500 here to avoid Midtrans retrying if the main transaction status is already updated.
-        // But we log it for manual intervention if needed.
       } else {
         console.log("[WEBHOOK] Premium table updated successfully");
+        
+        // SYNC: Also update is_premium flag in users table
+        const { error: userError } = await supabase
+          .from("users")
+          .update({ is_premium: true })
+          .eq("id", transaction.user_id);
+          
+        if (userError) {
+          console.error("[WEBHOOK] Failed to update is_premium in users table:", userError);
+        } else {
+          console.log("[WEBHOOK] Users table synced: is_premium = true");
+        }
       }
     }
 

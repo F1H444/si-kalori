@@ -10,6 +10,7 @@ import {
   User as UserIcon,
   Flame,
   Dumbbell,
+  Crown,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -64,6 +65,8 @@ interface UserProfile {
   gender: string;
   goal: string;
   activity_level: string;
+  is_premium?: boolean;
+  premium_expired_at?: string | null;
 }
 
 export default function UserDashboard() {
@@ -88,7 +91,18 @@ export default function UserDashboard() {
         console.error("Profile incomplete or error:", error);
         router.push("/onboarding");
       } else {
-        setProfile(data);
+        // Fetch premium expiration if is_premium
+        let premium_expired_at = null;
+        if (data.is_premium) {
+          const { data: premiumData } = await supabase
+            .from("premium")
+            .select("expired_at")
+            .eq("user_id", user.id)
+            .single();
+          premium_expired_at = premiumData?.expired_at || null;
+        }
+
+        setProfile({ ...data, premium_expired_at });
         // Update last_login activity
         await supabase
           .from("users")
@@ -218,6 +232,46 @@ export default function UserDashboard() {
                 <span className="text-xl italic ml-2 opacity-20">cm</span>
               </p>
             </motion.div>
+
+            {/* Premium Status Card */}
+            {profile?.is_premium ? (
+              <motion.div
+                variants={itemVariants}
+                className="flex-1 bg-yellow-400 border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-black flex items-center gap-2">
+                    <Crown size={14} /> Premium Aktif
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black tracking-tighter uppercase italic leading-none">
+                    ⭐ SEUMUR HIDUP
+                  </h3>
+                  {profile.premium_expired_at && (
+                    <p className="text-[10px] font-bold text-black/60 uppercase mt-2 tracking-widest">
+                      Berakhir: {new Date(profile.premium_expired_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                variants={itemVariants}
+                className="flex-1 bg-gray-100 border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                    <Crown size={14} /> Berlangganan
+                  </p>
+                </div>
+                <Link href="/premium">
+                  <button className="w-full py-2 bg-black text-white font-black text-xs uppercase tracking-tighter shadow-[4px_4px_0px_0px_rgba(250,204,21,1)]">
+                    Upgrade ke Premium
+                  </button>
+                </Link>
+              </motion.div>
+            )}
           </div>
         </motion.div>
 

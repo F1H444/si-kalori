@@ -69,10 +69,42 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         if (!isSubscribed) return;
 
         if (profile) {
+          let isPremium = profile.is_premium || false;
+
+          // --- LAZY EXPIRATION CHECK ---
+          if (isPremium) {
+            const { data: premiumInfo } = await supabase
+              .from("premium")
+              .select("expired_at")
+              .eq("user_id", userId)
+              .single();
+
+            if (premiumInfo?.expired_at) {
+              const expireDate = new Date(premiumInfo.expired_at);
+              const now = new Date();
+
+              if (now > expireDate) {
+                console.log("Premium expired! Revoking...");
+                isPremium = false;
+                // Update database
+                await supabase
+                  .from("users")
+                  .update({ is_premium: false })
+                  .eq("id", userId);
+                
+                // Also update status in premium table to expired
+                await supabase
+                  .from("premium")
+                  .update({ status: "expired" })
+                  .eq("user_id", userId);
+              }
+            }
+          }
+
           setUser({
             name: profile.full_name || email || "User",
             email: profile.email || email || "",
-            isPremium: profile.is_premium || false,
+            isPremium: isPremium,
           });
         } else {
           // If no profile found, still show name from auth

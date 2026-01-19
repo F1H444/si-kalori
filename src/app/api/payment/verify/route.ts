@@ -114,7 +114,20 @@ export async function POST(request: Request) {
           { status: 500 },
         );
       }
+      
       console.log("[VERIFY] Premium Table Updated Successfully");
+
+      // SYNC: Also update is_premium flag in users table
+      const { error: userUpdateError } = await supabase
+        .from("users")
+        .update({ is_premium: true })
+        .eq("id", transaction.user_id);
+
+      if (userUpdateError) {
+        console.error("[VERIFY] User Table Update Error", userUpdateError);
+      } else {
+        console.log("[VERIFY] Users table synced: is_premium = true");
+      }
     } else {
       console.error("[VERIFY] Transaction record not found for retrieval");
     }
