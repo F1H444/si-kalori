@@ -126,7 +126,7 @@ export async function POST(request: Request) {
       if (userUpdateError) {
         console.error("[VERIFY] User Table Update Error", userUpdateError);
       } else {
-        console.log("[VERIFY] Users table synced: is_premium = true");
+        console.log(`[VERIFY] SUCCESS: Premium status activated for User ID: ${transaction.user_id}`);
       }
     } else {
       console.error("[VERIFY] Transaction record not found for retrieval");

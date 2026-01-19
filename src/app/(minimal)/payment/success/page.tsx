@@ -1,28 +1,55 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, ArrowRight, ShieldCheck } from "lucide-react";
+import { Check, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Confetti from "react-confetti";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useWindowSize } from "react-use";
+import { useSearchParams, useRouter } from "next/navigation";
 
-export default function PaymentSuccessPage() {
+function SuccessContent() {
   const [showConfetti, setShowConfetti] = useState(true);
   const { width, height } = useWindowSize();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
+    const verifyPayment = async () => {
+      // Check if accessed normally after a payment
+      const orderId = searchParams.get("order_id") || searchParams.get("id");
+      if (!orderId) {
+        console.warn("Direct access to success page denied - No Order ID");
+        router.push("/dashboard");
+        return;
+      }
+
+      try {
+        console.log("Verifying payment for order:", orderId);
+        await fetch("/api/payment/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order_id: orderId }),
+        });
+      } catch (err) {
+        console.error("Verification error:", err);
+      } finally {
+        setVerifying(false);
+      }
+    };
+
+    verifyPayment();
+
     // Stop confetti after 5 seconds to not be annoying
     const timer = setTimeout(() => setShowConfetti(false), 5000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [searchParams, router]);
 
   return (
     <div className="min-h-screen bg-green-400 flex flex-col items-center justify-center p-4 font-mono overflow-hidden relative">
       {/* Confetti Celebration */}
       {showConfetti && <Confetti width={width} height={height} numberOfPieces={200} recycle={false} />}
-
-      {/* Background Pattern Removed as requested */}
 
       <motion.div
         initial={{ scale: 0.8, opacity: 0, rotate: -5 }}
@@ -56,8 +83,16 @@ export default function PaymentSuccessPage() {
           transition={{ delay: 0.5 }}
           className="text-lg font-bold uppercase mb-8 leading-relaxed"
         >
-          Selamat! Akun kamu sekarang sudah <span className="bg-black text-white px-2 py-1">PREMIUM</span>. 
-          Nikmati semua fitur tanpa batas sekarang juga.
+          {verifying ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="animate-spin" /> Sedang memverifikasi...
+            </span>
+          ) : (
+            <>
+              Selamat! Akun kamu sekarang sudah <span className="bg-black text-white px-2 py-1">PREMIUM</span>. 
+              Nikmati semua fitur tanpa batas sekarang juga.
+            </>
+          )}
         </motion.p>
 
         <div className="space-y-4">
@@ -84,8 +119,16 @@ export default function PaymentSuccessPage() {
       </motion.div>
 
       <div className="mt-12 text-center text-black font-bold uppercase tracking-widest text-sm opacity-60">
-        TRANSAKSI ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}
+        TRANSAKSI ID: {searchParams.get("order_id") || searchParams.get("id") || "N/A"}
       </div>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-green-400 flex items-center justify-center font-black text-white italic">MEMUAT...</div>}>
+      <SuccessContent />
+    </Suspense>
   );
 }

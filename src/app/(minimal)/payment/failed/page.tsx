@@ -3,13 +3,24 @@
 import { motion } from "framer-motion";
 import { X, RefreshCw, HelpCircle } from "lucide-react";
 import Link from "next/link";
+import { useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
-export default function PaymentFailedPage() {
+function FailedContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if accessed normally after a payment (Midtrans adds order_id or id)
+    const orderId = searchParams.get("order_id") || searchParams.get("id");
+    if (!orderId) {
+      console.warn("Direct access to failed page denied - No Order ID");
+      router.push("/premium");
+    }
+  }, [searchParams, router]);
+
   return (
     <div className="min-h-screen bg-red-500 flex flex-col items-center justify-center p-4 font-mono overflow-hidden relative">
-      
-      {/* Background Pattern Removed as requested */}
-
       <motion.div
         initial={{ scale: 0.8, opacity: 0, rotate: 5 }}
         animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -68,5 +79,13 @@ export default function PaymentFailedPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function PaymentFailedPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-red-500 flex items-center justify-center font-black text-white italic">MEMUAT...</div>}>
+      <FailedContent />
+    </Suspense>
   );
 }

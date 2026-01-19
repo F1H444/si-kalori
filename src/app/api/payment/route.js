@@ -92,6 +92,11 @@ export async function POST(request) {
     credit_card: {
       secure: true,
     },
+    callbacks: {
+      finish: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/payment/success`,
+      error: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/payment/failed`,
+      pending: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/payment/success`,
+    },
   };
 
   try {
