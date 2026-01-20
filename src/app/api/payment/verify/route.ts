@@ -7,24 +7,18 @@ export async function POST(request: Request) {
     const { order_id } = await request.json();
 
     if (!order_id) {
-      return NextResponse.json(
-        { error: "Order ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
     }
 
     // 1. Initialize Midtrans
     const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
-
-    // FORCE SANDBOX to match payment route (User has Prod-like keys in Sandbox)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
     const isProduction = false;
 
     console.log(`[VERIFY] Starting verification for Order: ${order_id}`);
-    console.log(
-      `[VERIFY] Using Key: ${serverKey.substring(0, 5)}... in Mode: ${isProduction ? "Production" : "Sandbox"}`,
-    );
+    console.log(`[VERIFY] ENV Check: URL=${supabaseUrl.slice(0, 15)}..., KeyPresent=${!!serviceKey}`);
 
-    // 2. Check Status Function
     const apiClient = new Midtrans.CoreApi({
       isProduction: isProduction,
       serverKey: serverKey,
@@ -33,38 +27,37 @@ export async function POST(request: Request) {
 
     let transactionStatus;
     try {
-      console.log(`[VERIFY] Calling Midtrans API...`);
+      console.log(`[VERIFY] Fetching status from Midtrans for: ${order_id}`);
       transactionStatus = await apiClient.transaction.status(order_id);
-      console.log(
-        `[VERIFY] Midtrans Response Status: ${transactionStatus.transaction_status}`,
-      );
+      console.log(`[VERIFY] Midtrans Raw Response:`, transactionStatus);
     } catch (midtransErr: any) {
       console.error("[VERIFY] Midtrans API Error:", midtransErr.message);
       return NextResponse.json(
-        { error: "Verification Failed with Payment Gateway" },
+        { error: "Gagal komunkasi dengan Midtrans", details: midtransErr.message },
         { status: 502 },
       );
     }
 
-    const verificationStatus = transactionStatus.transaction_status;
-    const fraudStatus = transactionStatus.fraud_status;
+    const verificationStatus = (transactionStatus.transaction_status || "").toLowerCase();
+    const fraudStatus = (transactionStatus.fraud_status || "").toLowerCase();
+
+    console.log(`[VERIFY] Status: ${verificationStatus}, Fraud: ${fraudStatus}`);
 
     let isSuccess = false;
-    if (verificationStatus == "capture") {
-      if (fraudStatus == "challenge") {
-        // deny
-      } else if (fraudStatus == "accept") {
+    if (verificationStatus === "capture") {
+      if (fraudStatus === "challenge") {
+        isSuccess = false; 
+      } else {
         isSuccess = true;
       }
-    } else if (verificationStatus == "settlement") {
+    } else if (verificationStatus === "settlement" || verificationStatus === "success") {
       isSuccess = true;
     }
 
-    console.log(`[VERIFY] Payment Success Determined: ${isSuccess}`);
-
     if (!isSuccess) {
+      console.warn(`[VERIFY] Payment NOT successful yet. Status: ${verificationStatus}`);
       return NextResponse.json(
-        { message: "Payment not settled yet", status: verificationStatus },
+        { message: "Pembayaran belum tuntas", status: verificationStatus },
         { status: 400 },
       );
     }
@@ -72,69 +65,62 @@ export async function POST(request: Request) {
     // 3. Update Database Securely (Bypass RLS)
     const supabase = createAdminClient();
 
-    // Update Transaction
-    const { error: txError } = await supabase
+    // Update Transaction and Get User ID atomically
+    console.log(`[VERIFY] Updating transaction record for: ${order_id}`);
+    const { data: txData, error: txError } = await supabase
       .from("transactions")
-      .update({ status: "success" })
-      .eq("order_id", order_id);
-
-    if (txError) console.error("[VERIFY] Transaction Update Error:", txError);
-
-    // Update Profile
-    const { data: transaction } = await supabase
-      .from("transactions")
-      .select("user_id")
+      .update({ 
+        status: "success",
+        payment_method: transactionStatus.payment_type || "midtrans"
+      })
       .eq("order_id", order_id)
+      .select("user_id")
       .single();
 
-    if (transaction?.user_id) {
-      console.log(
-        `[VERIFY] Updating Profile for User ID: ${transaction.user_id}`,
-      );
-
-      // Calculate expiration date (30 days from now)
-      const startDate = new Date();
-      const expiredAt = new Date(startDate);
-      expiredAt.setDate(startDate.getDate() + 30);
-
-      const { error } = await supabase.from("premium").upsert(
-        {
-          user_id: transaction.user_id,
-          status: "active",
-          start_date: startDate.toISOString(),
-          expired_at: expiredAt.toISOString(),
-        },
-        { onConflict: "user_id" },
-      );
-
-      if (error) {
-        console.error("[VERIFY] Premium Update Error", error);
-        return NextResponse.json(
-          { error: "Failed to update premium table" },
-          { status: 500 },
-        );
-      }
-      
-      console.log("[VERIFY] Premium Table Updated Successfully");
-
-      // SYNC: Also update is_premium flag in users table
-      const { error: userUpdateError } = await supabase
-        .from("users")
-        .update({ is_premium: true })
-        .eq("id", transaction.user_id);
-
-      if (userUpdateError) {
-        console.error("[VERIFY] User Table Update Error", userUpdateError);
-      } else {
-        console.log(`[VERIFY] SUCCESS: Premium status activated for User ID: ${transaction.user_id}`);
-      }
-    } else {
-      console.error("[VERIFY] Transaction record not found for retrieval");
+    if (txError || !txData) {
+      console.error("[VERIFY] DB Transaction Error:", txError);
+      return NextResponse.json({ error: "Data transaksi tidak ditemukan" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, message: "Premium activated" });
-  } catch (error: any) {
-    console.error("Verify Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const userId = txData.user_id;
+
+    // Update Premium Table
+    const startDate = new Date();
+    const expiredAt = new Date(startDate);
+    expiredAt.setDate(startDate.getDate() + 30);
+
+    console.log(`[VERIFY] Upserting premium record for User: ${userId}`);
+    const { error: premError } = await supabase.from("premium").upsert(
+      {
+        user_id: userId,
+        status: "active",
+        start_date: startDate.toISOString(),
+        expired_at: expiredAt.toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
+
+    if (premError) {
+      console.error("[VERIFY] DB Premium Error:", premError);
+      return NextResponse.json({ error: "Gagal memperbarui status premium" }, { status: 500 });
+    }
+    
+    // Sync User Flag
+    console.log(`[VERIFY] Syncing is_premium flag for User: ${userId}`);
+    const { error: userUpdateError } = await supabase
+      .from("users")
+      .update({ is_premium: true })
+      .eq("id", userId);
+
+    if (userUpdateError) {
+      console.error("[VERIFY] DB User Sync Error:", userUpdateError);
+    } else {
+      console.log(`[VERIFY] DONE: Premium activated for ${userId}`);
+    }
+
+    return NextResponse.json({ success: true, message: "Premium aktif!" });
+  } catch (err: any) {
+    console.error("[VERIFY] Critical Error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
