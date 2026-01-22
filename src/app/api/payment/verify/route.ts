@@ -138,9 +138,8 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ 
         error: "Gagal sinkronisasi data user", 
-        details: userUpdateError.message || JSON.stringify(userUpdateError),
+        details: `${userUpdateError.message}. Kolom tersedia: ${availableColumns.join(", ") || "tidak dapat membaca kolom"}`,
         code: userUpdateError.code,
-        available_columns: availableColumns, // Help me debug!
         debug_id: userId 
       }, { status: 500 });
     }
