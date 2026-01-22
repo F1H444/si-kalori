@@ -65,24 +65,37 @@ export async function POST(request: Request) {
     // 3. Update Database Securely (Bypass RLS)
     const supabase = createAdminClient();
 
-    // Update Transaction and Get User ID atomically
-    console.log(`[VERIFY] Updating transaction record for: ${order_id}`);
-    const { data: txData, error: txError } = await supabase
+    // Check current status first to avoid "already updated" edge cases
+    console.log(`[VERIFY] Checking current transaction status for: ${order_id}`);
+    const { data: currentTx, error: fetchError } = await supabase
       .from("transactions")
-      .update({ 
-        status: "success",
-        payment_method: transactionStatus.payment_type || "midtrans"
-      })
+      .select("user_id, status")
       .eq("order_id", order_id)
-      .select("user_id")
       .single();
 
-    if (txError || !txData) {
-      console.error("[VERIFY] DB Transaction Error:", txError);
-      return NextResponse.json({ error: "Data transaksi tidak ditemukan" }, { status: 404 });
+    if (fetchError || !currentTx) {
+      console.error("[VERIFY] Transaction Find Error:", fetchError);
+      return NextResponse.json({ error: "Data transaksi tidak ditemukan di database kami" }, { status: 404 });
     }
 
-    const userId = txData.user_id;
+    const userId = currentTx.user_id;
+    console.log(`[VERIFY] Database current status: ${currentTx.status} for User: ${userId}`);
+
+    // If already success, we can skip updates but still ensure premium just in case
+    if (currentTx.status !== "success") {
+      console.log(`[VERIFY] Updating transaction record to success...`);
+      const { error: txError } = await supabase
+        .from("transactions")
+        .update({ 
+          status: "success",
+          payment_method: transactionStatus.payment_type || "midtrans"
+        })
+        .eq("order_id", order_id);
+
+      if (txError) {
+        console.error("[VERIFY] DB Transaction Update Error:", txError);
+      }
+    }
 
     // Update Premium Table
     const startDate = new Date();
@@ -102,7 +115,7 @@ export async function POST(request: Request) {
 
     if (premError) {
       console.error("[VERIFY] DB Premium Error:", premError);
-      return NextResponse.json({ error: "Gagal memperbarui status premium" }, { status: 500 });
+      return NextResponse.json({ error: "Gagal memperbarui status premium di database" }, { status: 500 });
     }
     
     // Sync User Flag
@@ -114,13 +127,13 @@ export async function POST(request: Request) {
 
     if (userUpdateError) {
       console.error("[VERIFY] DB User Sync Error:", userUpdateError);
-    } else {
-      console.log(`[VERIFY] DONE: Premium activated for ${userId}`);
+      return NextResponse.json({ error: "Gagal sinkronisasi data user" }, { status: 500 });
     }
 
+    console.log(`[VERIFY] DONE: Premium activated successfully for ${userId}`);
     return NextResponse.json({ success: true, message: "Premium aktif!" });
   } catch (err: any) {
     console.error("[VERIFY] Critical Error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: `System Error: ${err.message}` }, { status: 500 });
   }
 }
