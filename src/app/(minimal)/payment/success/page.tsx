@@ -44,7 +44,7 @@ function SuccessContent() {
       } else {
         console.error("Verification failed:", data.error);
         setStatus("error");
-        setErrorMessage(data.error || "Gagal memverifikasi pembayaran.");
+        setErrorMessage(data.details ? `${data.error} (${data.details})` : (data.error || "Gagal memverifikasi pembayaran."));
       }
     } catch (err: any) {
       console.error("Verification error:", err);

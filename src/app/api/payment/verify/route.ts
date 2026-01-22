@@ -120,14 +120,32 @@ export async function POST(request: Request) {
     
     // Sync User Flag
     console.log(`[VERIFY] Syncing is_premium flag for User: ${userId}`);
-    const { error: userUpdateError } = await supabase
+    const { error: userUpdateError, count } = await supabase
       .from("users")
       .update({ is_premium: true })
-      .eq("id", userId);
+      .eq("id", userId)
+      .select("id"); // Select to see if anything happened
 
     if (userUpdateError) {
-      console.error("[VERIFY] DB User Sync Error:", userUpdateError);
-      return NextResponse.json({ error: "Gagal sinkronisasi data user" }, { status: 500 });
+      console.error("[VERIFY] DB User Sync Error Details:", JSON.stringify(userUpdateError));
+      return NextResponse.json({ 
+        error: "Gagal sinkronisasi data user", 
+        details: userUpdateError.message || JSON.stringify(userUpdateError),
+        code: userUpdateError.code,
+        debug_id: userId 
+      }, { status: 500 });
+    }
+
+    console.log(`[VERIFY] Rows updated: ${count ?? "unknown"}`);
+    if (!count && count !== null) {
+        console.warn(`[VERIFY] No user record found for ${userId}. Creating skeleton profile.`);
+        // Fallback: If user profile doesn't exist yet, we must create it so dashboard doesn't break
+        await supabase.from("users").insert({ 
+            id: userId, 
+            is_premium: true,
+            full_name: "Premium User",
+            daily_target: 2000 // Default fallback
+        });
     }
 
     console.log(`[VERIFY] DONE: Premium activated successfully for ${userId}`);
