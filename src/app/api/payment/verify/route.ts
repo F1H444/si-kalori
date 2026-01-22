@@ -120,23 +120,32 @@ export async function POST(request: Request) {
     
     // Sync User Flag
     console.log(`[VERIFY] Syncing is_premium flag for User: ${userId}`);
+    
+    // First, try a simple update
     const { error: userUpdateError, count } = await supabase
       .from("users")
       .update({ is_premium: true })
       .eq("id", userId)
-      .select("id"); // Select to see if anything happened
+      .select("id");
 
     if (userUpdateError) {
       console.error("[VERIFY] DB User Sync Error Details:", JSON.stringify(userUpdateError));
+      
+      // DIAGNOSTIC: Try to see what columns ARE there
+      const { data: sampleUser } = await supabase.from("users").select("*").limit(1).single();
+      const availableColumns = sampleUser ? Object.keys(sampleUser) : [];
+      console.log("[VERIFY] Available columns in 'users' table:", availableColumns);
+
       return NextResponse.json({ 
         error: "Gagal sinkronisasi data user", 
         details: userUpdateError.message || JSON.stringify(userUpdateError),
         code: userUpdateError.code,
+        available_columns: availableColumns, // Help me debug!
         debug_id: userId 
       }, { status: 500 });
     }
 
-    console.log(`[VERIFY] Rows updated: ${count ?? "unknown"}`);
+    console.log(`[VERIFY] Rows updated in 'users': ${count ?? "unknown"}`);
     if (!count && count !== null) {
         console.warn(`[VERIFY] No user record found for ${userId}. Creating skeleton profile.`);
         // Fallback: If user profile doesn't exist yet, we must create it so dashboard doesn't break
