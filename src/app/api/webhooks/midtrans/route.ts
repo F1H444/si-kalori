@@ -71,8 +71,16 @@ export async function POST(request: Request) {
         expired_at: expiredAt.toISOString(),
       }, { onConflict: "user_id" });
 
-      await supabase.from("users").update({ is_premium: true }).eq("id", userId);
-      console.log(`[WEBHOOK] PREMIUM ACTIVATED for ${userId}`);
+      // Robust check for is_premium column before update
+      const { data: sampleUser } = await supabase.from("users").select("*").limit(1).single();
+      const availableColumns = sampleUser ? Object.keys(sampleUser) : [];
+      
+      if (availableColumns.includes("is_premium")) {
+        await supabase.from("users").update({ is_premium: true }).eq("id", userId);
+        console.log(`[WEBHOOK] PREMIUM ACTIVATED for ${userId}`);
+      } else {
+        console.warn(`[WEBHOOK] Skipping is_premium update for ${userId} because column is missing.`);
+      }
     }
 
     return NextResponse.json({ message: "OK" });

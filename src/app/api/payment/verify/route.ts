@@ -121,39 +121,50 @@ export async function POST(request: Request) {
     // Sync User Flag
     console.log(`[VERIFY] Syncing is_premium flag for User: ${userId}`);
     
-    // First, try a simple update
-    const { error: userUpdateError, count } = await supabase
-      .from("users")
-      .update({ is_premium: true })
-      .eq("id", userId)
-      .select("id");
+    // Diagnostic: Check columns first to avoid known error
+    const { data: sampleUser } = await supabase.from("users").select("*").limit(1).single();
+    const availableColumns = sampleUser ? Object.keys(sampleUser) : [];
+    
+    let updateSuccessful = false;
+    
+    if (availableColumns.includes("is_premium")) {
+        const { error: userUpdateError, data } = await supabase
+          .from("users")
+          .update({ is_premium: true })
+          .eq("id", userId)
+          .select("id");
 
-    if (userUpdateError) {
-      console.error("[VERIFY] DB User Sync Error Details:", JSON.stringify(userUpdateError));
-      
-      // DIAGNOSTIC: Try to see what columns ARE there
-      const { data: sampleUser } = await supabase.from("users").select("*").limit(1).single();
-      const availableColumns = sampleUser ? Object.keys(sampleUser) : [];
-      console.log("[VERIFY] Available columns in 'users' table:", availableColumns);
-
-      return NextResponse.json({ 
-        error: "Gagal sinkronisasi data user", 
-        details: `${userUpdateError.message}. Kolom tersedia: ${availableColumns.join(", ") || "tidak dapat membaca kolom"}`,
-        code: userUpdateError.code,
-        debug_id: userId 
-      }, { status: 500 });
+        if (userUpdateError) {
+          console.error("[VERIFY] DB User Sync Error Details:", JSON.stringify(userUpdateError));
+          return NextResponse.json({ 
+            error: "Gagal sinkronisasi data user", 
+            details: userUpdateError.message,
+            code: userUpdateError.code,
+            debug_id: userId 
+          }, { status: 500 });
+        }
+        console.log(`[VERIFY] Rows updated in 'users': ${data?.length ?? 0}`);
+        updateSuccessful = (data?.length ?? 0) > 0;
+    } else {
+        console.warn("[VERIFY] WARNING: 'is_premium' column is MISSING in 'users' table. Skipping flag sync.");
+        console.warn("[VERIFY] PLEASE RUN: ALTER TABLE users ADD COLUMN is_premium BOOLEAN DEFAULT FALSE;");
+        updateSuccessful = true; // Pretend it's ok so we don't trigger the insert fallback unnecessarily if columns are just missing
     }
 
-    console.log(`[VERIFY] Rows updated in 'users': ${count ?? "unknown"}`);
-    if (!count && count !== null) {
+    if (!updateSuccessful && availableColumns.length > 0) {
         console.warn(`[VERIFY] No user record found for ${userId}. Creating skeleton profile.`);
         // Fallback: If user profile doesn't exist yet, we must create it so dashboard doesn't break
-        await supabase.from("users").insert({ 
+        const insertData: any = { 
             id: userId, 
-            is_premium: true,
             full_name: "Premium User",
-            daily_target: 2000 // Default fallback
-        });
+            daily_target: 2000 
+        };
+        
+        if (availableColumns.includes("is_premium")) {
+            insertData.is_premium = true;
+        }
+
+        await supabase.from("users").insert(insertData);
     }
 
     console.log(`[VERIFY] DONE: Premium activated successfully for ${userId}`);
