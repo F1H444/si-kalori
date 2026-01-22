@@ -128,29 +128,37 @@ export async function POST(req: NextRequest) {
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
-      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      model: "llama-3.2-11b-vision-preview",
       temperature: 0.5,
       max_tokens: 1024,
       top_p: 1,
       stream: false,
       response_format: { type: "json_object" },
     });
-
+ 
     const resultContent = completion.choices[0]?.message?.content;
-
+ 
     if (!resultContent) {
       throw new Error("No response from AI");
     }
-
+ 
     const jsonResult = JSON.parse(resultContent);
 
+    // --- VALIDATION: IS IT FOOD? ---
+    if (jsonResult.is_food === false) {
+      return NextResponse.json(
+        { 
+          error: "NOT_FOOD", 
+          message: jsonResult.description || "Wah, sepertinya ini bukan makanan atau minuman deh. Coba scan yang lain ya!",
+          name: jsonResult.name
+        }, 
+        { status: 400 }
+      );
+    }
+ 
     // --- SAVE TO SCAN LOGS ---
     if (userEmail && userProfile) {
       try {
-        // We need the profile ID to save the log.
-        // Since userProfile from getProfileByEmail doesn't have ID,
-        // we fetch it quickly here or update getProfileByEmail.
-        // For safety, let's use the supabase client directly to get the ID.
         const { data: profileData } = await (
           await import("@/lib/supabase")
         ).supabase
@@ -158,7 +166,7 @@ export async function POST(req: NextRequest) {
           .select("id")
           .eq("email", userEmail)
           .single();
-
+ 
         if (profileData) {
           await (await import("@/lib/supabase")).supabase
             .from("food_logs")

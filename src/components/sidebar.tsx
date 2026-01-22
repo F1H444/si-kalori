@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Sidebar({
   forceShow = false,
@@ -30,22 +30,37 @@ export default function Sidebar({
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
 
-  // Synchronize session flag to prevent Navbar sensitivity during navigation
-  useState(() => {
-    if (typeof window !== "undefined") {
-      const checkAndSync = async () => {
-        const isSessionActive = sessionStorage.getItem("sikalori_session_active");
-        if (!isSessionActive) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            sessionStorage.setItem("sikalori_session_active", "true");
-          }
-        }
-      };
-      checkAndSync();
-    }
-  });
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("is_premium")
+          .eq("id", session.user.id)
+          .single();
+        if (profile) setIsPremium(!!profile.is_premium);
+      }
+    };
+    checkUser();
+ 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("is_premium")
+          .eq("id", session.user.id)
+          .single();
+        if (profile) setIsPremium(!!profile.is_premium);
+      } else {
+        setIsPremium(false);
+      }
+    });
+ 
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Hide sidebar on root admin page unless forced (for login screen clarity)
   if (pathname === "/admin" && !forceShow) {
@@ -116,8 +131,13 @@ export default function Sidebar({
               <h2 className="font-black text-xl tracking-tighter uppercase leading-none">
                 SIKALORI
               </h2>
-              <p className="text-yellow-400 text-[10px] font-black uppercase tracking-widest mt-1">
+              <p className="text-yellow-400 text-[10px] font-black uppercase tracking-widest mt-1 flex items-center gap-2">
                 {isAdmin ? "Admin" : "Pengguna"}
+                {isPremium && !isAdmin && (
+                  <span className="bg-green-500 text-white px-1.5 py-0.5 rounded-sm text-[8px] animate-pulse">
+                    PREMIUM
+                  </span>
+                )}
               </p>
             </div>
           </div>

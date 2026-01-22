@@ -234,6 +234,13 @@ export default function ScanPage() {
                     }
                     throw new Error("Kuota harian habis.");
                 }
+
+                if (response.status === 400 && data.error === "NOT_FOOD") {
+                    alert(`${data.message}`);
+                    setMode("select");
+                    return;
+                }
+
                 throw new Error(data.error || "Gagal menganalisis makanan atau minuman kamu.");
             }
 

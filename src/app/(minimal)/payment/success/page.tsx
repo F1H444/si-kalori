@@ -7,6 +7,7 @@ import Confetti from "react-confetti";
 import { useEffect, useState, Suspense } from "react";
 import { useWindowSize } from "react-use";
 import { useSearchParams, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 function SuccessContent() {
   const [showConfetti, setShowConfetti] = useState(true);
@@ -27,11 +28,17 @@ function SuccessContent() {
 
       try {
         console.log("Verifying payment for order:", orderId);
-        await fetch("/api/payment/verify", {
+        const res = await fetch("/api/payment/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ order_id: orderId }),
         });
+ 
+        if (res.ok) {
+          console.log("Payment confirmed. Refreshing session...");
+          // Force a session refresh to update is_premium everywhere
+          await supabase.auth.refreshSession();
+        }
       } catch (err) {
         console.error("Verification error:", err);
       } finally {

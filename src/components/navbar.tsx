@@ -362,21 +362,24 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                               />
 
                               {/* Tombol Premium Brutal */}
-                              <Link
-                                href="/premium"
-                                className={`flex items-center justify-between p-4 border-4 border-black rounded-2xl font-black text-sm uppercase shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all mt-6 ${
-                                  user.isPremium
-                                    ? "bg-green-400 text-black border-green-600"
-                                    : "bg-yellow-400 text-black"
-                                }`}
-                              >
-                                <span className="flex items-center gap-2">
-                                  <Crown size={18} strokeWidth={3} />
-                                  {user.isPremium
-                                    ? "Premium Aktif"
-                                    : "Upgrade"}
-                                </span>
-                              </Link>
+                              {user.isPremium ? (
+                                <div className="flex items-center justify-between p-4 border-4 border-black rounded-2xl font-black text-sm uppercase bg-green-400 text-black border-green-600 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] mt-6">
+                                  <span className="flex items-center gap-2">
+                                    <Crown size={18} strokeWidth={3} />
+                                    Premium Aktif
+                                  </span>
+                                </div>
+                              ) : (
+                                <Link
+                                  href="/premium"
+                                  className="flex items-center justify-between p-4 border-4 border-black rounded-2xl font-black text-sm uppercase shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all mt-6 bg-yellow-400 text-black"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <Crown size={18} strokeWidth={3} />
+                                    Upgrade
+                                  </span>
+                                </Link>
+                              )}
 
                               {/* Logout dengan gaya elegan tapi brutal */}
                               <button
