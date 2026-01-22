@@ -36,16 +36,20 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const url = request.nextUrl.clone();
   
+  // IMPORTANT: Avoid writing any logic between createServerClient and
+  // supabase.auth.getUser().
+  // EXCEPT: If we are on the recovery page with a code, skip getUser to avoid consuming the code 
+  // before the client-side logic can handle it for the special recovery flow.
+  const isRecoveryWithCode = url.pathname === '/update-password' && url.searchParams.has('code');
+  
+  let user = null;
+  if (!isRecoveryWithCode) {
+    const { data: { user: foundUser } } = await supabase.auth.getUser();
+    user = foundUser;
+  }
+
   // Protected Routes
   const protectedRoutes = ['/dashboard', '/scan', '/history', '/settings'];
   const isProtectedRoute = protectedRoutes.some(route => url.pathname.startsWith(route));

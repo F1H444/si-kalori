@@ -21,7 +21,8 @@ export const supabase = createBrowserClient(
   {
   auth: {
     persistSession: true,
-    storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
   },
   cookieOptions: {
     // Omitting maxAge or setting it to undefined makes it a session cookie

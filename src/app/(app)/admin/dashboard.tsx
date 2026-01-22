@@ -65,7 +65,7 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
   const [users, setUsers] = useState<UserData[]>([]);
   const [totalScans, setTotalScans] = useState(0);
-  const [detectingScans, setDetectingScans] = useState(false);
+  const [detectingScans, setDetectingScans] = useState(fals e);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
