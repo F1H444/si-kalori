@@ -148,67 +148,38 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     const loadTimeout = setTimeout(() => {
       console.warn("⚠️ Data fetching taking too long, forcing loading to false...");
       if (!isSilent) setLoading(false);
-    }, 5000);
+    }, 10000);
 
     try {
-      console.log(`🔍 [AdminDashboard] Starting ${isSilent ? 'SILENT ' : ''}parallel fetch sequence...`);
+      console.log(`🔍 [AdminDashboard] Fetching data via Secure API...`);
       if (!isSilent) setLoading(true);
 
-      const [adminResponse, profileResponse, premiumResponse] = await Promise.all([
-        // 0. Fetch Admin IDs
-        supabase.from("admins").select("user_id"),
-        
-        // 1. Fetch Profiles
-        supabase.from("users").select("*").order("created_at", { ascending: false }),
-        
-        // 2. Fetch Premium Info (Try subscription table first)
-        supabase.from("premium_subscriptions").select("user_id, expired_at, status"),
-      ]);
-
-      // 3. Fetch Total Scans (Non-blocking count - fetch in background)
-      supabase.from("food_logs").select("*", { count: "exact", head: true }).then(res => {
-        if (!res.error && res.count !== null) {
-          setTotalScans(res.count);
-          console.log("📊 [AdminDashboard] Total scans (background):", res.count);
-        } else {
-          // Fallback if food_logs count fails
-          supabase.from("scan_logs").select("*", { count: "exact", head: true }).then(sr => {
-            if (sr.count !== null) setTotalScans(sr.count);
-          });
-        }
-      });
-
-      // --- PROCESS RESULTS ---
-      const adminIds = (adminResponse.data || []).map(a => a.user_id);
+      const response = await fetch("/api/admin/users");
+      if (!response.ok) throw new Error("Gagal mengambil data dari API");
       
-      if (profileResponse.error) throw profileResponse.error;
-      const profiles = profileResponse.data || [];
-
-      // Filter out admins from the profiles list
-      const filteredProfiles = profiles.filter(p => !adminIds.includes(p.id));
-      console.log("✅ [AdminDashboard] Profiles fetched:", filteredProfiles.length);
-
-      // Handle Premium Data fallback if needed
-      let premiumData = premiumResponse.data || [];
-      if (premiumResponse.error) {
-        console.warn("⚠️ Premium Subscriptions table error, trying legacy...");
-        const { data: legacyData } = await supabase.from("premium").select("user_id, expired_at, status");
-        if (legacyData) premiumData = legacyData;
-      }
-
-      const availableColumns = filteredProfiles.length > 0 ? Object.keys(filteredProfiles[0]) : [];
+      const data = await response.json();
       
-      // OPTIMIZATION: Use Map for O(1) lookups instead of .find() in a loop (O(N+M))
-      const premiumMap = new Map();
-      premiumData?.forEach(pr => premiumMap.set(pr.user_id, pr));
+      const adminIds = (data.admins || []).map((a: any) => a.user_id);
+      const profiles = data.users || [];
+      const premiumData = data.premium || [];
+      
+      setTotalScans(data.totalScans || 0);
 
-      const enrichedProfiles = filteredProfiles.map(p => {
-        const premInfo = premiumMap.get(p.id);
+      // Filter out admins if you want, or show all. 
+      // User said "mengambil data dari users", let's keep the filter if it was intended, 
+      // but usually admins want to see everyone including themselves.
+      // For now, let's show DEVELOPER current state: 
+      const filteredProfiles = profiles.filter((p: any) => !adminIds.includes(p.id));
+      
+      console.log("✅ [AdminDashboard] Data received. Users count:", filteredProfiles.length);
+
+      const enrichedProfiles = filteredProfiles.map((p: any) => {
+        const premInfo = premiumData.find((pr: any) => pr.user_id === p.id);
         const isPremiumActive = premInfo?.status === "active" && new Date(premInfo.expired_at) > new Date();
         
         return {
           ...p,
-          is_premium: isPremiumActive || (availableColumns.includes("is_premium") && p.is_premium),
+          is_premium: isPremiumActive || p.is_premium,
           premium_expired_at: premInfo?.expired_at || null
         };
       });
@@ -284,28 +255,18 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
 
   const stats = useMemo(() => {
     const totalUsers = users.length;
-    const activeToday = users.filter((u) => {
-      if (!u.last_login) return false;
-      const lastLogin = new Date(u.last_login);
-      const today = new Date();
-      return (
-        lastLogin.getDate() === today.getDate() &&
-        lastLogin.getMonth() === today.getMonth() &&
-        lastLogin.getFullYear() === today.getFullYear()
-      );
-    }).length;
     const premiumUsers = users.filter((u) => u.is_premium).length;
     const estimatedRevenue = premiumUsers * 16000;
 
     console.log("📊 Stats calculated:", {
       totalUsers,
-      activeToday,
       premiumUsers,
       estimatedRevenue,
+      totalScans
     });
 
-    return { totalUsers, activeToday, premiumUsers, estimatedRevenue };
-  }, [users]);
+    return { totalUsers, premiumUsers, estimatedRevenue };
+  }, [users, totalScans]);
 
   const demographics = useMemo(() => {
     const goals = { lose: 0, maintain: 0, gain: 0, other: 0 };
@@ -744,7 +705,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
           {/* Overview Tab */}
           {activeTab === "overview" && (
             <div className="space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                   title="Total Pengguna"
                   value={stats.totalUsers}
@@ -752,14 +713,6 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                   delay={0}
                   mounted={mounted}
                   icon={<Users className="w-8 h-8" />}
-                />
-                <StatCard
-                  title="Aktif Hari Ini"
-                  value={stats.activeToday}
-                  color="bg-[#FFC700]"
-                  delay={100}
-                  mounted={mounted}
-                  icon={<UserCheck className="w-8 h-8" />}
                 />
                 <StatCard
                   title="Total Scan Makanan"
@@ -1196,7 +1149,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                      <h3 className="text-xl font-black uppercase mb-6 border-b-4 border-black pb-2 italic">User Adoption</h3>
                      <div className="space-y-6">
                         <DistributionBar label="New Signups" value={growthData[5].value} total={users.length} color="bg-yellow-400" />
-                        <DistributionBar label="Returning" value={stats.activeToday} total={users.length} color="bg-green-500" />
+                        <DistributionBar label="Returning (Last Login)" value={users.filter(u => u.last_login).length} total={users.length} color="bg-green-500" />
                      </div>
                   </div>
                   <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">

@@ -41,12 +41,15 @@ export async function POST(request) {
   // SB- means Sandbox, Mid-server- means Production
   const isProduction = !serverKey.startsWith('SB-');
   
-  console.log(`🚀 [Payment] Initializing Midtrans Snap in ${isProduction ? 'PROD' : 'SANDBOX'} mode`);
-  
+  console.log(`🚀 [Payment] Initializing Midtrans Snap...`);
+  console.log(`📡 [Payment] Mode: ${isProduction ? 'PRODUCTION' : 'SANDBOX'}`);
+  console.log(`🔑 [Payment] Server Key Prefix: ${serverKey.substring(0, 10)}...`);
+
   const snap = new Midtrans.Snap({
     isProduction: isProduction,
     serverKey: serverKey,
-    clientKey: clientKey
+    // Note: clientKey is optional in some versions but good to have
+    clientKey: clientKey 
   });
 
   const orderId = `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
