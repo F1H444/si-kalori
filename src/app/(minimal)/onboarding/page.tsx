@@ -123,11 +123,11 @@ export default function Onboarding() {
       // Check if user already finished onboarding
       const { data: profile } = await supabase
         .from("users")
-        .select("daily_target")
+        .select("has_completed_onboarding")
         .eq("id", user.id)
         .single();
 
-      if (profile?.daily_target) {
+      if (profile?.has_completed_onboarding) {
         router.replace("/dashboard");
         return;
       }
@@ -151,8 +151,11 @@ export default function Onboarding() {
   // Loading Screen to prevent flashing
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center">
+        <div className="relative mb-6">
+          <div className="w-16 h-16 border-8 border-white/10 border-t-primary rounded-full animate-spin"></div>
+        </div>
+        <p className="text-white/40 font-black uppercase text-[10px] tracking-[0.4em]">Menyiapkan Sesi...</p>
       </div>
     );
   }
@@ -184,20 +187,28 @@ export default function Onboarding() {
 
       const dailyTargetValue = metrics.recommendedCalories;
 
-      // Kirim ke tabel profiles
-      const { error } = await supabase.from("users").upsert([
-        {
-          id: user.id, // uuid
-          full_name: user.user_metadata.full_name || "User", // text
-          gender: formData.gender, // text
-          age: formData.age, // int4
-          weight: formData.weight, // int4
-          height: formData.height, // int4
-          activity_level: formData.activityLevel, // text
-          goal: formData.goal, // text
-          daily_target: dailyTargetValue, // int4 (Pastikan kolom ini ada di Supabase!)
-        },
-      ]);
+      // Kirim ke tabel users (Update Schema Baru)
+      const { error } = await supabase.from("users").upsert({
+        id: user.id,
+        full_name: user.user_metadata.full_name || "User Baru",
+        email: user.email,
+        
+        // Data Biologis
+        gender: formData.gender,
+        age: formData.age,
+        weight: formData.weight,
+        height: formData.height,
+        
+        // Target & Preferensi
+        activity_level: formData.activityLevel, // Mapping camelCase -> snake_case
+        goal: formData.goal,
+        target_weight: formData.targetWeight,
+        diet_preference: formData.dietPreference,
+        
+        // System
+        daily_calorie_target: dailyTargetValue,
+        has_completed_onboarding: true,
+      });
 
       if (error) throw error;
 
@@ -224,7 +235,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black font-mono flex flex-col">
+    <div className="min-h-screen bg-blue-50 text-black font-mono flex flex-col">
       {/* Progress Bar Atas */}
       <div className="fixed top-0 left-0 w-full h-2 bg-gray-100 z-50">
         <motion.div
@@ -432,7 +443,7 @@ export default function Onboarding() {
                 className="space-y-8 text-center"
               >
                 <motion.div variants={itemVariants}>
-                  <Sparkles className="mx-auto w-16 h-16 text-[#FFDE59]" />
+                  <Sparkles className="mx-auto w-16 h-16 text-yellow-400" />
                 </motion.div>
                 <motion.h2
                   variants={itemVariants}

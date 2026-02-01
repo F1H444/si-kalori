@@ -46,7 +46,7 @@ export default function FaqSection() {
   if (!mounted) return null;
 
   return (
-    <div className="relative bg-white z-0 px-4 sm:px-6 py-16 sm:py-24 lg:py-32 overflow-hidden pt-32">
+    <div className="relative bg-zinc-50 z-0 px-4 sm:px-6 py-16 sm:py-24 lg:py-32 overflow-hidden pt-32">
       <motion.div
         className="relative z-10 max-w-3xl mx-auto"
         initial={{ opacity: 0 }}
@@ -111,7 +111,7 @@ export default function FaqSection() {
                     {/* Brutalist Button Indicator */}
                     <div
                       className={`w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 flex items-center justify-center border-4 border-black transition-all duration-300
-                        ${isOpen ? "bg-red-500 rotate-180" : "bg-black group-hover:bg-[#A076FF]"}`}
+                        ${isOpen ? "bg-red-500 rotate-180" : "bg-black group-hover:bg-yellow-400"}`}
                     >
                       {isOpen ? (
                         <Minus className="w-6 h-6 text-white" strokeWidth={4} />

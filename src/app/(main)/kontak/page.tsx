@@ -5,6 +5,7 @@ import { motion, Variants } from "framer-motion";
 import emailjs from "@emailjs/browser";
 import { useLoading } from "@/context/LoadingContext";
 import { TextScramble } from "@/components/ui/text-scramble";
+import { Mail, MessageCircle, Send, Sparkles, MapPin } from "lucide-react";
 
 export default function ContactPage() {
   const { isLoading: globalLoading } = useLoading();
@@ -47,8 +48,8 @@ export default function ContactPage() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.12,
-        delayChildren: 0.1,
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
       },
     },
   };
@@ -61,139 +62,138 @@ export default function ContactPage() {
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 12,
+        damping: 15,
       },
     },
   };
 
   return (
-    /* PERUBAHAN DI SINI:
-           - pt-32 (mobile) dan md:pt-48 (desktop) memberikan ruang yang sangat cukup untuk Navbar.
-           - min-h-screen memastikan halaman minimal setinggi layar.
-        */
-    <section className="min-h-screen bg-white text-black font-mono selection:bg-black selection:text-white pt-32 pb-20 md:pt-48 md:pb-32">
+    <section className="min-h-screen bg-white text-black pt-32 pb-20 md:pt-48 md:pb-32 px-4 sm:px-6 lg:px-20 overflow-hidden relative">
+      
+      {/* Decorative Blob (optional since the user wants it 'interesting') */}
+      <div className="absolute top-[10%] right-[-5%] w-[400px] h-[400px] bg-green-500/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[20%] left-[-5%] w-[300px] h-[300px] bg-yellow-400/10 rounded-full blur-[80px] pointer-events-none" />
+
       <motion.div
+        variants={containerVariants}
         initial="hidden"
         animate={!globalLoading ? "visible" : "hidden"}
-        viewport={{ once: true }}
-        variants={containerVariants}
-        className="w-full max-w-4xl mx-auto px-4 md:px-8 relative z-10"
+        className="max-w-7xl mx-auto relative z-10"
       >
-        {/* Header Section */}
-        <motion.header
-          variants={itemVariants}
-          className="mb-12 md:mb-16 text-center"
-        >
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="inline-block border-4 border-black bg-white p-4 md:p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[10px_10px_0px_0px_rgba(250,204,21,1)] transition-all duration-300 relative overflow-hidden group"
-          >
-            <motion.div 
-              initial={{ scaleX: 0 }}
-              animate={!globalLoading ? { scaleX: 1 } : {}}
-              transition={{ delay: 0.6, duration: 0.8, ease: "circOut" }}
-              className="absolute inset-0 bg-yellow-400 -z-10 origin-left"
-            />
-            <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none relative z-10">
-              <TextScramble text="Kontak" delay={0.1} /> <br className="md:hidden" />
-              <span className="inline-block md:ml-4 group-hover:text-white transition-colors">Kami</span>
-            </h1>
-          </motion.div>
-          <motion.p
-            variants={itemVariants}
-            className="mt-8 text-lg md:text-xl font-bold text-gray-700 max-w-md mx-auto leading-relaxed"
-          >
-            Punya pertanyaan atau saran? Kirim pesan dan kami akan membalas
-            secepatnya.
-          </motion.p>
-        </motion.header>
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-start">
+          
+          {/* LEFT COLUMN: Info & Message */}
+          <div className="space-y-10">
+            <motion.div variants={itemVariants} className="space-y-6">
+                <div className="inline-block bg-black text-white px-4 py-1 font-black text-xs uppercase tracking-widest border-2 border-black shadow-[4px_4px_0px_0px_rgba(34,197,94,1)]">
+                    Mari Ngobrol
+                </div>
+                <h1 className="text-5xl sm:text-7xl lg:text-[7rem] font-black leading-[0.85] tracking-tighter text-black uppercase">
+                    Punya <br />
+                    <span className="inline-block bg-[#FFC700] text-black px-6 py-2 mt-4 border-[6px] border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] italic text-4xl sm:text-6xl">
+                      PERTANYAAN?
+                    </span>
+                </h1>
+                <p className="text-xl font-bold text-black leading-relaxed max-w-lg border-l-8 border-green-500 pl-6 h-auto">
+                    Tim Sikalori selalu siap dengerin masukan, pertanyaan, atau cuma sekedar say hi. Kami bakal balas pesan Anda secepat kilat!
+                </p>
+            </motion.div>
 
-        {/* Contact Form Container */}
-        <motion.div variants={itemVariants} className="max-w-2xl mx-auto">
-          <motion.form
-            ref={form}
-            onSubmit={sendEmail}
-            whileHover={{ scale: 1.01 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="border-4 border-black bg-white p-6 md:p-10 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative"
+            {/* Quick Contact Cards */}
+            <div className="grid sm:grid-cols-2 gap-6">
+                <motion.div 
+                    variants={itemVariants}
+                    whileHover={{ y: -5, rotate: -1 }}
+                    className="bg-blue-50 border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] group"
+                >
+                    <Mail className="w-8 h-8 mb-4 text-blue-500 group-hover:scale-110 transition-transform" />
+                    <h3 className="text-xl font-black uppercase mb-1">Email</h3>
+                    <p className="font-bold text-gray-600">sikalori@gmail.com</p>
+                </motion.div>
+
+                <motion.div 
+                    variants={itemVariants}
+                    whileHover={{ y: -5, rotate: 1 }}
+                    className="bg-green-50 border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] group"
+                >
+                    <MessageCircle className="w-8 h-8 mb-4 text-green-500 group-hover:scale-110 transition-transform" />
+                    <h3 className="text-xl font-black uppercase mb-1">WhatsApp</h3>
+                    <p className="font-bold text-gray-600">0821-2857-3839</p>
+                </motion.div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: The Form */}
+          <motion.div 
+            variants={itemVariants}
+            className="relative"
           >
-            <div className="space-y-6">
-              <motion.div variants={itemVariants}>
-                <label className="block text-lg font-black uppercase mb-2">
-                  Nama
-                </label>
+            <div className="absolute inset-0 bg-black translate-x-4 translate-y-4 -z-10 border-4 border-black" />
+            <form
+              ref={form}
+              onSubmit={sendEmail}
+              className="bg-white border-4 border-black p-8 sm:p-12 space-y-8"
+            >
+              <div className="space-y-2">
+                <label className="text-sm font-black uppercase tracking-wider block">Nama Lengkap</label>
                 <input
                   type="text"
                   name="user_name"
                   required
-                  className="w-full bg-gray-50 border-4 border-black p-4 font-bold focus:outline-none focus:bg-yellow-50 focus:border-yellow-500 transition-all placeholder:text-gray-400"
-                  placeholder="Nama anda"
+                  placeholder="Siapa nama Anda?"
+                  className="w-full bg-transparent border-b-8 border-black p-0 py-4 text-xl font-bold focus:outline-none focus:border-yellow-400 placeholder:text-gray-300 transition-colors"
                 />
-              </motion.div>
+              </div>
 
-              <motion.div variants={itemVariants}>
-                <label className="block text-lg font-black uppercase mb-2">
-                  Email
-                </label>
+              <div className="space-y-2">
+                <label className="text-sm font-black uppercase tracking-wider block">Alamat Email</label>
                 <input
                   type="email"
                   name="user_email"
                   required
-                  className="w-full bg-gray-50 border-4 border-black p-4 font-bold focus:outline-none focus:bg-yellow-50 focus:border-yellow-500 transition-all placeholder:text-gray-400"
                   placeholder="email@anda.com"
+                  className="w-full bg-transparent border-b-8 border-black p-0 py-4 text-xl font-bold focus:outline-none focus:border-green-400 placeholder:text-gray-300 transition-colors"
                 />
-              </motion.div>
+              </div>
 
-              <motion.div variants={itemVariants}>
-                <label className="block text-lg font-black uppercase mb-2">
-                  Pesan
-                </label>
+              <div className="space-y-2">
+                <label className="text-sm font-black uppercase tracking-wider block">Pesan Anda</label>
                 <textarea
                   name="message"
                   required
-                  rows={5}
-                  className="w-full bg-gray-50 border-4 border-black p-4 font-bold focus:outline-none focus:bg-yellow-50 focus:border-yellow-500 transition-all placeholder:text-gray-400 resize-none"
-                  placeholder="Tulis pesan anda..."
+                  rows={4}
+                  placeholder="Tulis pesan Anda di sini..."
+                  className="w-full bg-transparent border-b-8 border-black p-0 py-4 text-xl font-bold focus:outline-none focus:border-purple-400 placeholder:text-gray-300 transition-colors resize-none"
                 />
-              </motion.div>
+              </div>
 
-              <motion.button
-                variants={itemVariants}
-                whileHover={{ scale: 1.02, y: -2 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 type="submit"
                 disabled={status === "sending" || status === "success"}
-                className="w-full bg-black text-white border-4 border-black p-5 text-xl font-black uppercase tracking-widest hover:bg-green-500 hover:text-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-black text-white px-8 py-5 border-4 border-black font-black text-xl uppercase italic shadow-[8px_8px_0px_0px_rgba(250,204,21,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all flex items-center justify-center gap-3"
               >
                 {status === "sending"
-                  ? "MENGIRIM..."
+                  ? ( <span className="animate-pulse">Mengirim...</span> )
                   : status === "success"
-                    ? "✓ TERKIRIM"
-                    : "KIRIM PESAN →"}
-              </motion.button>
+                    ? ( <>Terkirim <Sparkles className="w-6 h-6 text-yellow-400" /></> )
+                    : ( <>Kirim Pesan <Send className="w-6 h-6" /></> )}
+              </button>
 
-              {/* Status Messages */}
+              {/* Status Notifications */}
               {status === "error" && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="bg-red-100 border-4 border-red-600 text-red-600 p-4 font-black text-center"
-                >
-                  ✕ {errorMessage}
-                </motion.div>
+                <div className="bg-red-500 text-white p-4 border-4 border-black font-black uppercase text-center text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  {errorMessage || "Oops! Gagal mengirim."}
+                </div>
               )}
               {status === "success" && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="bg-green-100 border-4 border-green-600 text-green-600 p-4 font-black text-center"
-                >
-                  ✓ PESAN BERHASIL DIKIRIM!
-                </motion.div>
+                <div className="bg-green-500 text-white p-4 border-4 border-black font-black uppercase text-center text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  Berhasil! Pesan Anda sudah kami terima.
+                </div>
               )}
-            </div>
-          </motion.form>
-        </motion.div>
+            </form>
+          </motion.div>
+
+        </div>
       </motion.div>
     </section>
   );

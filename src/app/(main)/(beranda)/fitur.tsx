@@ -37,7 +37,7 @@ const featureItems: FeatureItem[] = [
     description:
       "Atur target (defisit, surplus, atau maintenance) sesuai goal kamu dan pantau kemajuannya.",
     color: "bg-yellow-500",
-    shadowColor: "rgba(234, 179, 8, 1)",
+    shadowColor: "rgba(249, 115, 22, 1)",
   },
   {
     icon: History,
@@ -45,7 +45,7 @@ const featureItems: FeatureItem[] = [
     description:
       "Semua scan makanan tersimpan rapi. Lihat pola makan dan track progress harianmu.",
     color: "bg-purple-500",
-    shadowColor: "rgba(168, 85, 247, 1)",
+    shadowColor: "rgba(139, 92, 246, 1)",
   },
 ];
 

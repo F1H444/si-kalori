@@ -9,8 +9,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        background: "#FFFFFF",
+        foreground: "#000000",
+        primary: {
+          DEFAULT: "#FFDE59", // Brand Yellow
+          hover: "#FFC700",
+        },
+        secondary: {
+          DEFAULT: "#2563EB", // Brand Blue
+          hover: "#1D4ED8",
+        },
+        accent: {
+          green: "#22C55E",
+          red: "#EF4444",
+        }
       },
       fontFamily: {
         sans: ["var(--font-lexend)"],

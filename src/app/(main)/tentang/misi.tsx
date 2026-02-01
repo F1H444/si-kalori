@@ -1,130 +1,82 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { useLoading } from "@/context/LoadingContext";
+import { Target, Eye, ShieldCheck } from "lucide-react";
 
 export default function MissionSection() {
   const { isLoading: globalLoading } = useLoading();
-  const containerVariants = {
-    hidden: { opacity: 0 },
+  
+  const cardVariants: Variants = {
+    hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
+      y: 0,
       transition: {
-        staggerChildren: 0.05,
-        delayChildren: 0.05,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, x: -30 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: {
-        type: "spring" as const,
-        stiffness: 200,
-        damping: 12,
-      },
-    },
-  };
-
-  const scaleVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        type: "spring" as const,
-        stiffness: 200,
-        damping: 15,
+        type: "spring",
+        stiffness: 100,
+        damping: 15
       },
     },
   };
 
   return (
-    <div className="relative w-full max-w-6xl mx-auto px-4 mb-20 sm:mb-32">
-      <motion.div
-        variants={scaleVariants}
-        initial="hidden"
-        whileInView={!globalLoading ? "visible" : "hidden"}
-        viewport={{ once: true, margin: "-100px" }}
-        className="bg-yellow-400 border-4 border-black p-6 sm:p-12 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden"
-      >
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="relative z-10"
-        >
-          <motion.h2
-            variants={itemVariants}
-            className="text-3xl sm:text-4xl font-black text-black mb-6 uppercase"
-          >
-            MISI KAMI
-          </motion.h2>
+    <section className="bg-white py-24 sm:py-32 px-4 sm:px-6 lg:px-20">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <motion.div
+                initial="hidden"
+                whileInView={!globalLoading ? "visible" : "hidden"}
+                viewport={{ once: true }}
+                variants={cardVariants}
+                className="space-y-8"
+            >
+                <div className="inline-block bg-green-500 text-white px-4 py-1 font-black text-xs uppercase tracking-widest border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    Apa Target Kami?
+                </div>
+                <h2 className="text-4xl sm:text-6xl font-black uppercase leading-none tracking-tighter text-black">
+                    Cara Baru <br />
+                    <span className="inline-block bg-[#FFC700] text-black px-5 py-2 mt-4 border-[6px] border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] italic text-3xl sm:text-5xl">
+                      Liat Makanan Anda.
+                    </span>
+                </h2>
+                <p className="text-xl font-bold text-black leading-relaxed max-w-xl">
+                    Sikalori pengen banget setiap orang bisa dapet info nutrisi dengan gampang tanpa perlu ribet baca label belakang kemasan yang pusing. Kami bantu Anda paham apa yang masuk ke tubuh Anda lewat cara yang lebih simpel.
+                </p>
+                <div className="h-2 w-24 bg-black" />
+            </motion.div>
 
-          <motion.p
-            variants={itemVariants}
-            className="text-lg sm:text-xl font-bold text-black leading-relaxed mb-6"
-          >
-            &quot;Membantu setiap orang memahami nutrisi makanan mereka dengan
-            mudah dan akurat. Dengan teknologi AI, kami mengubah cara tracking
-            kalori dari yang ribet menjadi semudah foto atau ketik nama
-            menu.&quot;
-          </motion.p>
+            <div className="space-y-6">
+                <motion.div
+                    initial="hidden"
+                    whileInView={!globalLoading ? "visible" : "hidden"}
+                    viewport={{ once: true }}
+                    variants={cardVariants}
+                    className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative group"
+                >
+                    <div className="absolute top-4 right-4 text-black/5 font-black text-6xl select-none group-hover:text-green-500 transition-colors">01</div>
+                    <Target className="w-10 h-10 mb-4 text-green-500" />
+                    <h3 className="text-2xl font-black uppercase mb-2 text-black">Gampang Aksesnya</h3>
+                    <p className="font-bold text-black italic">Bikin platform yang bisa dipake siapa aja, kapan aja, tinggal jepret doang langsung muncul infonya.</p>
+                </motion.div>
 
-          <motion.div variants={itemVariants} className="flex flex-wrap gap-3">
-            <span className="bg-black text-white px-3 py-1 font-black text-sm uppercase">
-              Mudah & Cepat
-            </span>
-            <span className="bg-white text-black px-3 py-1 font-black text-sm uppercase border-2 border-black">
-              Data Akurat
-            </span>
-            <span className="bg-black text-white px-3 py-1 font-black text-sm uppercase">
-              AI-Powered
-            </span>
-          </motion.div>
-        </motion.div>
-      </motion.div>
-
-      {/* Vision Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={!globalLoading ? { opacity: 1, y: 0 } : {}}
-        viewport={{ once: true, margin: "-50px" }}
-        transition={{ delay: 0.3, type: "spring", stiffness: 80 }}
-        className="mt-8 grid md:grid-cols-2 gap-6"
-      >
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="bg-white border-4 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
-        >
-          <h3 className="text-xl font-black uppercase mb-3 text-blue-600">
-            Visi Kami
-          </h3>
-          <p className="font-bold text-gray-800 leading-relaxed">
-            Menjadi platform analisis nutrisi terpercaya yang membantu
-            masyarakat Indonesia hidup lebih sehat melalui pemahaman gizi yang
-            tepat.
-          </p>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="bg-black text-white border-4 border-black p-6 shadow-[6px_6px_0px_0px_rgba(34,197,94,1)]"
-        >
-          <h3 className="text-xl font-black uppercase mb-3 text-yellow-400">
-            Mengapa Si Kalori?
-          </h3>
-          <p className="font-bold leading-relaxed opacity-90">
-            Karena tracking nutrisi seharusnya tidak ribet. Cukup foto atau
-            ketik, AI kami yang analisis. Simpel.
-          </p>
-        </motion.div>
-      </motion.div>
-    </div>
+                <motion.div
+                    initial="hidden"
+                    whileInView={!globalLoading ? "visible" : "hidden"}
+                    viewport={{ once: true }}
+                    variants={cardVariants}
+                    transition={{ delay: 0.1 }}
+                    className="bg-black text-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(34,197,94,1)] relative group"
+                >
+                    <div className="absolute top-4 right-4 text-white/5 font-black text-6xl select-none group-hover:text-yellow-400 transition-colors">02</div>
+                    <Eye className="w-10 h-10 mb-4 text-yellow-400" />
+                    <h3 className="text-2xl font-black uppercase mb-2">Data Apa Adanya</h3>
+                    <p className="font-bold text-white italic">Kasih info nutrisi yang beneran akurat pake teknologi AI terbaru tapi tetep sesuai sama data sains yang ada.</p>
+                </motion.div>
+            </div>
+        </div>
+      </div>
+    </section>
   );
 }

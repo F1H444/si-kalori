@@ -16,6 +16,7 @@ import {
   Users,
   BarChart3,
   Settings,
+  Crown,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -94,7 +95,7 @@ export default function Sidebar({
       className={`flex items-center gap-3 p-4 font-black border-4 border-black transition-all uppercase tracking-tighter ${
         active
           ? "bg-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] translate-x-1 translate-y-1 shadow-none"
-          : `bg-white text-black hover:bg-yellow-300 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-1 hover:-translate-y-1`
+          : `bg-white text-black hover:bg-yellow-50 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-1 hover:-translate-y-1`
       }`}
     >
       {icon}
@@ -124,21 +125,24 @@ export default function Sidebar({
         {/* HEADER */}
         <div className="p-6 border-b-4 border-black bg-black text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="bg-yellow-400 p-2 border-2 border-black">
+            <div className="bg-blue-500 p-2 border-2 border-black">
               <Fingerprint className="w-6 h-6 text-black" />
             </div>
             <div>
               <h2 className="font-black text-xl tracking-tighter uppercase leading-none">
                 SIKALORI
               </h2>
-              <p className="text-yellow-400 text-[10px] font-black uppercase tracking-widest mt-1 flex items-center gap-2">
+              <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mt-1 flex items-center gap-2">
                 {isAdmin ? "Admin" : "Pengguna"}
-                {isPremium && !isAdmin && (
-                  <span className="bg-green-500 text-white px-1.5 py-0.5 rounded-sm text-[8px] animate-pulse">
-                    PREMIUM
-                  </span>
-                )}
               </p>
+              {isPremium && !isAdmin && (
+                <div className="mt-2">
+                  <span className="inline-flex items-center gap-1 bg-yellow-400 text-black px-2 py-0.5 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-[9px] font-black italic uppercase leading-none">
+                    <Crown size={10} strokeWidth={3} fill="currentColor" />
+                    Premium
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           <button
@@ -194,6 +198,13 @@ export default function Sidebar({
                 icon={<Home size={20} />}
                 label="Dashboard"
                 active={pathname === "/dashboard"}
+                onClick={() => setIsMobileOpen(false)}
+              />
+              <NavItem
+                href="/edit-profil"
+                icon={<UserIcon size={20} />}
+                label="Edit Profil"
+                active={pathname === "/edit-profil"}
                 onClick={() => setIsMobileOpen(false)}
               />
               <NavItem

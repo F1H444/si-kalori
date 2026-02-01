@@ -17,12 +17,12 @@ export async function POST(req: NextRequest) {
     // --- GET PROFILE & CHECK LIMITS ---
     if (userEmail) {
       try {
-        // Fetch profile to get ID, Goal, and Premium Status
+        // Fetch profile to get ID and Premium Status (available in new schema)
         const { data: profile, error } = await (
           await import("@/lib/supabase")
         ).supabase
           .from("users")
-          .select("id, goal, is_premium, daily_target")
+          .select("id, is_premium")
           .eq("email", userEmail)
           .single();
 
@@ -58,13 +58,11 @@ export async function POST(req: NextRequest) {
         }
 
         // Construct UserProfile object for prompt builder
-        // We use defaults for missing fields since we only fetched partial data
         userProfile = {
           id: profile.id,
-          goal: profile.goal || "maintain",
+          goal: "maintain", // Default karena kolom sudah dihapus dari users
           is_premium: profile.is_premium,
-          recommendedCalories: profile.daily_target || 2000,
-          // Fillers to satisfy type if needed, though prompt builder might handle partials
+          recommendedCalories: 2000, // Default karena kolom sudah dihapus dari users
           age: 25,
           gender: "male",
           height: 170,
@@ -183,7 +181,7 @@ export async function POST(req: NextRequest) {
                 },
                 ai_analysis: jsonResult.description,
                 meal_type: "other",
-                rating: jsonResult.health_score,
+                // 'rating' dihapus karena tidak ada di skema baru
               },
             ]);
           console.log("Scan log saved to food_logs for:", userEmail);

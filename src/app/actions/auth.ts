@@ -16,7 +16,7 @@ export async function syncUserProfile(user: User) {
       },
       { onConflict: "id" },
     )
-    .select("daily_target")
+    .select("daily_calorie_target")
     .single();
 
   if (error) {
@@ -28,7 +28,7 @@ export async function syncUserProfile(user: User) {
   }
 
   // 2. Determine Redirection
-  if (!profile?.daily_target) {
+  if (!profile?.daily_calorie_target) {
     return { success: true, redirectUrl: "/onboarding" };
   } else {
     return { success: true, redirectUrl: "/dashboard" };

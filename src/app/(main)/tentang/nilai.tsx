@@ -1,130 +1,88 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
+import { Heart, ShieldCheck, Zap } from "lucide-react";
 
 export default function ValuesSection() {
   const values = [
     {
-      number: "01",
-      title: "KESEIMBANGAN",
+      icon: <Heart className="w-8 h-8" />,
+      title: "Pake Hati",
       description:
-        "Makan enak dan hidup sehat bisa jalan bareng. Fokus ke progres, bukan penyiksaan. Track nutrisi tanpa stress.",
-      color: "bg-pink-500",
+        "Kita paham banget kalau jaga makan itu tantangan. Di sini kita pengen jadi support system Anda, bukan hakim.",
+      color: "border-black",
+      accent: "bg-red-400",
     },
     {
-      number: "02",
-      title: "DATA AKURAT",
+      icon: <ShieldCheck className="w-8 h-8" />,
+      title: "Jujur & Akurat",
       description:
-        "Semua analisis berbasis data nutrisi yang valid dari AI. No guessing, just facts. Biar targetmu tercapai.",
-      color: "bg-blue-500",
+        "Akurasi data itu harga mati buat kita. Kami usahain kasih fakta nutrisi yang beneran bisa dipertanggungjawabkan.",
+      color: "border-black",
+      accent: "bg-blue-400",
     },
     {
-      number: "03",
-      title: "UNTUK SEMUA",
+      icon: <Zap className="w-8 h-8" />,
+      title: "Gak Berhenti Improvisasi",
       description:
-        "Apapun goalmu—turun BB, bulk, atau maintain—Si Kalori siap bantu. Dari pemula sampai pro, semua bisa mulai.",
-      color: "bg-green-500",
+        "Kami terus ulik teknologi AI biar pengalaman Anda nge-track makanan jadi makin gampang dan seru setiap harinya.",
+      color: "border-black",
+      accent: "bg-green-400",
     },
   ];
 
-  // Animation Variants
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-        delayChildren: 0.05,
-      },
+      transition: { staggerChildren: 0.1 },
     },
   };
 
-  const titleVariants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: "spring" as const,
-        stiffness: 200,
-        damping: 12,
-      },
-    },
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 40 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        type: "spring" as const,
-        stiffness: 200,
-        damping: 12,
-      },
-    },
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 mb-20 sm:mb-32">
-      {/* Section Title */}
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        className="text-center mb-16"
-      >
-        <motion.h2
-          variants={titleVariants}
-          className="text-4xl sm:text-5xl font-black text-center uppercase italic tracking-tighter"
+    <section className="bg-white py-24 px-4 sm:px-6 lg:px-20">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16 space-y-4">
+            <h2 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter text-black leading-none">
+              Prinsip Dasar <br />
+              <span className="inline-block bg-[#FFC700] text-black px-6 py-2 mt-4 border-[6px] border-black shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] italic text-3xl sm:text-5xl">
+                SI KALORI.
+              </span>
+            </h2>
+            <p className="text-black font-black uppercase tracking-widest text-sm">Gimana cara kita kerja buat Anda</p>
+        </div>
+
+        <motion.div
+           variants={containerVariants}
+           initial="hidden"
+           whileInView="visible"
+           viewport={{ once: true }}
+           className="grid md:grid-cols-3 gap-8"
         >
-          PRINSIP{" "}
-          <span className="inline-block bg-yellow-400 px-4 py-1 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            SI KALORI
-          </span>
-        </motion.h2>
-      </motion.div>
-
-      {/* Values Grid */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-50px" }}
-        className="grid md:grid-cols-3 gap-8 sm:gap-10"
-      >
-        {values.map((value, index) => (
-          <motion.div
-            key={index}
-            variants={cardVariants}
-            whileHover={{
-              y: -8,
-              transition: { type: "spring", stiffness: 400, damping: 17 },
-            }}
-            className="group relative bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow duration-300"
-          >
-            {/* Header */}
-            <div className={`p-5 border-b-4 border-black ${value.color}`}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black text-white uppercase tracking-tight">
-                  {value.title}
-                </h3>
-                <span className="text-3xl font-black text-white/30">
-                  {value.number}
-                </span>
+          {values.map((value, idx) => (
+            <motion.div
+              key={idx}
+              variants={itemVariants}
+              whileHover={{ y: -10 }}
+              className={`bg-white border-4 ${value.color} p-10 flex flex-col items-center text-center shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-all`}
+            >
+              <div className={`${value.accent} text-black p-4 rounded-full border-4 border-black mb-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}>
+                {value.icon}
               </div>
-            </div>
-
-            {/* Body */}
-            <div className="p-6 bg-white">
-              <p className="text-lg font-bold text-black leading-relaxed">
-                {value.description}
+              <h3 className="text-2xl font-black uppercase mb-4 tracking-tighter text-black">{value.title}</h3>
+              <p className="font-bold text-black leading-relaxed italic">
+                &quot;{value.description}&quot;
               </p>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-    </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
   );
 }

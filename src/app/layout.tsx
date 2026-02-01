@@ -5,11 +5,13 @@ import "./globals.css";
 const lexend = Lexend({
   variable: "--font-lexend",
   subsets: ["latin"],
+  display: 'swap',
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -33,7 +35,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         suppressHydrationWarning={true}
-        className={`${lexend.variable} ${geistMono.variable} antialiased font-sans`}
+        className={`${lexend.variable} ${geistMono.variable} antialiased font-sans bg-white text-black`}
       >
         <LoadingProvider>
           <Preloader />

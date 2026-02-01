@@ -62,8 +62,7 @@ export default function Register() {
         if (error) throw error;
 
         if (data.user) {
-          await supabase.auth.signOut();
-          router.replace("/login");
+          router.replace("/onboarding");
         }
       } catch (error: any) {
         setLoading(false);
@@ -94,8 +93,13 @@ export default function Register() {
       if (authError) throw authError;
 
       if (data.user) {
-        await supabase.auth.signOut();
-        router.replace("/login");
+        // If confirmation is required, data.session will be null
+        if (!data.session) {
+          alert("Silakan cek email kamu untuk konfirmasi akun.");
+          router.replace("/login");
+        } else {
+          router.replace("/onboarding");
+        }
       }
     } catch (err: any) {
       setError(err.message || "Gagal mendaftar. Coba lagi.");
@@ -167,13 +171,15 @@ export default function Register() {
         <AnimatePresence>
           {loading && (
             <motion.div
-              className="absolute inset-0 z-50 bg-white/90 backdrop-blur-[2px] flex flex-col items-center justify-center"
+              className="absolute inset-0 z-50 bg-black/95 flex flex-col items-center justify-center overflow-hidden backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <Loader2 className="animate-spin text-black mb-3" size={40} strokeWidth={3} />
-              <p className="font-black uppercase text-xs tracking-widest">Memproses...</p>
+              <div className="flex flex-col items-center gap-6">
+                <div className="w-16 h-16 border-4 border-primary border-t-white rounded-full animate-spin"></div>
+                <p className="font-black uppercase text-sm tracking-[0.4em] text-white animate-pulse">MENDAFTAR...</p>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -240,7 +246,7 @@ export default function Register() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
-                            className="w-full bg-gray-50 border-2 border-black p-4 pl-12 font-bold focus:outline-none focus:bg-yellow-50 focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-gray-400 rounded-none text-sm sm:text-base"
+                            className="w-full bg-gray-50 border-2 border-black p-4 pl-12 font-bold focus:outline-none focus:bg-white focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all placeholder:text-gray-400 rounded-none text-sm sm:text-base"
                         />
                     </div>
                 </motion.div>

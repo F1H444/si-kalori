@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     console.log(`[VERIFY] Checking current transaction status for: ${order_id}`);
     const { data: currentTx, error: fetchError } = await supabase
       .from("transactions")
-      .select("user_id, status")
+      .select("id, user_id, status")
       .eq("order_id", order_id)
       .single();
 
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
         .from("transactions")
         .update({ 
           status: "success",
-          payment_method: transactionStatus.payment_type || "midtrans"
+          payment_type: transactionStatus.payment_type || "midtrans"
         })
         .eq("order_id", order_id);
 
@@ -102,10 +102,10 @@ export async function POST(request: Request) {
     const expiredAt = new Date(startDate);
     expiredAt.setDate(startDate.getDate() + 30);
 
-    console.log(`[VERIFY] Upserting premium record for User: ${userId}`);
     const { error: premError } = await supabase.from("premium").upsert(
       {
         user_id: userId,
+        transaction_id: currentTx.id || null, // Link to current transaction
         status: "active",
         start_date: startDate.toISOString(),
         expired_at: expiredAt.toISOString(),
@@ -153,11 +153,10 @@ export async function POST(request: Request) {
 
     if (!updateSuccessful && availableColumns.length > 0) {
         console.warn(`[VERIFY] No user record found for ${userId}. Creating skeleton profile.`);
-        // Fallback: If user profile doesn't exist yet, we must create it so dashboard doesn't break
         const insertData: any = { 
             id: userId, 
             full_name: "Premium User",
-            daily_target: 2000 
+            email: "user@example.com" // Ditambahkan sesuai skema baru
         };
         
         if (availableColumns.includes("is_premium")) {

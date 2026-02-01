@@ -8,7 +8,7 @@ interface SkeletonProps {
 }
 
 export default function Skeleton({ className = "", variant = "rect" }: SkeletonProps) {
-  const baseClass = "bg-gray-200 animate-pulse border-4 border-black/5";
+  const baseClass = "bg-yellow-100/50 animate-pulse border-4 border-black/5";
   const variantClass = 
     variant === "circle" ? "rounded-full" : 
     variant === "text" ? "rounded-md h-4 w-full" : 
@@ -21,7 +21,7 @@ export default function Skeleton({ className = "", variant = "rect" }: SkeletonP
 
 export function SkeletonCard({ className = "" }: { className?: string }) {
   return (
-    <div className={`bg-white border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${className}`}>
+    <div className={`bg-blue-50 border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${className}`}>
       <div className="flex justify-between items-center mb-6">
         <Skeleton variant="circle" className="w-8 h-8" />
         <Skeleton variant="text" className="w-16 h-4" />
@@ -34,7 +34,7 @@ export function SkeletonCard({ className = "" }: { className?: string }) {
 
 export function DashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-white text-black font-mono p-4 md:p-10">
+    <div className="min-h-screen bg-yellow-50 text-black font-mono p-4 md:p-10">
       <div className="max-w-7xl mx-auto space-y-10">
         {/* Header Skeleton */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b-4 border-black pb-8">
@@ -48,7 +48,7 @@ export function DashboardSkeleton() {
         {/* Main Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Card Skeleton */}
-          <div className="lg:col-span-8 bg-white border-4 border-black p-6 md:p-10 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] min-h-[450px] flex flex-col justify-between">
+          <div className="lg:col-span-8 bg-green-50 border-4 border-black p-6 md:p-10 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] min-h-[450px] flex flex-col justify-between">
             <div className="flex justify-between">
               <Skeleton className="w-16 h-16" />
               <div className="text-right space-y-2">
@@ -85,7 +85,7 @@ export function DashboardSkeleton() {
 
 export function HistorySkeleton() {
   return (
-    <div className="min-h-screen bg-white p-4 md:p-10 font-mono text-black">
+    <div className="min-h-screen bg-yellow-50 p-4 md:p-10 font-mono text-black">
       <div className="max-w-6xl mx-auto space-y-12">
         {/* Header Skeleton */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
@@ -114,7 +114,7 @@ export function HistorySkeleton() {
 
           {/* Log Item Skeletons */}
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <div key={i} className={`${i % 2 === 0 ? 'bg-blue-50' : 'bg-green-50'} border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]`}>
               <div className="flex flex-col md:flex-row gap-6 justify-between items-center">
                 <Skeleton className="w-full md:w-32 h-32 shrink-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" />
                 <div className="flex-1 w-full space-y-4">

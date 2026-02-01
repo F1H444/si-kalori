@@ -19,13 +19,14 @@ export const supabase = createBrowserClient(
   supabaseUrl || "https://missing.supabase.co",
   supabaseAnonKey || "missing-key",
   {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-  cookieOptions: {
-    // Omitting maxAge or setting it to undefined makes it a session cookie
-    maxAge: undefined,
-  },
-});
+    auth: {
+      persistSession: true, 
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: typeof window !== "undefined" ? window.sessionStorage : undefined,
+    },
+    cookieOptions: {
+      maxAge: undefined, // Session cookie (clears on browser close)
+    },
+  }
+);

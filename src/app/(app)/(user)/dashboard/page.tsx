@@ -58,7 +58,7 @@ const scaleVariants = {
 interface UserProfile {
   id: string;
   full_name: string | null;
-  daily_target: number;
+  daily_calorie_target: number;
   weight: number;
   height: number;
   age: number;
@@ -87,7 +87,7 @@ export default function UserDashboard() {
         .eq("id", user.id)
         .single();
 
-      if (error || !data?.daily_target) {
+      if (error || !data?.daily_calorie_target) {
         console.error("Profile incomplete or error:", error);
         router.push("/onboarding");
       } else {
@@ -118,7 +118,7 @@ export default function UserDashboard() {
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <div className="min-h-screen bg-white text-black font-mono p-4 md:p-10 selection:bg-yellow-400">
+    <div className="min-h-screen bg-white text-black font-mono p-4 md:p-10 selection:bg-secondary">
       <motion.main
         className="max-w-7xl mx-auto space-y-10"
         variants={containerVariants}
@@ -132,7 +132,7 @@ export default function UserDashboard() {
         >
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Fingerprint size={16} className="text-yellow-400" />
+              <Fingerprint size={16} className="text-secondary" />
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
                 Dashboard
               </p>
@@ -146,7 +146,7 @@ export default function UserDashboard() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full sm:w-auto px-8 py-4 bg-yellow-400 border-4 border-black font-black text-xl italic shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all uppercase flex items-center justify-center gap-3 group text-black"
+              className="w-full sm:w-auto px-8 py-4 bg-secondary border-4 border-black font-black text-xl italic shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all uppercase flex items-center justify-center gap-3 group text-black"
             >
               Scan Makanan &amp; Minuman
             </motion.button>
@@ -161,10 +161,10 @@ export default function UserDashboard() {
           {/* Kartu Kalori Besar */}
           <motion.div
             variants={scaleVariants}
-            className="lg:col-span-8 bg-white border-4 border-black p-6 md:p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] md:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between min-h-[350px] md:min-h-[450px]"
+            className="lg:col-span-8 bg-white border-4 border-black p-6 md:p-10 shadow-[8px_8px_0px_0px_rgba(34,197,94,1)] md:shadow-[12px_12px_0px_0px_rgba(34,197,94,1)] flex flex-col justify-between min-h-[350px] md:min-h-[450px]"
           >
             <div className="flex justify-between items-start">
-              <div className="bg-black text-white p-3 md:p-4 shadow-[4px_4px_0px_0px_rgba(250,204,21,1)]">
+              <div className="bg-primary text-white p-3 md:p-4 shadow-[4px_4px_0px_0px_#F97316]">
                 <Flame size={32} />
               </div>
               <div className="text-right">
@@ -192,9 +192,9 @@ export default function UserDashboard() {
                   transition={{ delay: 0.5, type: "spring", stiffness: 80 }}
                   className="text-[6rem] sm:text-[8rem] md:text-[13rem] font-black tracking-tighter leading-[0.8]"
                 >
-                  {profile?.daily_target}
+                  {profile?.daily_calorie_target}
                 </motion.h2>
-                <span className="text-xl md:text-3xl font-black italic uppercase text-yellow-500 tracking-tighter">
+                <span className="text-xl md:text-3xl font-black italic uppercase text-secondary tracking-tighter">
                   Kcal
                 </span>
               </div>
@@ -205,7 +205,7 @@ export default function UserDashboard() {
           <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
             <motion.div
               variants={itemVariants}
-              className="flex-1 bg-white border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+              className="flex-1 bg-green-50 border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
             >
               <div className="flex justify-between items-center mb-6">
                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function UserDashboard() {
 
             <motion.div
               variants={itemVariants}
-              className="flex-1 bg-white border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+              className="flex-1 bg-blue-50 border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
             >
               <div className="flex justify-between items-center mb-6">
                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
@@ -237,7 +237,7 @@ export default function UserDashboard() {
             {profile?.is_premium ? (
               <motion.div
                 variants={itemVariants}
-                className="flex-1 bg-yellow-400 border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+                className="flex-1 bg-secondary border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
               >
                 <div className="flex justify-between items-center mb-6">
                   <p className="text-[10px] font-black uppercase tracking-widest text-black flex items-center gap-2">
@@ -246,7 +246,7 @@ export default function UserDashboard() {
                 </div>
                 <div>
                   <h3 className="text-3xl font-black tracking-tighter uppercase italic leading-none">
-                    ⭐ SEUMUR HIDUP
+                    1 Bulan
                   </h3>
                   {profile.premium_expired_at && (
                     <p className="text-[10px] font-bold text-black/60 uppercase mt-2 tracking-widest">
@@ -266,7 +266,7 @@ export default function UserDashboard() {
                   </p>
                 </div>
                 <Link href="/premium">
-                  <button className="w-full py-2 bg-black text-white font-black text-xs uppercase tracking-tighter shadow-[4px_4px_0px_0px_rgba(250,204,21,1)]">
+                  <button className="w-full py-2 bg-black text-white font-black text-xs uppercase tracking-tighter shadow-[4px_4px_0px_0px_#F97316]">
                     Upgrade ke Premium
                   </button>
                 </Link>
@@ -284,7 +284,7 @@ export default function UserDashboard() {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -5 }}
-            className="border-4 border-black p-6 md:p-8 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between"
+            className="border-4 border-black p-6 md:p-8 bg-red-50 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between"
           >
             <div className="flex justify-between items-center mb-6">
               <Calendar size={24} />
@@ -302,7 +302,7 @@ export default function UserDashboard() {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -5 }}
-            className="border-4 border-black p-6 md:p-8 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between"
+            className="border-4 border-black p-6 md:p-8 bg-indigo-50 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between"
           >
             <div className="flex justify-between items-center mb-6">
               <UserIcon size={24} />
@@ -319,27 +319,26 @@ export default function UserDashboard() {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -5 }}
-            className="sm:col-span-2 lg:col-span-1 border-4 border-black p-6 md:p-8 bg-black text-white shadow-[6px_6px_0px_0px_rgba(250,204,21,1)] flex flex-col justify-between min-h-[160px]"
+            className="sm:col-span-2 lg:col-span-1 border-4 border-black p-6 md:p-8 bg-primary text-white shadow-[6px_6px_0px_0px_#F97316] flex flex-col justify-between min-h-[160px]"
           >
             <div className="flex justify-between items-center mb-6">
-              <Dumbbell size={24} className="text-yellow-400" />
+              <Dumbbell size={24} className="text-secondary" />
               <span className="text-[10px] font-black uppercase text-gray-500">
                 Intensitas
               </span>
             </div>
             <h3 className="text-xl md:text-2xl font-black uppercase italic tracking-tighter leading-tight">
-              {profile?.activity_level.replace(/_/g, " ") === "sedentary"
+              {profile?.activity_level === "sedentary"
                 ? "Jarang Gerak"
-                : profile?.activity_level.replace(/_/g, " ") === "light"
+                : profile?.activity_level === "light"
                   ? "Olahraga Ringan"
-                  : profile?.activity_level.replace(/_/g, " ") === "moderate"
+                  : profile?.activity_level === "moderate"
                     ? "Cukup Aktif"
-                    : profile?.activity_level.replace(/_/g, " ") === "active"
+                    : profile?.activity_level === "active"
                       ? "Sangat Aktif"
-                      : profile?.activity_level.replace(/_/g, " ") ===
-                          "very_active"
+                      : profile?.activity_level === "veryActive" || profile?.activity_level === "very_active"
                         ? "Atletis"
-                        : profile?.activity_level.replace(/_/g, " ")}
+                        : profile?.activity_level}
             </h3>
           </motion.div>
         </motion.div>

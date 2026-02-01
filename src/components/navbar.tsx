@@ -11,10 +11,12 @@ import {
   LayoutDashboard,
   Settings,
   ChevronDown,
+  ArrowRight,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import NextImage from "next/image";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface User {
@@ -34,6 +36,7 @@ interface NavbarProps {
 
 export default function Navbar({ initialUser = null }: NavbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -242,8 +245,9 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
-      // 4. Force hard reload to home to clear server-side initialUser prop
-      window.location.href = "/";
+      // 4. Client-side navigation to home
+      router.push("/");
+      router.refresh(); // Ensure layout props (initialUser) are updated
     }
   };
 
@@ -274,7 +278,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               <div className="flex-1 flex justify-start">
                 <Link
                   href="/"
-                  className="group flex items-center px-5 py-2 bg-black text-white border-2 border-black rounded-full hover:bg-yellow-400 hover:text-black transition-all active:translate-y-1"
+                  className="group flex items-center px-5 py-2 bg-black text-white border-2 border-black rounded-full hover:bg-[#FFC700] hover:text-black transition-all active:translate-y-1"
                 >
                   <span className="text-xs sm:text-sm font-black tracking-tighter uppercase italic">
                     SI KALORI
@@ -291,7 +295,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                       href={link.href}
                       className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
                         pathname === link.href
-                          ? "bg-black text-white shadow-[4px_4px_0px_0px_rgba(253,224,71,1)]"
+                          ? "bg-black text-white shadow-[4px_4px_0px_0px_#FFDE59]"
                           : "hover:bg-black/5 text-gray-600"
                       }`}
                     >
@@ -304,14 +308,18 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               {/* 3. BAGIAN KANAN: ACTIONS */}
               <div className="flex-1 flex items-center justify-end gap-3">
                 {loading ? (
-                  <div className="w-10 h-10 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
+                  <div className="w-10 h-10 border-4 border-black border-t-yellow-400 rounded-full animate-spin"></div>
                 ) : user ? (
                   <div className="flex items-center gap-2">
                     {user.isPremium && (
-                      <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-green-100 border-2 border-green-600 text-green-700 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        <Crown size={12} strokeWidth={3} />
+                      <motion.div 
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 bg-yellow-400 border-[3px] border-black text-black rounded-full text-[11px] font-black uppercase tracking-tighter italic shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                      >
+                        <Crown size={14} strokeWidth={3} fill="currentColor" />
                         Premium
-                      </div>
+                      </motion.div>
                     )}
 
                     <div className="relative">
@@ -319,7 +327,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         className="flex items-center gap-2 p-1.5 bg-white border-2 border-black rounded-full shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                       >
-                        <div className="w-9 h-9 bg-yellow-400 border-2 border-black rounded-full overflow-hidden relative flex items-center justify-center">
+                        <div className="w-9 h-9 bg-blue-500 border-2 border-black rounded-full overflow-hidden relative flex items-center justify-center">
                           <UserIcon className="p-2 w-full h-full" />
                         </div>
                         <span className="hidden sm:block text-xs font-black uppercase pr-2 pl-1">
@@ -337,7 +345,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                             initial={{ opacity: 0, y: 15, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                            className="absolute right-0 top-[calc(100%+20px)] w-72 bg-white border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] rounded-3xl p-6 z-50"
+                            className="absolute right-0 top-[calc(100%+20px)] w-72 bg-white border-4 border-black shadow-[15px_15px_0px_0px_rgba(0,0,0,1)] rounded-[32px] p-6 z-50 overflow-hidden"
                           >
                             {/* Header dengan Divider Brutal */}
                             <div className="flex flex-col items-center text-center pb-5 mb-5 border-b-4 border-black/10">
@@ -363,21 +371,20 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
                               {/* Tombol Premium Brutal */}
                               {user.isPremium ? (
-                                <div className="flex items-center justify-between p-4 border-4 border-black rounded-2xl font-black text-sm uppercase bg-green-400 text-black border-green-600 shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] mt-6">
-                                  <span className="flex items-center gap-2">
-                                    <Crown size={18} strokeWidth={3} />
-                                    Premium Aktif
-                                  </span>
+                                <div className="flex items-center justify-center gap-3 p-5 border-4 border-black rounded-2xl font-black text-sm uppercase bg-green-500 text-white italic shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mt-6">
+                                  <Crown size={20} strokeWidth={3} fill="currentColor" />
+                                  Sudah Premium
                                 </div>
                               ) : (
                                 <Link
                                   href="/premium"
-                                  className="flex items-center justify-between p-4 border-4 border-black rounded-2xl font-black text-sm uppercase shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all mt-6 bg-yellow-400 text-black"
+                                  className="flex items-center justify-between p-5 border-4 border-black rounded-2xl font-black text-sm uppercase shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all mt-6 bg-yellow-400 text-black italic group"
                                 >
                                   <span className="flex items-center gap-2">
-                                    <Crown size={18} strokeWidth={3} />
-                                    Upgrade
+                                    <Crown size={20} strokeWidth={3} fill="currentColor" className="group-hover:animate-bounce" />
+                                    Upgrade Pro
                                   </span>
+                                  <ArrowRight size={20} strokeWidth={3} />
                                 </Link>
                               )}
 
@@ -452,9 +459,9 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   <Link
                     href={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`text-4xl font-black uppercase tracking-tighter transition-all hover:text-yellow-500 ${
+                    className={`text-4xl font-black uppercase tracking-tighter transition-all hover:text-blue-600 ${
                       pathname === link.href
-                        ? "text-yellow-500 underline decoration-[6px] underline-offset-8"
+                        ? "text-blue-600 underline decoration-[6px] underline-offset-8"
                         : "text-black"
                     }`}
                   >
@@ -485,7 +492,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                 </div>
               ) : (
                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                  <button className="w-full py-5 bg-black text-white font-black text-xl rounded-full shadow-[8px_8px_0px_0px_rgba(253,224,71,1)]">
+                  <button className="w-full py-5 bg-black text-white font-black text-xl rounded-full shadow-[8px_8px_0px_0px_#F97316]">
                     MULAI GRATIS
                   </button>
                 </Link>
@@ -512,7 +519,7 @@ function DropdownItem({
       href={href}
       className="flex items-center gap-3 p-3 hover:bg-black hover:text-white rounded-2xl transition-all font-bold text-xs uppercase border-2 border-transparent hover:border-black group"
     >
-      <span className="text-gray-400 group-hover:text-yellow-400">{icon}</span>
+      <span className="text-gray-400 group-hover:text-secondary">{icon}</span>
       {label}
     </Link>
   );

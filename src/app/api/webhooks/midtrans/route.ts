@@ -46,10 +46,10 @@ export async function POST(request: Request) {
       .from("transactions")
       .update({ 
         status: isSuccess ? "success" : vtStatus,
-        payment_method: notificationJson.payment_type 
+        payment_type: notificationJson.payment_type 
       })
       .eq("order_id", order_id)
-      .select("user_id, status")
+      .select("id, user_id, status")
       .single();
 
     if (txError || !txData) {
@@ -66,6 +66,7 @@ export async function POST(request: Request) {
 
       await supabase.from("premium").upsert({
         user_id: userId,
+        transaction_id: txData.id,
         status: "active",
         start_date: startDate.toISOString(),
         expired_at: expiredAt.toISOString(),

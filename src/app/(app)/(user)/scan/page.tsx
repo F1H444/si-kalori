@@ -305,12 +305,14 @@ export default function ScanPage() {
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
                             exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-white/90 z-[100] flex flex-col items-center justify-center p-6 text-center"
+                            className="fixed inset-0 bg-black/95 z-[100] flex flex-col items-center justify-center p-6 text-center backdrop-blur-sm"
                         >
-                            <Loader2 className="w-20 h-20 animate-spin mb-6 text-black" strokeWidth={3} />
-                            <h2 className="text-5xl font-black uppercase tracking-tighter italic text-black">Lagi Diproses...</h2>
-                            <p className="mt-4 bg-black text-white px-6 py-2 font-bold uppercase shadow-[6px_6px_0px_0px_rgba(37,99,235,1)]">
-                                Menganalisa
+                            <div className="relative mb-8">
+                                <Loader2 className="w-24 h-24 animate-spin text-primary" strokeWidth={3} />
+                            </div>
+                            <h2 className="text-5xl font-black uppercase tracking-tighter italic text-white">MENGANALISA...</h2>
+                            <p className="mt-4 bg-primary text-black px-8 py-2 font-black uppercase shadow-[6px_6px_0px_0px_rgba(37,99,235,1)]">
+                                Tunggu Sebentar
                             </p>
                         </motion.div>
                     )}

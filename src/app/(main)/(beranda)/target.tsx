@@ -99,7 +99,7 @@ export default function TargetAudienceSection() {
   if (!mounted) return null;
 
   return (
-    <div className="relative min-h-screen bg-white overflow-hidden py-12 sm:py-16 lg:py-24">
+    <div className="relative min-h-screen bg-yellow-50 overflow-hidden py-12 sm:py-16 lg:py-24">
       {/* Background & Geometric Accents di bawah ini telah dihapus sesuai permintaan */}
 
       <motion.div

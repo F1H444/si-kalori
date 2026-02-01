@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -50,7 +50,7 @@ interface UserData {
   height?: number | null;
   activity_level?: string | null;
   goal?: string | null;
-  daily_target?: number | null;
+  daily_calorie_target?: number | null;
   is_premium?: boolean;
   created_at: string;
   last_login?: string | null;
@@ -487,8 +487,8 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
           ? activityMap[user.activity_level] || user.activity_level
           : "Tidak diisi",
         user.goal ? goalMap[user.goal] || user.goal : "Tidak diisi",
-        user.daily_target
-          ? `${user.daily_target.toLocaleString()} kalori`
+        user.daily_calorie_target
+          ? `${user.daily_calorie_target.toLocaleString()} kalori`
           : "Tidak diisi",
         user.provider
           ? user.provider === "google"
@@ -707,13 +707,22 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 lg:p-8">
           {/* Page Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl md:text-4xl font-black uppercase mb-2 tracking-tight">
-              {tabLabels[activeTab] || activeTab}
-            </h1>
-            <p className="text-gray-600 font-bold uppercase text-sm italic">
-              Panel Kontrol & Monitoring
-            </p>
+          <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-[6px] border-black pb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-3 h-3 bg-yellow-400 border-2 border-black rounded-full animate-pulse" />
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">
+                  Sistem Kontrol Pusat
+                </p>
+              </div>
+              <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tighter leading-none">
+                {tabLabels[activeTab] || activeTab}.
+              </h1>
+            </div>
+            <div className="hidden md:block text-right">
+              <p className="text-sm font-black text-black">ADMINISTRATOR PANEL</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">SIKALORI v2.0</p>
+            </div>
           </div>
 
           {/* Overview Tab */}
@@ -731,7 +740,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                 <StatCard
                   title="Aktif Hari Ini"
                   value={stats.activeToday}
-                  color="bg-[#FFDE59]"
+                  color="bg-[#FFC700]"
                   delay={100}
                   mounted={mounted}
                   icon={<UserCheck className="w-8 h-8" />}
@@ -739,7 +748,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                 <StatCard
                   title="Total Scan Makanan"
                   value={totalScans}
-                  color="bg-blue-400"
+                  color="bg-green-500"
                   delay={200}
                   mounted={mounted}
                   icon={<BarChart3 className="w-8 h-8" />}
@@ -747,7 +756,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                 <StatCard
                   title="Pengguna Premium"
                   value={stats.premiumUsers}
-                  color="bg-green-400"
+                  color="bg-blue-500"
                   delay={300}
                   mounted={mounted}
                   icon={<Crown className="w-8 h-8" />}
@@ -755,7 +764,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                 <StatCard
                   title="Revenue (Est)"
                   value={`${(stats.estimatedRevenue / 1000).toFixed(0)}K`}
-                  color="bg-purple-400"
+                  color="bg-purple-500"
                   delay={400}
                   mounted={mounted}
                   icon={<Flame className="w-8 h-8" />}
@@ -916,494 +925,237 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
           {/* Users Tab */}
           {activeTab === "users" && (
             <div className="space-y-6">
-              {/* Search & Filter */}
-              <div className="bg-white border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-6">
-                <div className="flex flex-col gap-6">
-                  {/* Search and Export Row */}
-                  <div className="flex flex-col lg:flex-row gap-4">
-                    <div className="flex-1 relative">
-                      <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
+              {/* Users Toolbelt */}
+              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8">
+                <div className="flex flex-col gap-8">
+                  {/* Primary Actions Row */}
+                  <div className="flex flex-col xl:flex-row gap-6">
+                    <div className="flex-1 relative group">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-black transition-transform group-focus-within:scale-110">
+                        <Search size={22} />
+                      </div>
                       <input
                         type="text"
-                        placeholder="Cari pengguna berdasarkan nama atau email..."
+                        placeholder="Cari berdasarkan nama atau alamat email..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-16 pr-6 py-4 border-4 border-black font-bold text-base focus:outline-none focus:bg-yellow-50 transition-all placeholder:text-gray-400"
+                        className="w-full pl-16 pr-8 py-5 border-4 border-black font-black text-lg focus:outline-none focus:bg-yellow-50 transition-all placeholder:text-gray-300 placeholder:italic placeholder:font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] focus:shadow-none"
                       />
                     </div>
                     <button
                       onClick={exportToCSV}
-                      className="bg-green-400 text-black px-8 py-4 border-4 border-black font-black text-base whitespace-nowrap flex items-center justify-center gap-3 hover:bg-green-300 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1"
+                      className="bg-green-500 text-white px-10 py-5 border-4 border-black font-black text-lg flex items-center justify-center gap-3 hover:bg-black transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 uppercase italic tracking-tighter"
                     >
-                      <FileSpreadsheet className="w-5 h-5" />
-                      Export CSV
+                      <FileSpreadsheet size={24} />
+                      Download Data (.CSV)
                     </button>
                   </div>  
 
-                  {/* Filter Section */}
-                  <div className="border-4 border-black p-5 bg-gray-50">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Filter className="w-5 h-5" />
-                      <span className="text-base font-black">Filter Data:</span>
+                  {/* Filter Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-8 border-t-4 border-black border-dashed">
+                    {/* Membership Filter */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Crown size={18} className="text-yellow-500" />
+                        <span className="text-sm font-black uppercase tracking-widest">Filter Membership</span>
+                      </div>
+                      <div className="flex gap-2">
+                        {["all", "premium", "free"].map((type) => (
+                          <button
+                            key={type}
+                            onClick={() => setFilterPremium(type as any)}
+                            className={`flex-1 py-3 border-4 border-black font-black text-xs uppercase transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${
+                              filterPremium === type
+                                ? "bg-[#FFC700] text-black"
+                                : "bg-white text-black"
+                            }`}
+                          >
+                            {type === 'all' ? 'Semua User' : type === 'premium' ? 'Hanya Pro' : 'Free Member'}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Premium Status Filter */}
-                      <div>
-                        <label className="text-sm font-black mb-3 flex items-center gap-2">
-                          <Crown className="w-4 h-4" />
-                          Status Membership
-                        </label>
-                        <div className="flex gap-3">
+                    {/* Gender Filter */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Users size={18} className="text-blue-500" />
+                        <span className="text-sm font-black uppercase tracking-widest">Saring Jenis Kelamin</span>
+                      </div>
+                      <div className="flex gap-2">
+                        {["all", "male", "female"].map((type) => (
                           <button
-                            onClick={() => setFilterPremium("all")}
-                            className={`flex-1 px-4 py-3 border-3 border-black font-bold text-sm transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${
-                              filterPremium === "all"
+                            key={type}
+                            onClick={() => setFilterGender(type as any)}
+                            className={`flex-1 py-3 border-4 border-black font-black text-xs uppercase transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${
+                              filterGender === type
                                 ? "bg-black text-white"
                                 : "bg-white text-black"
                             }`}
                           >
-                            Semua
+                            {type === 'all' ? 'Semua' : type === 'male' ? 'Laki-Laki' : 'Perempuan'}
                           </button>
-                          <button
-                            onClick={() => setFilterPremium("premium")}
-                            className={`flex-1 px-4 py-3 border-3 border-black font-bold text-sm transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 flex items-center justify-center gap-2 ${
-                              filterPremium === "premium"
-                                ? "bg-yellow-400 text-black"
-                                : "bg-white text-black"
-                            }`}
-                          >
-                            <Crown className="w-4 h-4" />
-                            Premium
-                          </button>
-                          <button
-                            onClick={() => setFilterPremium("free")}
-                            className={`flex-1 px-4 py-3 border-3 border-black font-bold text-sm transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${
-                              filterPremium === "free"
-                                ? "bg-gray-300 text-black"
-                                : "bg-white text-black"
-                            }`}
-                          >
-                            Free
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Gender Filter */}
-                      <div>
-                        <label className="text-sm font-black mb-3 flex items-center gap-2">
-                          <Users className="w-4 h-4" />
-                          Gender
-                        </label>
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => setFilterGender("all")}
-                            className={`flex-1 px-4 py-3 border-3 border-black font-bold text-sm transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${
-                              filterGender === "all"
-                                ? "bg-black text-white"
-                                : "bg-white text-black"
-                            }`}
-                          >
-                            Semua
-                          </button>
-                          <button
-                            onClick={() => setFilterGender("male")}
-                            className={`flex-1 px-4 py-3 border-3 border-black font-bold text-sm transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 flex items-center justify-center gap-2 ${
-                              filterGender === "male"
-                                ? "bg-blue-400 text-white"
-                                : "bg-white text-black"
-                            }`}
-                          >
-                            <User className="w-4 h-4" />
-                            Pria
-                          </button>
-                          <button
-                            onClick={() => setFilterGender("female")}
-                            className={`flex-1 px-4 py-3 border-3 border-black font-bold text-sm transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 flex items-center justify-center gap-2 ${
-                              filterGender === "female"
-                                ? "bg-pink-400 text-white"
-                                : "bg-white text-black"
-                            }`}
-                          >
-                            <User className="w-4 h-4" />
-                            Wanita
-                          </button>
-                        </div>
+                        ))}
                       </div>
                     </div>
+                  </div>
 
-                    {/* Result Counter */}
-                    <div className="mt-5 pt-5 border-t-2 border-black">
-                      <div className="bg-black text-white px-5 py-3 border-2 border-black font-black text-base inline-flex items-center gap-2">
-                        <Users className="w-5 h-5" />
-                        Menampilkan {filteredUsers.length} dari {users.length}{" "}
-                        Pengguna
-                      </div>
+                  {/* Stats Counter */}
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="bg-black text-white px-6 py-2 border-2 border-black font-black text-xs uppercase tracking-widest flex items-center gap-3 shadow-[4px_4px_0px_0px_rgba(255,199,0,1)]">
+                       <User size={14} className="text-yellow-400" />
+                       Found {filteredUsers.length} Users
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Users Table */}
-              <div className="bg-white border-8 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+              <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
-                      <tr className="bg-black text-white border-b-8 border-black">
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4" />
-                            Identitas
-                          </div>
+                      <tr className="bg-black text-white border-b-4 border-black">
+                        <th className="text-left p-6 font-black text-xs uppercase tracking-widest whitespace-nowrap">
+                          Pengguna
                         </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Mail className="w-4 h-4" />
-                            Kontak
-                          </div>
+                        <th className="text-left p-6 font-black text-xs uppercase tracking-widest whitespace-nowrap">
+                          Status & Aktivitas
                         </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Crown className="w-4 h-4" />
-                            Status
-                          </div>
+                        <th className="text-left p-6 font-black text-xs uppercase tracking-widest whitespace-nowrap">
+                          Metrik Fisik
                         </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            Gender
-                          </div>
+                        <th className="text-left p-6 font-black text-xs uppercase tracking-widest whitespace-nowrap">
+                          Target & Gaya Hidup
                         </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            Umur
-                          </div>
+                        <th className="text-left p-6 font-black text-xs uppercase tracking-widest whitespace-nowrap">
+                          Log Akses
                         </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Scale className="w-4 h-4" />
-                            BB / TB
-                          </div>
-                        </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Activity className="w-4 h-4" />
-                            Aktivitas
-                          </div>
-                        </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Target className="w-4 h-4" />
-                            Goal
-                          </div>
-                        </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Zap className="w-4 h-4" />
-                            Target Kalori
-                          </div>
-                        </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <LogIn className="w-4 h-4" />
-                            Provider
-                          </div>
-                        </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4" />
-                            Last Login
-                          </div>
-                        </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <UserPlus className="w-4 h-4" />
-                            Bergabung
-                          </div>
-                        </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Camera className="w-4 h-4" />
-                            Total Scan
-                          </div>
-                        </th>
-                        <th className="text-left p-5 font-black text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Settings className="w-4 h-4" />
-                            Aksi
-                          </div>
+                        <th className="text-center p-6 font-black text-xs uppercase tracking-widest whitespace-nowrap">
+                          Aksi
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y-4 divide-black">
                       {filteredUsers.length === 0 ? (
                         <tr>
-                          <td colSpan={13} className="p-12 text-center">
-                            <div className="border-4 border-dashed border-black p-8 bg-yellow-50">
-                              <p className="font-black text-xl mb-3">
-                                Tidak Ada Pengguna
-                              </p>
-                              <p className="font-bold text-base text-gray-600">
-                                {searchQuery ||
-                                filterPremium !== "all" ||
-                                filterGender !== "all"
-                                  ? "Tidak ditemukan pengguna dengan filter tersebut"
-                                  : "Belum ada pengguna terdaftar dalam sistem"}
-                              </p>
-                              <p className="font-bold text-sm text-gray-400 mt-4">
-                                Total Users: {users.length} | Filtered:{" "}
-                                {filteredUsers.length}
+                          <td colSpan={6} className="p-16 text-center">
+                            <div className="border-4 border-dashed border-black p-10 bg-yellow-50 max-w-lg mx-auto">
+                              <p className="font-black text-2xl mb-2">Pencarian Kosong.</p>
+                              <p className="font-bold text-gray-600 uppercase text-xs tracking-widest">
+                                Tidak ada pengguna yang cocok dengan filter Anda.
                               </p>
                             </div>
                           </td>
                         </tr>
                       ) : (
-                        filteredUsers.map((user) => (
+                        filteredUsers.map((user, idx) => (
                           <tr
                             key={user.id}
-                            className="border-b-4 border-black hover:bg-[#FFDE59]/10 transition-colors group"
+                            className={`hover:bg-yellow-50 transition-colors group ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                           >
-                            {/* Identitas */}
-                            <td className="p-5">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-black flex items-center justify-center border-4 border-black group-hover:bg-[#FFDE59] transition-colors shrink-0">
-                                  <span className="text-white group-hover:text-black font-black text-lg uppercase">
+                            {/* IDENTITY: Avatar + Name + Email */}
+                            <td className="p-6">
+                              <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 bg-black flex items-center justify-center border-4 border-black group-hover:bg-[#FFC700] transition-all transform group-hover:rotate-3 shrink-0">
+                                  <span className="text-white group-hover:text-black font-black text-xl">
                                     {user.full_name?.charAt(0) || "?"}
                                   </span>
                                 </div>
                                 <div className="min-w-0">
-                                  <span className="font-black text-base block truncate max-w-[150px]">
-                                    {user.full_name || "Tanpa Nama"}
-                                  </span>
-                                  <span className="text-xs font-bold text-gray-500">
-                                    ID: {user.id.slice(0, 8)}...
-                                  </span>
+                                  <div className="font-black text-lg leading-tight truncate max-w-[180px] uppercase">
+                                    {user.full_name || "Guest User"}
+                                  </div>
+                                  <div className="text-xs font-bold text-gray-500 mt-1 truncate max-w-[200px]">
+                                    {user.email}
+                                  </div>
                                 </div>
                               </div>
                             </td>
 
-                            {/* Kontak */}
-                            <td className="p-5 font-bold text-sm">
-                              <div className="max-w-[200px] truncate">
-                                {user.email}
+                            {/* STATUS & SCAN: Premium Badge + Count */}
+                            <td className="p-6">
+                              <div className="space-y-3">
+                                {user.is_premium ? (
+                                  <div className="inline-flex items-center gap-2 bg-[#FFC700] text-black px-3 py-1 border-2 border-black font-black text-[10px] uppercase italic shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                                    <Crown size={12} fill="currentColor" /> Pro Member
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-2 bg-gray-200 text-gray-600 px-3 py-1 border-2 border-gray-400 font-black text-[10px] uppercase">
+                                    Free Tier
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2 text-blue-600 font-black text-sm">
+                                  <Camera size={16} />
+                                  <span>{user.scan_count || 0} Total Scans</span>
+                                </div>
                               </div>
                             </td>
 
-                            {/* Status Premium */}
-                            <td className="p-5">
-                              {user.is_premium ? (
-                                <div className="space-y-1">
-                                  <span className="inline-flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 border-3 border-black font-black text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                                    <Crown className="w-4 h-4" />
-                                    Premium
+                            {/* METRIC: BB, TB, Age, Gender */}
+                            <td className="p-6">
+                               <div className="grid grid-cols-2 gap-3 max-w-[180px]">
+                                 <div className="bg-white border-2 border-black p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                    <p className="text-[8px] font-black text-gray-400 uppercase">BB</p>
+                                    <p className="font-black text-sm">{user.weight || '-'} <span className="text-[10px]">kg</span></p>
+                                 </div>
+                                 <div className="bg-white border-2 border-black p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                    <p className="text-[8px] font-black text-gray-400 uppercase">TB</p>
+                                    <p className="font-black text-sm">{user.height || '-'} <span className="text-[10px]">cm</span></p>
+                                 </div>
+                                 <div className="bg-white border-2 border-black p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                    <p className="text-[8px] font-black text-gray-400 uppercase">Usia</p>
+                                    <p className="font-black text-sm">{user.age || '-'} <span className="text-[10px]">thn</span></p>
+                                 </div>
+                                 <div className="bg-white border-2 border-black p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                                    <p className="text-[8px] font-black text-gray-400 uppercase">Gen</p>
+                                    <p className="font-black text-sm uppercase">{user.gender?.charAt(0) || '-'}</p>
+                                 </div>
+                               </div>
+                            </td>
+
+                            {/* LIFESTYLE: Goal + Activity */}
+                            <td className="p-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="p-1.5 bg-black text-white border-2 border-black">
+                                    {user.goal === 'lose' ? <TrendingDown size={14} /> : user.goal === 'gain' ? <TrendingUp size={14} /> : <Target size={14} />}
+                                  </div>
+                                  <span className="font-black text-xs uppercase tracking-tighter">
+                                    {user.goal === 'lose' ? 'Turunkan BB' : user.goal === 'gain' ? 'Naikkan BB' : 'Jaga BB'}
                                   </span>
-                                  {user.premium_expired_at && (
-                                    <p className="text-[10px] font-black text-red-500 uppercase mt-1">
-                                      Habis: {new Date(user.premium_expired_at).toLocaleDateString('id-ID')}
-                                    </p>
-                                  )}
                                 </div>
-                              ) : (
-                                <span className="inline-block bg-gray-200 text-gray-700 px-4 py-2 border-2 border-gray-400 font-bold text-sm">
-                                  Free
-                                </span>
-                              )}
-                            </td>
-
-                            {/* Gender */}
-                            <td className="p-5 font-bold text-sm">
-                              {user.gender === "male" ? (
-                                <span className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 border-2 border-blue-600 text-sm font-bold">
-                                  <User className="w-4 h-4" />
-                                  Pria
-                                </span>
-                              ) : user.gender === "female" ? (
-                                <span className="inline-flex items-center gap-2 bg-pink-100 text-pink-700 px-3 py-2 border-2 border-pink-600 text-sm font-bold">
-                                  <User className="w-4 h-4" />
-                                  Wanita
-                                </span>
-                              ) : (
-                                <span className="text-gray-400 text-sm">-</span>
-                              )}
-                            </td>
-
-                            {/* Umur */}
-                            <td className="p-5 font-black text-sm">
-                              {user.age ? (
-                                <span className="text-black">
-                                  {user.age} tahun
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </td>
-
-                            {/* BB/TB */}
-                            <td className="p-5 font-bold text-sm">
-                              {user.weight || user.height ? (
-                                <div className="space-y-1">
-                                  {user.weight && (
-                                    <div className="text-black flex items-center gap-1">
-                                      <Scale className="w-3 h-3" />
-                                      {user.weight} kg
-                                    </div>
-                                  )}
-                                  {user.height && (
-                                    <div className="text-gray-600 flex items-center gap-1">
-                                      <Ruler className="w-3 h-3" />
-                                      {user.height} cm
-                                    </div>
-                                  )}
+                                <div className="text-[10px] font-bold text-gray-500 bg-gray-100 p-2 border-2 border-black/10 uppercase italic">
+                                  {user.activity_level?.replace(/_/g, ' ') || 'Belum diisi'}
                                 </div>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
+                              </div>
                             </td>
 
-                            {/* Aktivitas */}
-                            <td className="p-5 font-bold text-sm">
-                              {user.activity_level ? (
-                                <span className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-3 py-2 border-2 border-green-600">
-                                  <Activity className="w-4 h-4" />
-                                  {user.activity_level === "sedentary" &&
-                                    "Ringan"}
-                                  {user.activity_level === "lightly_active" &&
-                                    "Sedang"}
-                                  {user.activity_level ===
-                                    "moderately_active" && "Aktif"}
-                                  {user.activity_level === "very_active" &&
-                                    "Sangat Aktif"}
-                                  {user.activity_level === "extra_active" &&
-                                    "Extra Aktif"}
-                                  {![
-                                    "sedentary",
-                                    "lightly_active",
-                                    "moderately_active",
-                                    "very_active",
-                                    "extra_active",
-                                  ].includes(user.activity_level) &&
-                                    user.activity_level}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
+                            {/* LOG: Provider + Login */}
+                            <td className="p-6">
+                               <div className="space-y-2">
+                                 <div className="flex items-center gap-2 text-xs font-black uppercase">
+                                    <LogIn size={14} className="text-purple-600" />
+                                    <span>{user.provider || 'unknown'}</span>
+                                 </div>
+                                 <div className="space-y-1">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase leading-none">Last Active:</p>
+                                    <p className="text-xs font-black">{user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</p>
+                                 </div>
+                               </div>
                             </td>
 
-                            {/* Goal */}
-                            <td className="p-5 font-bold text-sm">
-                              {user.goal === "lose" ? (
-                                <span className="inline-flex items-center gap-2 bg-red-100 text-red-700 px-3 py-2 border-2 border-red-600">
-                                  <TrendingDown className="w-4 h-4" />
-                                  Turun
-                                </span>
-                              ) : user.goal === "maintain" ? (
-                                <span className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-2 border-2 border-yellow-600">
-                                  <Minus className="w-4 h-4" />
-                                  Jaga
-                                </span>
-                              ) : user.goal === "gain" ? (
-                                <span className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-3 py-2 border-2 border-green-600">
-                                  <TrendingUp className="w-4 h-4" />
-                                  Naik
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </td>
-
-                            {/* Target Kalori */}
-                            <td className="p-5 font-black text-sm">
-                              {user.daily_target ? (
-                                <span className="text-black flex items-center gap-1">
-                                  <Zap className="w-4 h-4 text-orange-500" />
-                                  {user.daily_target.toLocaleString()} kal
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </td>
-
-                            {/* Provider */}
-                            <td className="p-5 font-bold text-sm">
-                              {user.provider ? (
-                                <span className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-2 border-2 border-purple-600">
-                                  <LogIn className="w-4 h-4" />
-                                  {user.provider === "google" && "Google"}
-                                  {user.provider === "email" && "Email"}
-                                  {!["google", "email"].includes(
-                                    user.provider,
-                                  ) && user.provider}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </td>
-
-                            {/* Last Login */}
-                            <td className="p-5 font-bold text-sm">
-                              {user.last_login ? (
-                                <div className="space-y-1">
-                                  <div className="text-black">
-                                    {new Date(
-                                      user.last_login,
-                                    ).toLocaleDateString("id-ID", {
-                                      day: "numeric",
-                                      month: "short",
-                                      year: "numeric",
-                                    })}
-                                  </div>
-                                  <div className="text-gray-500 text-xs">
-                                    {new Date(
-                                      user.last_login,
-                                    ).toLocaleTimeString("id-ID", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </div>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </td>
-
-                            {/* Bergabung */}
-                            <td className="p-5 font-bold text-sm whitespace-nowrap">
-                              {new Date(user.created_at).toLocaleDateString(
-                                "id-ID",
-                                {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                },
-                              )}
-                            </td>
-
-                            {/* Total Scan */}
-                            <td className="p-5 font-black text-sm">
-                              {user.scan_count ? (
-                                <span className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 border-3 border-blue-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                                  <Camera className="w-4 h-4" />
-                                  {user.scan_count} scan
-                                </span>
-                              ) : (
-                                <span className="text-gray-400 flex items-center gap-2">
-                                  <Camera className="w-4 h-4" />0 scan
-                                </span>
-                              )}
-                            </td>
-
-                            {/* Tombol Aksi */}
-                            <td className="p-5">
+                            {/* ACTION */}
+                            <td className="p-6 text-center">
                               <button
                                 onClick={() => togglePremium(user.id, user.is_premium || false)}
-                                className={`px-4 py-2 font-black text-xs uppercase border-3 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all whitespace-nowrap ${
+                                className={`w-full py-3 font-black text-xs uppercase border-4 border-black transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${
                                   user.is_premium 
-                                    ? "bg-red-50 text-red-600 hover:bg-red-100" 
-                                    : "bg-green-50 text-green-600 hover:bg-green-100"
+                                    ? "bg-red-50 text-red-600" 
+                                    : "bg-green-500 text-white"
                                 }`}
                               >
-                                {user.is_premium ? "Cabut Premium" : "Beri Premium"}
+                                {user.is_premium ? "Revoke Pro" : "Grant Pro"}
                               </button>
                             </td>
                           </tr>
@@ -1418,7 +1170,34 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
 
           {activeTab === "analytics" && (
             <div className="space-y-12">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                     <h3 className="text-xl font-black uppercase mb-6 border-b-4 border-black pb-2 italic">User Adoption</h3>
+                     <div className="space-y-6">
+                        <DistributionBar label="New Signups" value={growthData[5].value} total={users.length} color="bg-yellow-400" />
+                        <DistributionBar label="Returning" value={stats.activeToday} total={users.length} color="bg-green-500" />
+                     </div>
+                  </div>
+                  <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                     <h3 className="text-xl font-black uppercase mb-6 border-b-4 border-black pb-2 italic">Premium Conversion</h3>
+                     <div className="flex items-center justify-center py-4">
+                        <div className="relative w-32 h-32 border-8 border-black rounded-full flex items-center justify-center">
+                           <div className="text-2xl font-black">{((stats.premiumUsers / (users.length || 1)) * 100).toFixed(1)}%</div>
+                        </div>
+                     </div>
+                     <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-4">Conversion Rate</p>
+                  </div>
+                  <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                     <h3 className="text-xl font-black uppercase mb-6 border-b-4 border-black pb-2 italic">Scanning Stats</h3>
+                     <div className="space-y-2">
+                        <p className="text-4xl font-black">{totalScans}</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Total Food Items Logged</p>
+                        <div className="pt-4 border-t-2 border-black border-dashed mt-4">
+                           <p className="font-black text-sm uppercase">Avg Scans/User: <span className="text-blue-600">{analyticsData.avgScansPerUser}</span></p>
+                        </div>
+                     </div>
+                  </div>
+               </div>
             </div>
           )}
 
@@ -1511,19 +1290,28 @@ function StatCard({
 }) {
   return (
     <div
-      className={`${color} border-8 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-6 transition-all duration-500 hover:shadow-none hover:translate-x-2 hover:translate-y-2 group h-full flex flex-col justify-between ${
+      className={`${color} border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 transition-all duration-300 hover:shadow-none hover:translate-x-1 hover:translate-y-1 group h-full flex flex-col justify-between relative overflow-hidden ${
         mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
       }`}
       style={{ transitionDelay: `${delay}ms` }}
     >
-      <div className="flex items-center justify-between mb-4">
-        {icon && <div className="opacity-50">{icon}</div>}
+      <div className="flex items-start justify-between relative z-10">
+        <div className="text-sm font-black uppercase tracking-tight leading-tight max-w-[70%]">
+          {title}
+        </div>
+        {icon && <div className="p-2 bg-black/5 rounded-lg">{icon}</div>}
       </div>
-      <div className="text-5xl font-black mb-4 overflow-hidden truncate">
-        {value}
+      
+      <div className="mt-6 relative z-10">
+        <div className="text-5xl font-black tracking-tighter">
+          {value}
+        </div>
+        <div className="w-12 h-2 bg-black mt-2" />
       </div>
-      <div className="text-sm font-black border-t-4 border-black pt-4 leading-tight">
-        {title}
+
+      {/* Decorative background element */}
+      <div className="absolute -right-4 -bottom-4 opacity-[0.05] group-hover:opacity-10 transition-opacity">
+        {icon && React.cloneElement(icon as React.ReactElement<any>, { size: 100 })}
       </div>
     </div>
   );
