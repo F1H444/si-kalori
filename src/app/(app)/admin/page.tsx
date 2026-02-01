@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 import AdminLogin from "./login";
 import AdminDashboard from "./dashboard";
 import { Loader2 } from "lucide-react";
 
-export default function AdminPage() {
+function AdminPageContent() {
   const searchParams = useSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
 
@@ -26,7 +26,8 @@ export default function AdminPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin" />
+        <Loader2 className="w-10 h-10 animate-spin text-black" />
+        <span className="ml-3 font-black uppercase text-sm">Menyiapkan Sesi...</span>
       </div>
     );
   }
@@ -36,7 +37,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#F0F0F0] overflow-hidden">
+    <div className="flex h-screen bg-[#F0F0F0] overflow-hidden font-mono">
       <div className="shrink-0">
         <Sidebar forceShow={true} />
       </div>
@@ -44,5 +45,18 @@ export default function AdminPage() {
         <AdminDashboard activeTab={activeTab} />
       </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-black" />
+        <span className="ml-3 font-black uppercase text-sm">Menghubungkan ke Server...</span>
+      </div>
+    }>
+      <AdminPageContent />
+    </Suspense>
   );
 }

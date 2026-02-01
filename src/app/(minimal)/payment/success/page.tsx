@@ -39,8 +39,14 @@ function SuccessContent() {
       if (res.ok) {
         console.log("Payment confirmed. Refreshing session...");
         setStatus("success");
-        // Force a session refresh to update is_premium everywhere
-        await supabase.auth.refreshSession();
+        
+        // Update local session state if possible
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await supabase.auth.refreshSession();
+          // Update the session storage flag used by Navbar
+          sessionStorage.setItem("sikalori_session_active", "true");
+        }
       } else {
         console.error("Verification failed:", data.error);
         setStatus("error");
@@ -143,6 +149,7 @@ function SuccessContent() {
             {isSuccess ? (
               <Link href="/dashboard" className="block">
                   <motion.button 
+                      onClick={() => window.location.href = "/dashboard"}
                       whileHover={{ scale: 1.02, x: -4, y: -4, boxShadow: "8px 8px 0px 0px rgba(0,0,0,1)" }}
                       whileTap={{ scale: 0.98, x: 0, y: 0, boxShadow: "0px 0px 0px 0px rgba(0,0,0,1)" }}
                       className="w-full bg-black text-white py-4 font-black uppercase text-xl border-2 border-black flex items-center justify-center gap-2 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"

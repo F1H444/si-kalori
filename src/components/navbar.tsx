@@ -57,7 +57,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         ...baseLinks, 
         { 
           name: "Dashboard", 
-          href: user.hasOnboarded ? "/dashboard" : "/onboarding" 
+          href: user.isAdmin ? "/admin" : (user.hasOnboarded ? "/dashboard" : "/onboarding")
         }
       ]
     : baseLinks;
@@ -101,13 +101,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           const isAdminByEmail = (profile.email?.toLowerCase() === "admin@sikalori.com" || email?.toLowerCase() === "admin@sikalori.com");
           const isAdmin = isAdminByTable || isAdminByEmail;
 
-          console.log("🔍 [Navbar] Admin Check:", {
-            userId,
-            email: profile.email || email,
-            isAdminByTable,
-            isAdminByEmail,
-            finalIsAdmin: isAdmin
-          });
+
 
           const availableColumns = Object.keys(profile);
           let isPremium = availableColumns.includes("is_premium") ? (profile as any).is_premium : false;

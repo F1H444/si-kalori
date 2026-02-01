@@ -118,8 +118,8 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
             </div>
           </div>
 
-          <h1 className="text-4xl font-black text-center mb-2 tracking-tighter uppercase italic">Admin Portal</h1>
-          <p className="text-center text-gray-500 font-bold mb-8 uppercase text-xs tracking-[0.3em]">Authorized Personnel Only</p>
+          <h1 className="text-4xl font-black text-center mb-2 tracking-tighter uppercase italic">Portal Admin</h1>
+          <p className="text-center text-gray-500 font-bold mb-8 uppercase text-xs tracking-[0.3em]">Hanya untuk personel berwenang</p>
 
           <form onSubmit={handleAccountLogin} className="space-y-4">
             <div className="space-y-1 text-black">
@@ -168,12 +168,12 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
               disabled={isAuthenticating}
               className="w-full bg-black text-white p-5 font-black text-xl border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all uppercase flex items-center justify-center gap-2"
             >
-              {isAuthenticating ? <Loader2 className="animate-spin" /> : "Verify Access"}
+              {isAuthenticating ? <Loader2 className="animate-spin" /> : "Verifikasi Akses"}
             </button>
           </form>
 
           <div className="mt-8 pt-6 border-t-4 border-black text-center">
-            <a href="/" className="text-xs font-black uppercase hover:underline">← Back to Homepage</a>
+            <a href="/" className="text-xs font-black uppercase hover:underline">← Balik ke Beranda</a>
           </div>
         </div>
       </div>

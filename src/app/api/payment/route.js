@@ -28,26 +28,25 @@ export async function POST(request) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
-  // 3. Prepare Midtrans - Trim the key to avoid 401 errors from invisible whitespace
+  // 3. Prepare Midtrans
   const serverKey = (process.env.MIDTRANS_SERVER_KEY || "").trim();
+  const clientKey = (process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "").trim();
   
   if (!serverKey) {
     console.error("PAYMENT ERROR: MIDTRANS_SERVER_KEY is missing.");
     return NextResponse.json({ error: "Konfigurasi server bermasalah (Missing Key)" }, { status: 500 });
   }
 
-  // Force Sandbox for testing
-  const isProduction = false;
+  // Detect environment automatically based on Key
+  // SB- means Sandbox, Mid-server- means Production
+  const isProduction = !serverKey.startsWith('SB-');
   
-  // Detection for potential key mismatch
-  if (!serverKey.startsWith('SB-') && !isProduction) {
-    console.warn("⚠️ [PAYMENT] Using isProduction:false but key doesn't start with SB-. This may cause 401.");
-  }
-
+  console.log(`🚀 [Payment] Initializing Midtrans Snap in ${isProduction ? 'PROD' : 'SANDBOX'} mode`);
+  
   const snap = new Midtrans.Snap({
     isProduction: isProduction,
     serverKey: serverKey,
-    clientKey: (process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "").trim()
+    clientKey: clientKey
   });
 
   const orderId = `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;

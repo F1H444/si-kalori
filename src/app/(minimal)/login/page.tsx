@@ -270,12 +270,6 @@ function LoginContent() {
                 <motion.div variants={itemVariants} className="space-y-1">
                     <div className="flex justify-between items-end">
                         <label className="text-xs font-black uppercase tracking-widest block pl-1">Password</label>
-                        <Link 
-                            href="/forgot-password" 
-                            className="text-[10px] font-black uppercase tracking-tight text-gray-400 hover:text-black hover:underline decoration-2 underline-offset-2 transition-colors mb-1"
-                        >
-                            Lupa Password?
-                        </Link>
                     </div>
                     <div className="relative group">
                         <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-black/50 group-focus-within:text-black transition-colors" size={20} strokeWidth={2.5} />

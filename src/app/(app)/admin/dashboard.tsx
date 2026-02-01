@@ -76,6 +76,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
   const [filterGender, setFilterGender] = useState<"all" | "male" | "female">(
     "all",
   );
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   const [settings, setSettings] = useState({
     siteName: "SI KALORI",
@@ -134,24 +135,24 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       await smartUpsert("premium_subscriptions");
 
       // Refresh list
-      await fetchUsers();
-      console.log(`✅ Premium ${newStatus ? 'granted' : 'revoked'} for user ${userId}`);
+      await fetchUsers(true);
+      console.log(`✅ Akses Pro ${newStatus ? 'diberikan' : 'dicabut'} untuk user ${userId}`);
     } catch (err) {
-      console.error("Failed to toggle premium:", err);
-      alert("Gagal mengubah status premium.");
+      console.error("Gagal mengubah status premium:", err);
+      alert("Waduh, gagal ngubah status premium nih.");
     }
   };
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (isSilent = false) => {
     // Safety timeout to prevent infinite loading
     const loadTimeout = setTimeout(() => {
       console.warn("⚠️ Data fetching taking too long, forcing loading to false...");
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }, 5000);
 
     try {
-      console.log("🔍 [AdminDashboard] Starting parallel fetch sequence...");
-      setLoading(true);
+      console.log(`🔍 [AdminDashboard] Starting ${isSilent ? 'SILENT ' : ''}parallel fetch sequence...`);
+      if (!isSilent) setLoading(true);
 
       const [adminResponse, profileResponse, premiumResponse] = await Promise.all([
         // 0. Fetch Admin IDs
@@ -219,7 +220,8 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     } finally {
       clearTimeout(loadTimeout);
       setDetectingScans(false);
-      setLoading(false);
+      if (!isSilent) setLoading(false);
+      setLastUpdated(new Date());
       console.log("🏁 [AdminDashboard] Fetch sequence complete.");
     }
   }, []);
@@ -231,47 +233,51 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Supabase Realtime Subscription
+  // Supabase Realtime Subscription - ENHANCED V2
   useEffect(() => {
+    console.log("📡 [AdminDashboard] Initializing Realtime Channels...");
+
+    // Create a single channel for all public changes
     const channel = supabase
-      .channel("users-changes")
+      .channel("admin-realtime-sync")
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "users",
-        },
-        () => {
-          console.log("🔄 Users table changed, refetching...");
-          fetchUsers();
-        },
+        { event: "*", schema: "public", table: "users" },
+        (payload) => {
+          console.log("🚀 [Realtime] User change detected:", payload.eventType);
+          fetchUsers(true); // Silent refresh
+        }
       )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchUsers]);
-
-  // Realtime Subscription for Food Logs (Scans)
-  useEffect(() => {
-    const channel = supabase
-      .channel("food-logs-changes")
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "food_logs",
-        },
+        { event: "*", schema: "public", table: "food_logs" },
         () => {
-          fetchUsers();
-        },
+          console.log("🚀 [Realtime] Food log change detected");
+          fetchUsers(true);
+        }
       )
-      .subscribe();
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "premium_subscriptions" },
+        () => {
+          console.log("🚀 [Realtime] Premium subscription change detected");
+          fetchUsers(true);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "admins" },
+        () => {
+          console.log("🚀 [Realtime] Admin list change detected");
+          fetchUsers(true);
+        }
+      )
+      .subscribe((status) => {
+        console.log("📡 [Realtime] Subscription status:", status);
+      });
 
     return () => {
+      console.log("🔌 [AdminDashboard] Cleaning up Realtime Channels...");
       supabase.removeChannel(channel);
     };
   }, [fetchUsers]);
@@ -679,7 +685,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     searchQuery,
   });
 
-  if (loading) return <LoadingOverlay message="MEMUAT DASHBOARD..." isFullPage={false} />;
+  if (loading) return <LoadingOverlay message="LAGI MENYIAPKAN DATA..." isFullPage={false} />;
 
   const tabLabels: Record<string, string> = {
     overview: "Dashboard",
@@ -710,8 +716,11 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
           {/* Page Header */}
           <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-[6px] border-black pb-8">
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-3 h-3 bg-yellow-400 border-2 border-black rounded-full animate-pulse" />
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 border-2 border-green-500 rounded-full">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-[10px] font-black text-green-700 uppercase">Live Sync</span>
+                </div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">
                   Sistem Kontrol Pusat
                 </p>
@@ -721,6 +730,12 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
               </h1>
             </div>
             <div className="hidden md:block text-right">
+              <div className="flex items-center justify-end gap-2 mb-1 text-gray-400">
+                <Clock className="w-3 h-3" />
+                <p className="text-[10px] font-bold uppercase tracking-widest">
+                  Terakhir update: {lastUpdated.toLocaleTimeString('id-ID')}
+                </p>
+              </div>
               <p className="text-sm font-black text-black">ADMINISTRATOR PANEL</p>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">SIKALORI v2.0</p>
             </div>
@@ -755,7 +770,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                   icon={<BarChart3 className="w-8 h-8" />}
                 />
                 <StatCard
-                  title="Pengguna Premium"
+                  title="Member Pro"
                   value={stats.premiumUsers}
                   color="bg-blue-500"
                   delay={300}
@@ -763,8 +778,8 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                   icon={<Crown className="w-8 h-8" />}
                 />
                 <StatCard
-                  title="Revenue (Est)"
-                  value={`${(stats.estimatedRevenue / 1000).toFixed(0)}K`}
+                  title="Estimasi Cuan"
+                  value={`Rp${(stats.estimatedRevenue / 1000).toFixed(0)}rb`}
                   color="bg-purple-500"
                   delay={400}
                   mounted={mounted}
@@ -776,7 +791,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                 <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                   <h3 className="text-xl font-black tracking-tight mb-6 flex items-center gap-2">
                     <TrendingUp className="w-6 h-6" />
-                    Pertumbuhan Pengguna (6 Bulan)
+                    Tren Pertumbuhan (6 Bulan)
                   </h3>
                   <div className="flex gap-3 h-64 items-end justify-between">
                     {growthData.map((data, i) => {
@@ -816,7 +831,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                 <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                   <h3 className="text-xl font-black tracking-tight mb-6 flex items-center gap-2">
                     <Target className="w-6 h-6" />
-                    Goal Distribusi
+                    Target Diet Mereka
                   </h3>
                   <div className="space-y-6">
                     <div className="space-y-4">
@@ -894,7 +909,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                 <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                   <h3 className="text-xl font-black tracking-tight mb-6 flex items-center gap-2">
                     <Users className="w-6 h-6" />
-                    Gender
+                    Proporsi Gender
                   </h3>
                   <div className="flex gap-4 h-48 items-end justify-around pb-4 border-b-2 border-dashed border-black">
                     <GenderPillar
@@ -937,7 +952,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                       </div>
                       <input
                         type="text"
-                        placeholder="Cari berdasarkan nama atau alamat email..."
+                        placeholder="Ketikan nama atau email user yang dicari..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-16 pr-8 py-5 border-4 border-black font-black text-lg focus:outline-none focus:bg-yellow-50 transition-all placeholder:text-gray-300 placeholder:italic placeholder:font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] focus:shadow-none"
@@ -971,7 +986,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                                 : "bg-white text-black"
                             }`}
                           >
-                            {type === 'all' ? 'Semua User' : type === 'premium' ? 'Hanya Pro' : 'Free Member'}
+                            {type === 'all' ? 'Semua User' : type === 'premium' ? 'Hanya Member Pro' : 'Member Gratisan'}
                           </button>
                         ))}
                       </div>
@@ -994,7 +1009,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                                 : "bg-white text-black"
                             }`}
                           >
-                            {type === 'all' ? 'Semua' : type === 'male' ? 'Laki-Laki' : 'Perempuan'}
+                            {type === 'all' ? 'Gabungan' : type === 'male' ? 'Laki-Laki' : 'Perempuan'}
                           </button>
                         ))}
                       </div>
@@ -1033,7 +1048,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                           Log Akses
                         </th>
                         <th className="text-center p-6 font-black text-xs uppercase tracking-widest whitespace-nowrap">
-                          Aksi
+                          Kelola
                         </th>
                       </tr>
                     </thead>
@@ -1088,7 +1103,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                                 )}
                                 <div className="flex items-center gap-2 text-blue-600 font-black text-sm">
                                   <Camera size={16} />
-                                  <span>{user.scan_count || 0} Total Scans</span>
+                                  <span>{user.scan_count || 0} Kali Scan</span>
                                 </div>
                               </div>
                             </td>
@@ -1127,7 +1142,12 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                                   </span>
                                 </div>
                                 <div className="text-[10px] font-bold text-gray-500 bg-gray-100 p-2 border-2 border-black/10 uppercase italic">
-                                  {user.activity_level?.replace(/_/g, ' ') || 'Belum diisi'}
+                                  {user.activity_level === 'sedentary' ? 'Kurang Gerak' : 
+                                   user.activity_level === 'lightly_active' ? 'Aktif Ringan' : 
+                                   user.activity_level === 'moderately_active' ? 'Cukup Aktif' : 
+                                   user.activity_level === 'very_active' ? 'Sangat Aktif' : 
+                                   user.activity_level === 'extra_active' ? 'Aktif Banget' : 
+                                   user.activity_level || 'Belum diisi'}
                                 </div>
                               </div>
                             </td>
@@ -1156,7 +1176,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                                     : "bg-green-500 text-white"
                                 }`}
                               >
-                                {user.is_premium ? "Revoke Pro" : "Grant Pro"}
+                                {user.is_premium ? "Cabut Akses Pro" : "Jadikan Pro"}
                               </button>
                             </td>
                           </tr>
@@ -1189,12 +1209,12 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                      <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-4">Conversion Rate</p>
                   </div>
                   <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                     <h3 className="text-xl font-black uppercase mb-6 border-b-4 border-black pb-2 italic">Scanning Stats</h3>
+                     <h3 className="text-xl font-black uppercase mb-6 border-b-4 border-black pb-2 italic">Aktivitas Scan</h3>
                      <div className="space-y-2">
                         <p className="text-4xl font-black">{totalScans}</p>
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Total Food Items Logged</p>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Total Makanan Di-scan</p>
                         <div className="pt-4 border-t-2 border-black border-dashed mt-4">
-                           <p className="font-black text-sm uppercase">Avg Scans/User: <span className="text-blue-600">{analyticsData.avgScansPerUser}</span></p>
+                           <p className="font-black text-sm uppercase">Rata-rata/User: <span className="text-blue-600 font-black">{analyticsData.avgScansPerUser}</span></p>
                         </div>
                      </div>
                   </div>

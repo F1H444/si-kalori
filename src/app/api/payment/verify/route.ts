@@ -12,43 +12,62 @@ export async function POST(request: Request) {
 
     // 1. Initialize Midtrans
     const serverKey = (process.env.MIDTRANS_SERVER_KEY || "").trim();
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-    const isProduction = false;
-    console.log(`[VERIFY] Starting verification for Order: ${order_id}`);
-    console.log(`[VERIFY] ENV Check: URL=${supabaseUrl.slice(0, 15)}..., KeyPresent=${!!serviceKey}`);
+    const clientKey = (process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "").trim();
+    
+    // Detect environment automatically based on Key
+    const isProduction = !serverKey.startsWith('SB-');
+    
+    console.log(`[VERIFY] Starting verification in ${isProduction ? 'PROD' : 'SANDBOX'} mode for Order: ${order_id}`);
 
     const apiClient = new Midtrans.CoreApi({
       isProduction: isProduction,
       serverKey: serverKey,
-      clientKey: (process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "").trim(),
+      clientKey: clientKey,
     });
 
-    let transactionStatus;
-    try {
-      console.log(`[VERIFY] Fetching status from Midtrans for: ${order_id}`);
-      transactionStatus = await apiClient.transaction.status(order_id);
-      console.log(`[VERIFY] Midtrans Raw Response:`, transactionStatus);
-    } catch (midtransErr: any) {
-      console.error("[VERIFY] Midtrans API Error:", midtransErr.message);
-      return NextResponse.json(
-        { error: "Gagal komunkasi dengan Midtrans", details: midtransErr.message },
-        { status: 502 },
-      );
+    // 2. Fetch Status with Retry Logic (Midtrans timing can be tricky)
+    let transactionStatus: any;
+    let retries = 0;
+    const maxRetries = 2;
+
+    while (retries <= maxRetries) {
+      try {
+        console.log(`[VERIFY] Fetching status (Attempt ${retries + 1}) for: ${order_id}`);
+        transactionStatus = await apiClient.transaction.status(order_id);
+        
+        const vStatus = (transactionStatus.transaction_status || "").toLowerCase();
+        // If it's already successful, we can stop retrying
+        if (["capture", "settlement", "success"].includes(vStatus)) break;
+        
+        // If pending, wait a bit and retry
+        if (retries < maxRetries) {
+          console.log("[VERIFY] Status is pending, waiting 2 seconds before retry...");
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      } catch (midtransErr: any) {
+        if (retries === maxRetries) {
+          console.error("[VERIFY] Midtrans API Error after max retries:", midtransErr.message);
+          return NextResponse.json(
+            { error: "Gagal komunikasi dengan Midtrans", details: midtransErr.message },
+            { status: 502 },
+          );
+        }
+      }
+      retries++;
+    }
+
+    if (!transactionStatus) {
+       return NextResponse.json({ error: "Data transaksi tidak ditemukan di Midtrans" }, { status: 404 });
     }
 
     const verificationStatus = (transactionStatus.transaction_status || "").toLowerCase();
     const fraudStatus = (transactionStatus.fraud_status || "").toLowerCase();
 
-    console.log(`[VERIFY] Status: ${verificationStatus}, Fraud: ${fraudStatus}`);
+    console.log(`[VERIFY] Final Status: ${verificationStatus}, Fraud: ${fraudStatus}`);
 
     let isSuccess = false;
     if (verificationStatus === "capture") {
-      if (fraudStatus === "challenge") {
-        isSuccess = false; 
-      } else {
-        isSuccess = true;
-      }
+      isSuccess = fraudStatus !== "challenge";
     } else if (verificationStatus === "settlement" || verificationStatus === "success") {
       isSuccess = true;
     }
@@ -56,7 +75,7 @@ export async function POST(request: Request) {
     if (!isSuccess) {
       console.warn(`[VERIFY] Payment NOT successful yet. Status: ${verificationStatus}`);
       return NextResponse.json(
-        { message: "Pembayaran belum tuntas", status: verificationStatus },
+        { message: "Pembayaran belum tuntas atau gagal", status: verificationStatus },
         { status: 400 },
       );
     }
