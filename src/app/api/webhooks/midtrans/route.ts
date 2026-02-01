@@ -64,13 +64,25 @@ export async function POST(request: Request) {
       const expiredAt = new Date(startDate);
       expiredAt.setDate(startDate.getDate() + 30);
 
-      await supabase.from("premium").upsert({
+      const premiumData = {
         user_id: userId,
         transaction_id: txData.id,
         status: "active",
+        plan_type: "monthly",
         start_date: startDate.toISOString(),
         expired_at: expiredAt.toISOString(),
-      }, { onConflict: "user_id" });
+      };
+
+      let { error: premError } = await supabase.from("premium").upsert(premiumData, { onConflict: "user_id" });
+      
+      // Fallback if 'premium' table doesn't exist
+      if (premError && (
+        premError.code === "42P01" || 
+        premError.message.includes("not found") || 
+        premError.message.includes("schema cache")
+      )) {
+        await supabase.from("premium_subscriptions").upsert(premiumData, { onConflict: "user_id" });
+      }
 
       // Robust check for is_premium column before update
       const { data: sampleUser } = await supabase.from("users").select("*").limit(1).single();

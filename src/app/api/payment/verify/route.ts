@@ -113,15 +113,19 @@ export async function POST(request: Request) {
 
     console.log(`[VERIFY] Upserting premium record for User: ${userId}`);
     
-    // Attempt upsert on 'premium' (most commonly used in this project)
+    // Attempt upsert on 'premium' first
     let { error: premError } = await supabase.from("premium").upsert(
       premiumData,
       { onConflict: "user_id" }
     );
 
-    // Fallback if 'premium' table doesn't exist (using the one from database.ts)
-    if (premError && (premError.code === "42P01" || premError.message.includes("not found"))) {
-      console.warn("[VERIFY] 'premium' table not found, trying 'premium_subscriptions'...");
+    // If 'premium' fails because it doesn't exist, try 'premium_subscriptions'
+    if (premError && (
+      premError.code === "42P01" || 
+      premError.message.includes("not found") || 
+      premError.message.includes("schema cache")
+    )) {
+      console.warn("[VERIFY] 'premium' table not found or not in cache, trying 'premium_subscriptions'...");
       const { error: fallbackError } = await supabase.from("premium_subscriptions").upsert(
         premiumData,
         { onConflict: "user_id" }

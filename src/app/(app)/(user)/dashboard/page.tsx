@@ -102,18 +102,41 @@ function DashboardContent() {
           console.error("Profile incomplete or error:", error);
           router.push("/onboarding");
         } else {
-          // Fetch premium expiration if is_premium
+          // Fetch premium status and expiration (More robust check)
+          const availableColumns = Object.keys(data);
+          let isPremium = false;
           let premium_expired_at = null;
-          if (data.is_premium) {
-            const { data: premiumData } = await supabase
-              .from("premium")
-              .select("expired_at")
-              .eq("user_id", user.id)
-              .single();
-            premium_expired_at = premiumData?.expired_at || null;
+
+          if (availableColumns.includes("is_premium")) {
+            isPremium = !!data.is_premium;
           }
 
-          setProfile({ ...data, premium_expired_at });
+          // Query premium table with fallback
+          let { data: premiumData, error: premErr } = await supabase
+            .from("premium")
+            .select("expired_at, status")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          // Fallback for table name
+          if (premErr && (premErr.code === "42P01" || premErr.message.includes("not found") || premErr.message.includes("schema cache"))) {
+            const { data: subData } = await supabase
+              .from("premium_subscriptions")
+              .select("expired_at, status")
+              .eq("user_id", user.id)
+              .maybeSingle();
+            premiumData = subData;
+          }
+
+          if (premiumData) {
+            premium_expired_at = premiumData.expired_at;
+            // If column is_premium missing, we rely on the premium table status
+            if (!availableColumns.includes("is_premium")) {
+              isPremium = premiumData.status === "active" && new Date(premiumData.expired_at) > new Date();
+            }
+          }
+
+          setProfile({ ...data, is_premium: isPremium, premium_expired_at });
           // Update last_login activity
           await supabase
             .from("users")

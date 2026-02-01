@@ -89,33 +89,36 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     try {
       const newStatus = !currentStatus;
       
-      // 1. Update users table
-      const { error: userError } = await supabase
-        .from("users")
-        .update({ is_premium: newStatus })
-        .eq("id", userId);
+      // 1. Update users table if is_premium column exists
+      const { data: cols } = await supabase.from("users").select("*").limit(1).single();
+      const availableColumns = cols ? Object.keys(cols) : [];
 
-      if (userError) throw userError;
+      if (availableColumns.includes("is_premium")) {
+        await supabase
+          .from("users")
+          .update({ is_premium: newStatus })
+          .eq("id", userId);
+      }
 
       // 2. Update/Insert premium table
-      if (newStatus) {
-        // Granting premium (30 days)
-        const startDate = new Date();
-        const expiredAt = new Date(startDate);
-        expiredAt.setDate(startDate.getDate() + 30);
+      const startDate = new Date();
+      const expiredAt = new Date(startDate);
+      expiredAt.setDate(startDate.getDate() + 30);
 
-        await supabase.from("premium").upsert(
-          {
-            user_id: userId,
-            status: "active",
-            start_date: startDate.toISOString(),
-            expired_at: expiredAt.toISOString(),
-          },
-          { onConflict: "user_id" }
-        );
-      } else {
-        // Revoking premium
-        await supabase.from("premium").update({ status: "canceled" }).eq("user_id", userId);
+      const premiumData = {
+        user_id: userId,
+        status: newStatus ? "active" : "canceled",
+        plan_type: "monthly",
+        start_date: startDate.toISOString(),
+        expired_at: expiredAt.toISOString(),
+      };
+
+      // Try 'premium' table
+      let { error: premError } = await supabase.from("premium").upsert(premiumData, { onConflict: "user_id" });
+      
+      // Fallback to 'premium_subscriptions'
+      if (premError && (premError.code === "42P01" || premError.message.includes("not found") || premError.message.includes("schema cache"))) {
+        await supabase.from("premium_subscriptions").upsert(premiumData, { onConflict: "user_id" });
       }
 
       // Refresh list
@@ -144,22 +147,39 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
         throw profileError;
       }
 
-      // Fetch Premium Info to get expiration dates
-      const { data: premiumData } = await supabase
+      // Fetch Premium Info to get expiration dates and status
+      let { data: premiumData, error: pErr } = await supabase
         .from("premium")
-        .select("user_id, expired_at");
+        .select("user_id, expired_at, status");
 
-      const enrichedProfiles = (profiles || []).map(p => ({
-        ...p,
-        premium_expired_at: premiumData?.find(pr => pr.user_id === p.id)?.expired_at || null
-      }));
+      // Fallback for premium table
+      if (pErr && (pErr.code === "42P01" || pErr.message.includes("not found") || pErr.message.includes("schema cache"))) {
+        const { data: subData } = await supabase
+          .from("premium_subscriptions")
+          .select("user_id, expired_at, status");
+        premiumData = subData;
+      }
+
+      const availableColumns = profiles && profiles.length > 0 ? Object.keys(profiles[0]) : [];
+
+      const enrichedProfiles = (profiles || []).map(p => {
+        const premInfo = premiumData?.find(pr => pr.user_id === p.id);
+        const isPremiumActive = premInfo?.status === "active" && new Date(premInfo.expired_at) > new Date();
+        
+        return {
+          ...p,
+          // Handle missing is_premium column in users table
+          is_premium: availableColumns.includes("is_premium") ? p.is_premium : isPremiumActive,
+          premium_expired_at: premInfo?.expired_at || null
+        };
+      });
 
       console.log(
         "✅ Users enriched successfully:",
         enrichedProfiles.length,
         "users",
       );
-      setUsers(enrichedProfiles);
+      setUsers(enrichedProfiles as UserData[]);
 
       // Fetch Total Scans from food_logs & scan_logs (Robust Detection)
       setDetectingScans(true);

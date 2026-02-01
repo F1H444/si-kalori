@@ -79,35 +79,49 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         if (!isSubscribed) return;
 
         if (profile) {
-          let isPremium = profile.is_premium || false;
+          const availableColumns = Object.keys(profile);
+          let isPremium = availableColumns.includes("is_premium") ? (profile as any).is_premium : false;
 
-          // --- LAZY EXPIRATION CHECK ---
-          if (isPremium) {
-            const { data: premiumInfo } = await supabase
-              .from("premium")
-              .select("expired_at")
+          // --- LAZY EXPIRATION CHECK & ROBUST PREMIUM DETECTION ---
+          // Fetch from premium table with fallback
+          let { data: premiumInfo, error: pErr } = await supabase
+            .from("premium")
+            .select("expired_at, status")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          if (pErr && (pErr.code === "42P01" || pErr.message.includes("not found") || pErr.message.includes("schema cache"))) {
+            const { data: subData } = await supabase
+              .from("premium_subscriptions")
+              .select("expired_at, status")
               .eq("user_id", userId)
-              .single();
+              .maybeSingle();
+            premiumInfo = subData;
+          }
 
-            if (premiumInfo?.expired_at) {
-              const expireDate = new Date(premiumInfo.expired_at);
-              const now = new Date();
+          if (premiumInfo) {
+            const expireDate = new Date(premiumInfo.expired_at);
+            const now = new Date();
+            const isActive = premiumInfo.status === "active" && now <= expireDate;
 
-              if (now > expireDate) {
-                console.log("Premium expired! Revoking...");
-                isPremium = false;
-                // Update database
-                await supabase
-                  .from("users")
-                  .update({ is_premium: false })
-                  .eq("id", userId);
-                
-                // Also update status in premium table to expired
-                await supabase
-                  .from("premium")
-                  .update({ status: "expired" })
-                  .eq("user_id", userId);
+            // If column is_premium missing, we rely on the premium table status
+            if (!availableColumns.includes("is_premium")) {
+              isPremium = isActive;
+            }
+
+            if (now > expireDate && isActive) {
+              console.log("Premium expired! Revoking...");
+              isPremium = false;
+              
+              // Update database flags if possible
+              if (availableColumns.includes("is_premium")) {
+                await supabase.from("users").update({ is_premium: false }).eq("id", userId);
               }
+              
+              // Mark subscription as expired
+              await supabase.from("premium").update({ status: "expired" }).eq("user_id", userId);
+              // Try fallback table too
+              await supabase.from("premium_subscriptions").update({ status: "expired" }).eq("user_id", userId);
             }
           }
 
