@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
     // 1. Get Profile & Check Limits
     if (userEmail) {
       try {
-        const { supabase } = await import("@/lib/supabase");
+        const { createAdminClient } = await import("@/lib/supabase-admin");
+        const supabase = createAdminClient();
         // 1. Fetch basic profile info
         const { data: profile, error } = await supabase
           .from("users")
@@ -81,13 +82,13 @@ export async function POST(req: NextRequest) {
     }
 
     const groq = new Groq({ apiKey });
-    const systemPrompt = buildPersonalizedPrompt(userProfile);
+    const systemPrompt = buildPersonalizedPrompt(userProfile) + "\n\nWAJIB: Kembalikan HANYA JSON mentah tanpa backticks markdown atau teks penjelasan apapun.";
 
     // 3. Prepare Content
     let messages: any[] = [{ role: "system", content: systemPrompt }];
     let userContent: any[] = [];
 
-    if (image) {
+    if (image && typeof image !== "string") {
       const bytes = await image.arrayBuffer();
       const base64 = Buffer.from(bytes).toString("base64");
       const dataUrl = `data:${image.type};base64,${base64}`;
@@ -103,44 +104,36 @@ export async function POST(req: NextRequest) {
     messages.push({ role: "user", content: userContent });
 
     // 4. Analyze with Groq (Llama 3.2 Vision)
+    // Note: JSON mode might not be fully supported on all vision models yet, so we use manual parsing
     const completion = await groq.chat.completions.create({
       messages,
       model: "llama-3.2-11b-vision-preview",
-      temperature: 0.3,
-      response_format: { type: "json_object" },
+      temperature: 0.1, // Lower temperature for more consistent JSON
     });
 
     const resultContent = completion.choices[0]?.message?.content;
     if (!resultContent) throw new Error("AI No Response");
-    const jsonResult = JSON.parse(resultContent);
+    
+    // Robust JSON Extraction
+    let jsonResult;
+    try {
+      // Remove any markdown code block markers if present
+      const cleanJson = resultContent.replace(/```json/g, "").replace(/```/g, "").trim();
+      jsonResult = JSON.parse(cleanJson);
+    } catch (parseErr) {
+      console.error("AI returned invalid JSON:", resultContent);
+      throw new Error("Gagal memproses hasil analisis AI.");
+    }
 
     // 5. Validation
     if (jsonResult.is_food === false) {
-      return NextResponse.json({ error: "NOT_FOOD", message: jsonResult.description || "Bukan makanan." }, { status: 400 });
+      return NextResponse.json({ 
+        error: "NOT_FOOD", 
+        message: jsonResult.description || "Maaf, sistem hanya bisa menganalisa makanan dan minuman." 
+      }, { status: 400 });
     }
 
-    // 6. Save Log
-    if (userEmail && userProfile) {
-      try {
-        const { supabase } = await import("@/lib/supabase");
-        await supabase.from("food_logs").insert([{
-          user_id: userProfile.id,
-          food_name: jsonResult.name,
-          nutrition: {
-            calories: jsonResult.calories,
-            protein: jsonResult.protein,
-            carbs: jsonResult.carbs,
-            fat: jsonResult.fat,
-            health_score: jsonResult.health_score,
-          },
-          ai_analysis: jsonResult.description,
-          meal_type: "other",
-        }]);
-      } catch (dbErr) {
-        console.error("DB Save Fail", dbErr);
-      }
-    }
-
+    // 6. Return Result (Frontend will handle saving to DB to avoid duplication)
     return NextResponse.json({
       ...jsonResult,
       personalized: !!userProfile,
@@ -149,9 +142,16 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (err: any) {
-    console.error("Groq Error:", err);
-    let msg = "Gagal menganalisa.";
-    if (err.message?.includes("429")) msg = "Batas kuota Groq tercapai. Mohon tunggu sebentar.";
+    console.error("Analysis Exception:", err);
+    let msg = "Gagal menganalisa makanan.";
+    
+    // Handle specific Groq errors
+    if (err.message?.includes("429")) {
+      msg = "Batas penggunaan AI tercapai. Silakan coba lagi dalam 1 menit.";
+    } else if (err.message?.includes("analysis")) {
+      msg = err.message;
+    }
+    
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

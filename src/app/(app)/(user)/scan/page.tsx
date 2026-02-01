@@ -302,12 +302,27 @@ export default function ScanPage() {
 
             const aiData: NutritionResult = data;
 
+            // Mapping Indonesian meal types to DB Enums
+            const mealTypeMapping: Record<string, string> = {
+                "pagi": "breakfast",
+                "siang": "lunch",
+                "malam": "dinner",
+                "snack": "snack",
+                "minuman": "snack" // Fallback
+            };
+
+            const dbMealType = mealTypeMapping[mealType] || "snack";
+
             // 4. Simpan ke Tabel 'food_logs'
             const { error: dbError } = await supabase
                 .from("food_logs")
                 .insert([{
                     user_id: user.id,
                     food_name: aiData.name,
+                    calories: aiData.calories,
+                    protein: Number(aiData.protein) || 0,
+                    carbs: Number(aiData.carbs) || 0,
+                    fat: Number(aiData.fat) || 0,
                     nutrition: {
                         calories: aiData.calories,
                         protein: aiData.protein,
@@ -317,8 +332,7 @@ export default function ScanPage() {
                     },
                     ai_analysis: aiData.description,
                     image_url: publicUrl, 
-                    meal_type: mealType,
-                    rating: aiData.health_score
+                    meal_type: dbMealType as any,
                 }]);
 
             if (dbError) throw dbError;
@@ -355,7 +369,7 @@ export default function ScanPage() {
                 
                 <AnimatePresence mode="wait">
                     {/* LOADING OVERLAY */}
-                    {loading && <LoadingOverlay message="MENGANALISA..." />}
+                    {loading && <LoadingOverlay message="MENGANALISA..." isFullPage={false} />}
 
                     {/* SELECT MODE */}
                     {mode === "select" && (

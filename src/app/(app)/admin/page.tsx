@@ -40,7 +40,7 @@ export default function AdminPage() {
       <div className="shrink-0">
         <Sidebar forceShow={true} />
       </div>
-      <div className="flex-1 min-w-0 h-full overflow-hidden">
+      <div className="flex-1 min-w-0 h-full overflow-hidden flex flex-col">
         <AdminDashboard activeTab={activeTab} />
       </div>
     </div>

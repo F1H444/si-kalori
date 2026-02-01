@@ -71,7 +71,7 @@ interface UserProfile {
 
 export default function UserDashboard() {
   return (
-    <Suspense fallback={<LoadingOverlay message="MENYIAPKAN PANEL..." />}>
+    <Suspense fallback={<LoadingOverlay message="MENYIAPKAN PANEL..." isFullPage={false} />}>
       <DashboardContent />
     </Suspense>
   );
@@ -154,8 +154,8 @@ function DashboardContent() {
 
   // --- TAMPILAN LOADING BARU ---
   if (loading) return (
-    <div className="fixed inset-0 z-[999] bg-white flex items-center justify-center p-4">
-      <LoadingOverlay message="MENYIAPKAN PANEL..." isFullPage={true} />
+    <div className="flex-1 flex items-center justify-center p-4 min-h-[500px]">
+      <LoadingOverlay message="MENYIAPKAN PANEL..." isFullPage={false} />
     </div>
   );
 

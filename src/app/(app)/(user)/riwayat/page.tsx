@@ -167,8 +167,8 @@ export default function RiwayatPage() {
 
 
   if (!mounted || loading) return (
-    <div className="fixed inset-0 z-[999] bg-white flex items-center justify-center p-4">
-      <LoadingOverlay message="MEMUAT RIWAYAT..." isFullPage={true} />
+    <div className="flex-1 flex items-center justify-center p-4 min-h-[500px]">
+      <LoadingOverlay message="MEMUAT RIWAYAT..." isFullPage={false} />
     </div>
   );
 

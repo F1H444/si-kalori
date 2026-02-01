@@ -131,33 +131,44 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
   };
 
   const fetchUsers = useCallback(async () => {
-    try {
-      console.log("🔍 Fetching users from Supabase...");
+    // Safety timeout to prevent infinite loading
+    const loadTimeout = setTimeout(() => {
+      console.warn("⚠️ Data fetching taking too long, forcing loading to false...");
+      setLoading(false);
+    }, 5000);
 
-      // Fetch Profiles
+    try {
+      console.log("🔍 [AdminDashboard] Starting fetch sequence...");
+      setLoading(true);
+
+      // 1. Fetch Profiles
       const { data: profiles, error: profileError } = await supabase
         .from("users")
         .select("*")
         .order("created_at", { ascending: false });
 
-      console.log("📊 Supabase Response:", { profiles, profileError });
-
       if (profileError) {
-        console.error("❌ Profile Error:", profileError);
+        console.error("❌ [AdminDashboard] User Profile Error:", profileError);
         throw profileError;
       }
+      console.log("✅ [AdminDashboard] Profiles fetched:", profiles?.length);
 
-      // Fetch Premium Info to get expiration dates and status
-      let { data: premiumData, error: pErr } = await supabase
-        .from("premium")
-        .select("user_id, expired_at, status");
-
-      // Fallback for premium table
-      if (pErr && (pErr.code === "42P01" || pErr.message.includes("not found") || pErr.message.includes("schema cache"))) {
-        const { data: subData } = await supabase
-          .from("premium_subscriptions")
+      // 2. Fetch Premium Info (Non-blocking)
+      let premiumData: any[] = [];
+      try {
+        let { data: pData, error: pErr } = await supabase
+          .from("premium")
           .select("user_id, expired_at, status");
-        premiumData = subData;
+
+        if (pErr && (pErr.code === "42P01" || pErr.message.includes("not found"))) {
+          const { data: subData } = await supabase
+            .from("premium_subscriptions")
+            .select("user_id, expired_at, status");
+          pData = subData;
+        }
+        premiumData = pData || [];
+      } catch (e) {
+        console.warn("⚠️ [AdminDashboard] Failed to fetch premium data, continuing...", e);
       }
 
       const availableColumns = profiles && profiles.length > 0 ? Object.keys(profiles[0]) : [];
@@ -168,50 +179,45 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
         
         return {
           ...p,
-          // Handle missing is_premium column in users table
           is_premium: availableColumns.includes("is_premium") ? p.is_premium : isPremiumActive,
           premium_expired_at: premInfo?.expired_at || null
         };
       });
 
-      console.log(
-        "✅ Users enriched successfully:",
-        enrichedProfiles.length,
-        "users",
-      );
       setUsers(enrichedProfiles as UserData[]);
+      console.log("✅ [AdminDashboard] Users enriched and set.");
 
-      // Fetch Total Scans from food_logs & scan_logs (Robust Detection)
-      setDetectingScans(true);
-      let countResult = 0;
-
-      const { count: foodLogsCount, error: foodError } = await supabase
-        .from("food_logs")
-        .select("*", { count: "exact", head: true });
-
-      if (foodError) {
-        console.warn("⚠️ Diagnosa food_logs:", foodError.message);
-      } else {
-        countResult = foodLogsCount || 0;
-        console.log("📊 Food logs count:", countResult);
-      }
-
-      // Fallback check to scan_logs if food_logs is 0
-      if (countResult === 0) {
-        const { count: scanLogsCount } = await supabase
-          .from("scan_logs")
+      // 3. Fetch Total Scans (Non-blocking)
+      try {
+        setDetectingScans(true);
+        let countResult = 0;
+        const { count: foodLogsCount } = await supabase
+          .from("food_logs")
           .select("*", { count: "exact", head: true });
-        countResult = scanLogsCount || 0;
-        console.log("📊 Scan logs count (fallback):", countResult);
+        
+        countResult = foodLogsCount || 0;
+        
+        if (countResult === 0) {
+          const { count: scanLogsCount } = await supabase
+            .from("scan_logs")
+            .select("*", { count: "exact", head: true });
+          countResult = scanLogsCount || 0;
+        }
+        
+        setTotalScans(countResult);
+        console.log("📊 [AdminDashboard] Total scans:", countResult);
+      } catch (scErr) {
+        console.warn("⚠️ [AdminDashboard] Failed to fetch scan count:", scErr);
       }
 
-      console.log("📈 Total scans set to:", countResult);
-      setTotalScans(countResult);
-    } catch (error: unknown) {
-      console.error("❌ Gagal mengambil data user:", error);
+    } catch (error: any) {
+      console.error("❌ [AdminDashboard] Master Fetch Error:", error);
+      // If profiles fail, we can't show much, but at least stop loading
     } finally {
+      clearTimeout(loadTimeout);
       setDetectingScans(false);
       setLoading(false);
+      console.log("🏁 [AdminDashboard] Fetch sequence complete.");
     }
   }, []);
 
@@ -685,7 +691,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     searchQuery,
   });
 
-  if (loading) return <LoadingOverlay message="MEMUAT DASHBOARD..." />;
+  if (loading) return <LoadingOverlay message="MEMUAT DASHBOARD..." isFullPage={false} />;
 
   const tabLabels: Record<string, string> = {
     overview: "Dashboard",
