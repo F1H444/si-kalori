@@ -100,7 +100,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
           .eq("id", userId);
       }
 
-      // 2. Update/Insert premium table
+      // 2. Update/Insert premium tables
       const startDate = new Date();
       const expiredAt = new Date(startDate);
       expiredAt.setDate(startDate.getDate() + 30);
@@ -113,12 +113,28 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
         expired_at: expiredAt.toISOString(),
       };
 
+      // Helper function to update or insert without relying on ON CONFLICT constraint
+      const smartUpsert = async (tableName: string) => {
+        // Try update first
+        const { data, error: updateError } = await supabase
+          .from(tableName)
+          .update(premiumData)
+          .eq("user_id", userId)
+          .select();
+        
+        // If no data returned (not found), then insert
+        if (!updateError && (!data || data.length === 0)) {
+          await supabase.from(tableName).insert(premiumData);
+        }
+        return updateError;
+      };
+
       // Try 'premium' table
-      let { error: premError } = await supabase.from("premium").upsert(premiumData, { onConflict: "user_id" });
+      let premError = await smartUpsert("premium");
       
-      // Fallback to 'premium_subscriptions'
-      if (premError && (premError.code === "42P01" || premError.message.includes("not found") || premError.message.includes("schema cache"))) {
-        await supabase.from("premium_subscriptions").upsert(premiumData, { onConflict: "user_id" });
+      // Fallback to 'premium_subscriptions' if table 'premium' doesn't exist
+      if (premError && (premError.code === "42P01" || premError.message.includes("not found"))) {
+        await smartUpsert("premium_subscriptions");
       }
 
       // Refresh list

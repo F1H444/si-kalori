@@ -161,13 +161,13 @@ function SuccessContent() {
               </motion.button>
             ) : null}
             
-            <Link href="/riwayat" className="block">
+            <Link href="/" className="block">
                 <motion.button 
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className="w-full bg-white text-black py-4 font-bold uppercase text-lg border-2 border-black hover:bg-gray-50 transition-all"
                 >
-                    Lihat Riwayat
+                    Kembali ke Beranda
                 </motion.button>
             </Link>
         </div>

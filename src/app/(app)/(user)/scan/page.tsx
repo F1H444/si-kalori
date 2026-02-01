@@ -483,6 +483,18 @@ export default function ScanPage() {
                             >
                                 <ArrowLeft size={16} /> Batal
                             </motion.button>
+                            
+                            {/* Preview Item */}
+                            {preview ? (
+                                <motion.div variants={mealItemVariants} className="mb-6 border-8 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white overflow-hidden aspect-video">
+                                    <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                </motion.div>
+                            ) : inputText ? (
+                                <motion.div variants={mealItemVariants} className="mb-6 p-6 border-8 border-black shadow-[8px_8px_0px_0px_rgba(37,99,235,1)] bg-white">
+                                    <p className="font-black italic uppercase leading-tight text-xl text-blue-600">"{inputText}"</p>
+                                </motion.div>
+                            ) : null}
+
                             <motion.div variants={mealItemVariants}>
                                 <h2 className="text-4xl md:text-5xl font-black uppercase text-center mb-2 leading-none">Kapan Kamu</h2>
                                 <h2 className="text-4xl md:text-5xl font-black uppercase italic text-center mb-8 bg-yellow-400 inline-block w-full">Makan Ini?</h2>

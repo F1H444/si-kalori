@@ -111,26 +111,36 @@ export async function POST(request: Request) {
       expired_at: expiredAt.toISOString(),
     };
 
-    console.log(`[VERIFY] Upserting premium record for User: ${userId}`);
+    console.log(`[VERIFY] Updating premium record for User: ${userId}`);
     
-    // Attempt upsert on 'premium' first
-    let { error: premError } = await supabase.from("premium").upsert(
-      premiumData,
-      { onConflict: "user_id" }
-    );
+    // Helper function to update or insert without relying on ON CONFLICT constraint
+    const smartUpsert = async (tableName: string) => {
+      // Try update first
+      const { data, error: updateError } = await supabase
+        .from(tableName)
+        .update(premiumData)
+        .eq("user_id", userId)
+        .select();
+      
+      // If no data returned (not found), then insert
+      if (!updateError && (!data || data.length === 0)) {
+        console.log(`[VERIFY] Not found in ${tableName}, inserting new record...`);
+        const { error: insertError } = await supabase.from(tableName).insert(premiumData);
+        return insertError;
+      }
+      return updateError;
+    };
+
+    // Attempt smart update/insert on 'premium' first
+    let premError = await smartUpsert("premium");
 
     // If 'premium' fails because it doesn't exist, try 'premium_subscriptions'
     if (premError && (
       premError.code === "42P01" || 
-      premError.message.includes("not found") || 
-      premError.message.includes("schema cache")
+      premError.message.includes("not found")
     )) {
-      console.warn("[VERIFY] 'premium' table not found or not in cache, trying 'premium_subscriptions'...");
-      const { error: fallbackError } = await supabase.from("premium_subscriptions").upsert(
-        premiumData,
-        { onConflict: "user_id" }
-      );
-      premError = fallbackError;
+      console.warn("[VERIFY] 'premium' table not found, trying 'premium_subscriptions'...");
+      premError = await smartUpsert("premium_subscriptions");
     }
 
     if (premError) {

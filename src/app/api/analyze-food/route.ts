@@ -117,12 +117,19 @@ export async function POST(req: NextRequest) {
     // Robust JSON Extraction
     let jsonResult;
     try {
-      // Remove any markdown code block markers if present
-      const cleanJson = resultContent.replace(/```json/g, "").replace(/```/g, "").trim();
-      jsonResult = JSON.parse(cleanJson);
+      // Find the first '{' and the last '}' to extract only the JSON object
+      const firstBrace = resultContent.indexOf('{');
+      const lastBrace = resultContent.lastIndexOf('}');
+      
+      if (firstBrace === -1 || lastBrace === -1) {
+        throw new Error("Pola JSON tidak ditemukan dalam respon AI.");
+      }
+      
+      const jsonString = resultContent.substring(firstBrace, lastBrace + 1);
+      jsonResult = JSON.parse(jsonString);
     } catch (parseErr) {
-      console.error("AI returned invalid JSON:", resultContent);
-      throw new Error("Gagal memproses hasil analisis AI.");
+      console.error("AI returned unparsable content:", resultContent);
+      throw new Error("Gagal memproses format data dari AI.");
     }
 
     // 5. Validation
