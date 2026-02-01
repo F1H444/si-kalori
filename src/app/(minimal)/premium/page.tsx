@@ -1,12 +1,18 @@
 "use client";
 
-import Script from "next/script";
-
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Check, Star, Zap, TrendingUp, Loader2, Crown } from "lucide-react";
+import { 
+  Zap, 
+  Star, 
+  TrendingUp, 
+  Check, 
+  Crown,
+  Loader2
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/navbar";
+import { motion } from "framer-motion";
+import Script from "next/script";
 
 // Animation Variants
 const containerVariants = {
@@ -14,14 +20,14 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.1,
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
@@ -34,14 +40,29 @@ const itemVariants = {
 };
 
 const headerVariants = {
-  hidden: { opacity: 0, x: -40 },
+  hidden: { opacity: 0, x: -50 },
   visible: {
     opacity: 1,
     x: 0,
     transition: {
       type: "spring" as const,
       stiffness: 80,
+      damping: 15,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.9, rotate: -2 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    rotate: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 120,
       damping: 12,
+      delay: 0.4,
     },
   },
 };
@@ -54,36 +75,16 @@ const featureVariants = {
     transition: {
       type: "spring" as const,
       stiffness: 100,
-      damping: 12,
-    },
-  },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, scale: 0.9, y: 20 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 80,
       damping: 15,
-      delay: 0.3,
     },
   },
 };
 
 const checkItemVariants = {
-  hidden: { opacity: 0, x: -20 },
+  hidden: { opacity: 0, x: 10 },
   visible: {
     opacity: 1,
     x: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 100,
-      damping: 12,
-    },
   },
 };
 
@@ -91,12 +92,11 @@ export default function PremiumPage() {
   const [loading, setLoading] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
         const { data: profile } = await supabase
@@ -113,93 +113,95 @@ export default function PremiumPage() {
     checkUser();
   }, []);
 
-  const [scriptLoaded, setScriptLoaded] = useState(false);
-
   useEffect(() => {
-    // Check if Snap is already loaded
-    if ((window as any).snap) {
-      setScriptLoaded(true);
-    }
+    // Check if Snap is already loaded periodically
+    const interval = setInterval(() => {
+      if ((window as any).snap) {
+        setScriptLoaded(true);
+        clearInterval(interval);
+      }
+    }, 500);
+    return () => clearInterval(interval);
   }, []);
 
   const handleUpgrade = async () => {
     if (!user) {
-      window.location.href = "/login";
-      return;
+       // Save intended destination
+       if (typeof window !== 'undefined') {
+         sessionStorage.setItem('redirect_after_login', '/premium');
+       }
+       window.location.href = "/login";
+       return;
     }
 
-    if (!scriptLoaded) {
-      alert("Sistem pembayaran sedang memuat, cobalah sesaat lagi.");
+    if (!scriptLoaded || !(window as any).snap) {
+      alert("Sistem pembayaran sedang diinisialisasi, mohon tunggu 2-3 detik.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch("/api/payment", { method: "POST" });
+      // 1. Create Order
+      const response = await fetch("/api/payment", { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
       const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 401 || response.status === 500) {
-          throw new Error(
-            "Gagal memproses pembayaran. Periksa konfigurasi Key Midtrans.",
-          );
-        }
-        throw new Error(data.error || "Gagal inisialisasi pembayaran");
+        throw new Error(data.error || "Gagal membuat pesanan pembayaran.");
       }
 
-      if ((window as any).snap) {
-        (window as any).snap.pay(data.token, {
-          onSuccess: async function (result: any) {
-            console.log("Payment Result:", result);
-
-            // Call Verification API (Bypasses RLS & Checks Midtrans)
-            try {
-              const verifyReq = await fetch("/api/payment/verify", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ order_id: result.order_id }),
-              });
-
-              if (verifyReq.ok) {
-                setIsPremium(true);
-                alert("Pembayaran Berhasil! Akun Anda kini Premium.");
-                window.location.href = "/dashboard?payment=success";
-              } else {
-                throw new Error("Verifikasi pembayaran gagal di server.");
-              }
-            } catch (vErr) {
-                console.error("Verification Error:", vErr);
-                alert(
-                  "Pembayaran sukses tapi gagal verifikasi. Silakan refresh.",
-                );
-                window.location.href = "/dashboard?payment=pending"; // Still redirect as it might be a false negative or webhook will catch up
-              }
-          },
-          onPending: function (result: any) {
-            alert("Menunggu pembayaran...");
-            console.log(result);
-          },
-          onError: function (result: any) {
-            alert("Pembayaran gagal!");
-            console.log(result);
-          },
-          onClose: function () {
-            // alert('Pembayaran dibatalkan.');
-          },
-        });
-      } else {
-        alert("Gagal memuat sistem pembayaran. Coba refresh halaman.");
+      if (!data.token) {
+        throw new Error("Token pembayaran tidak valid dari server.");
       }
+
+      // 2. Open Snap Popup
+      (window as any).snap.pay(data.token, {
+        onSuccess: async function (result: any) {
+          console.log("Midtrans Success:", result);
+          setLoading(true); // Show loader during verification
+          
+          try {
+            const verifyReq = await fetch("/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ order_id: result.order_id }),
+            });
+
+            if (verifyReq.ok) {
+              setIsPremium(true);
+              window.location.href = "/dashboard?payment=success";
+            } else {
+              window.location.href = "/dashboard?payment=pending";
+            }
+          } catch (vErr) {
+            console.error("Verification error:", vErr);
+            window.location.href = "/dashboard?payment=pending";
+          }
+        },
+        onPending: function (result: any) {
+          console.log("Midtrans Pending:", result);
+          window.location.href = "/dashboard?payment=pending";
+        },
+        onError: function (result: any) {
+          console.error("Midtrans Error:", result);
+          alert("Pembayaran Gagal. Silakan coba lagi.");
+          setLoading(false);
+        },
+        onClose: function () {
+          setLoading(false);
+        },
+      });
     } catch (err: any) {
-      console.error("Error:", err);
-      alert(err.message || "Terjadi kesalahan.");
-    } finally {
+      console.error("Payment Process Error:", err);
+      alert(err.message || "Terjadi kesalahan saat memulai pembayaran.");
       setLoading(false);
     }
   };
 
-  // Ikon disesuaikan dengan konteks fitur (Zap untuk kecepatan, Star untuk AI, TrendingUp untuk laporan)
   const features = [
     {
       icon: <Zap className="w-6 h-6 sm:w-8 sm:h-8" />,
@@ -394,13 +396,17 @@ export default function PremiumPage() {
                 >
                   {loading ? (
                     <div className="flex items-center gap-3">
-                      <Loader2 className="w-8 h-8 animate-spin" />
+                      <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-8 h-8 border-4 border-white border-t-transparent rounded-full"
+                      />
                       <span>Memproses...</span>
                     </div>
                   ) : isPremium ? (
                     "SUDAH PREMIUM"
                   ) : !scriptLoaded ? (
-                    "Memuat Sistem..."
+                    "Inisialisasi..."
                   ) : (
                     "Bayar Sekarang"
                   )}
@@ -414,7 +420,7 @@ export default function PremiumPage() {
       <Script
         src="https://app.sandbox.midtrans.com/snap/snap.js"
         data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ""}
-        strategy="lazyOnload"
+        strategy="afterInteractive"
         onLoad={() => setScriptLoaded(true)}
       />
     </div>

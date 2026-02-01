@@ -167,8 +167,8 @@ export default function RiwayatPage() {
 
 
   if (!mounted || loading) return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative">
-      <LoadingOverlay message="MEMUAT RIWAYAT..." isFullPage={false} />
+    <div className="fixed inset-0 z-[999] bg-white flex items-center justify-center p-4">
+      <LoadingOverlay message="MEMUAT RIWAYAT..." isFullPage={true} />
     </div>
   );
 
@@ -251,10 +251,14 @@ export default function RiwayatPage() {
                   className="flex-1 bg-red-500 text-white border-4 border-black p-4 font-black uppercase tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isDeleting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Menghapus...
-                    </>
+                    <div className="flex items-center gap-2">
+                      <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                      />
+                      <span>Menghapus...</span>
+                    </div>
                   ) : (
                     "Ya, Hapus"
                   )}

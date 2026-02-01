@@ -305,13 +305,25 @@ function LoginContent() {
                 )}
 
                 <motion.button
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
                     variants={itemVariants}
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-black text-white p-4 font-black uppercase tracking-widest hover:bg-gray-900 focus:ring-4 focus:ring-yellow-400 transition-all flex items-center justify-center gap-2 group text-sm sm:text-base"
+                    className="w-full bg-black text-white p-4 font-black uppercase tracking-widest hover:bg-gray-900 focus:ring-4 focus:ring-yellow-400 transition-all flex items-center justify-center gap-2 group text-sm sm:text-base h-[56px] sm:h-[64px]"
                 >
-                    Masuk Sekarang
-                    <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} strokeWidth={3} />
+                    {loading ? (
+                        <motion.div 
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="w-6 h-6 border-4 border-white border-t-transparent rounded-full"
+                        />
+                    ) : (
+                        <>
+                            Masuk Sekarang
+                            <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} strokeWidth={3} />
+                        </>
+                    )}
                 </motion.button>
             </form>
 

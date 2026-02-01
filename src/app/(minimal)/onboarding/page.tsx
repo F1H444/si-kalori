@@ -579,7 +579,11 @@ export default function Onboarding() {
           >
             {loading ? (
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                <motion.div 
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-white border-t-transparent rounded-full"
+                />
                 <span className="text-sm">MEMPROSES...</span>
               </div>
             ) : (

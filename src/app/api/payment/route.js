@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import Midtrans from "midtrans-client";
 import { createClient } from "@/lib/supabase-server";
+import { createAdminClient } from "@/lib/supabase-admin";
 
 export async function POST(request) {
   const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
 
   // 1. Auth Check
   const {
@@ -26,9 +28,9 @@ export async function POST(request) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
-  // 3. Prepare Midtrans
-  const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
-
+  // 3. Prepare Midtrans - Trim the key to avoid 401 errors from invisible whitespace
+  const serverKey = (process.env.MIDTRANS_SERVER_KEY || "").trim();
+  
   if (!serverKey) {
     console.error(
       "PAYMENT ERROR: MIDTRANS_SERVER_KEY is missing in environment variables.",
@@ -39,7 +41,7 @@ export async function POST(request) {
     );
   }
 
-  // FORCE SANDBOX: User keys look like Prod but are Sandbox
+  // Force Sandbox for testing as requested
   const isProduction = false;
 
   console.log("PAYMENT DEBUG:", {
@@ -52,27 +54,33 @@ export async function POST(request) {
   const snap = new Midtrans.Snap({
     isProduction: isProduction,
     serverKey: serverKey,
+    clientKey: (process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "").trim()
   });
 
   const orderId = `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const amount = 16000; // Fixed amount from UI
 
   // 4. Create Transaction Record
-  const { error: transactionError } = await supabase
+  // Using Admin Client to bypass RLS for logging transactions
+  console.log("Creating transaction record for:", user.id, orderId);
+  const { error: transactionError } = await supabaseAdmin
     .from("transactions")
     .insert({
       user_id: user.id,
       order_id: orderId,
       amount: amount,
       status: "pending",
-      payment_method: "midtrans",
-      // payment_url: "", // Will be filled by webhooks or client if needed, or we can save token here
+      payment_type: "midtrans",
+      metadata: { 
+        email: user.email, 
+        created_at_api: new Date().toISOString() 
+      }
     });
-
+  
   if (transactionError) {
-    console.error("Transaction create error:", transactionError);
+    console.error("PAYMENT DB ERROR Details:", transactionError);
     return NextResponse.json(
-      { error: "Failed to create transaction" },
+      { error: `Database Error: ${transactionError.message}` },
       { status: 500 },
     );
   }

@@ -11,18 +11,17 @@ export async function POST(request: Request) {
     }
 
     // 1. Initialize Midtrans
-    const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
+    const serverKey = (process.env.MIDTRANS_SERVER_KEY || "").trim();
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
     const isProduction = false;
-
     console.log(`[VERIFY] Starting verification for Order: ${order_id}`);
     console.log(`[VERIFY] ENV Check: URL=${supabaseUrl.slice(0, 15)}..., KeyPresent=${!!serviceKey}`);
 
     const apiClient = new Midtrans.CoreApi({
       isProduction: isProduction,
       serverKey: serverKey,
-      clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,
+      clientKey: (process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "").trim(),
     });
 
     let transactionStatus;
@@ -97,25 +96,46 @@ export async function POST(request: Request) {
       }
     }
 
-    // Update Premium Table
+    // 4. Update Premium Table
     const startDate = new Date();
     const expiredAt = new Date(startDate);
     expiredAt.setDate(startDate.getDate() + 30);
 
-    const { error: premError } = await supabase.from("premium").upsert(
-      {
-        user_id: userId,
-        transaction_id: currentTx.id || null, // Link to current transaction
-        status: "active",
-        start_date: startDate.toISOString(),
-        expired_at: expiredAt.toISOString(),
-      },
+    // Provide all possible required fields based on schema knowledge
+    const premiumData = {
+      user_id: userId,
+      transaction_id: currentTx.id || null,
+      status: "active",
+      plan_type: "monthly", // Required in premium_subscriptions table
+      start_date: startDate.toISOString(),
+      expired_at: expiredAt.toISOString(),
+    };
+
+    console.log(`[VERIFY] Upserting premium record for User: ${userId}`);
+    
+    // Attempt upsert on 'premium' (most commonly used in this project)
+    let { error: premError } = await supabase.from("premium").upsert(
+      premiumData,
       { onConflict: "user_id" }
     );
 
+    // Fallback if 'premium' table doesn't exist (using the one from database.ts)
+    if (premError && (premError.code === "42P01" || premError.message.includes("not found"))) {
+      console.warn("[VERIFY] 'premium' table not found, trying 'premium_subscriptions'...");
+      const { error: fallbackError } = await supabase.from("premium_subscriptions").upsert(
+        premiumData,
+        { onConflict: "user_id" }
+      );
+      premError = fallbackError;
+    }
+
     if (premError) {
-      console.error("[VERIFY] DB Premium Error:", premError);
-      return NextResponse.json({ error: "Gagal memperbarui status premium di database" }, { status: 500 });
+      console.error("[VERIFY] DB Premium Error Final:", premError);
+      return NextResponse.json({ 
+        error: "Gagal memperbarui status premium di database",
+        details: premError.message,
+        code: premError.code
+      }, { status: 500 });
     }
     
     // Sync User Flag

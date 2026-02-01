@@ -86,48 +86,53 @@ function DashboardContent() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return router.push("/login");
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return router.push("/login");
 
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (error || !data?.daily_calorie_target) {
-        console.error("Profile incomplete or error:", error);
-        router.push("/onboarding");
-      } else {
-        // Fetch premium expiration if is_premium
-        let premium_expired_at = null;
-        if (data.is_premium) {
-          const { data: premiumData } = await supabase
-            .from("premium")
-            .select("expired_at")
-            .eq("user_id", user.id)
-            .single();
-          premium_expired_at = premiumData?.expired_at || null;
-        }
-
-        setProfile({ ...data, premium_expired_at });
-        // Update last_login activity
-        await supabase
+        const { data, error } = await supabase
           .from("users")
-          .update({ last_login: new Date().toISOString() })
-          .eq("id", user.id);
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (error || !data?.daily_calorie_target) {
+          console.error("Profile incomplete or error:", error);
+          router.push("/onboarding");
+        } else {
+          // Fetch premium expiration if is_premium
+          let premium_expired_at = null;
+          if (data.is_premium) {
+            const { data: premiumData } = await supabase
+              .from("premium")
+              .select("expired_at")
+              .eq("user_id", user.id)
+              .single();
+            premium_expired_at = premiumData?.expired_at || null;
+          }
+
+          setProfile({ ...data, premium_expired_at });
+          // Update last_login activity
+          await supabase
+            .from("users")
+            .update({ last_login: new Date().toISOString() })
+            .eq("id", user.id);
+        }
+      } catch (err) {
+        console.error("Fetch User Data Error:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchUserData();
   }, [router]);
 
-  // --- TAMPILAN LOADING BARU (NEO-BRUTALIST SKELETON) ---
+  // --- TAMPILAN LOADING BARU ---
   if (loading) return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative">
-      <LoadingOverlay message="MENYIAPKAN PANEL..." isFullPage={false} />
+    <div className="fixed inset-0 z-[999] bg-white flex items-center justify-center p-4">
+      <LoadingOverlay message="MENYIAPKAN PANEL..." isFullPage={true} />
     </div>
   );
 

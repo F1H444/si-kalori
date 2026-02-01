@@ -105,8 +105,20 @@ function SuccessContent() {
           className="text-lg font-bold uppercase mb-8 leading-relaxed"
         >
           {status === "verifying" ? (
-            <span className="flex items-center justify-center gap-2">
-              <Loader2 className="animate-spin" /> Sedang memverifikasi transaksi...
+            <span className="flex flex-col items-center justify-center gap-4 py-4">
+              <div className="relative w-12 h-12">
+                <motion.div 
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 border-4 border-gray-100 border-t-black rounded-full"
+                />
+                <motion.div 
+                   animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                   transition={{ duration: 1.5, repeat: Infinity }}
+                   className="absolute inset-3 bg-yellow-400 rounded-full border-2 border-black"
+                />
+              </div>
+              <span className="text-sm font-black italic tracking-widest text-black/60">MEMVERIFIKASI TRANSAKSI...</span>
             </span>
           ) : isError ? (
             <span className="text-red-600 block bg-red-50 p-4 border-2 border-black border-dashed">

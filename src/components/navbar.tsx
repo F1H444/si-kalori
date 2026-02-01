@@ -316,7 +316,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
               {/* 3. BAGIAN KANAN: ACTIONS */}
               <div className="flex-1 flex items-center justify-end gap-3">
                 {loading ? (
-                  <div className="w-10 h-10 border-4 border-black border-t-yellow-400 rounded-full animate-spin"></div>
+                  <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-10 h-10 border-4 border-black border-t-transparent rounded-full"
+                  />
                 ) : user ? (
                   <div className="flex items-center gap-2">
                     {user.isPremium && (
