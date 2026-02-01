@@ -144,30 +144,39 @@ export default function Onboarding() {
 
   // Auth Check
   useEffect(() => {
+    let isMounted = true;
     const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
+      try {
+        const {
+          data: { user },
+          error: authError
+        } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+          if (isMounted) router.push("/login");
+          return;
+        }
+
+        // Check if user already finished onboarding
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("has_completed_onboarding")
+          .eq("id", user.id)
+          .single();
+
+        if (profile?.has_completed_onboarding) {
+          if (isMounted) router.replace("/dashboard");
+          return;
+        }
+
+        if (isMounted) setIsCheckingAuth(false);
+      } catch (err) {
+        console.error("Auth check error in onboarding:", err);
+        if (isMounted) setIsCheckingAuth(false); // Go to onboarding anyway or show error
       }
-
-      // Check if user already finished onboarding
-      const { data: profile } = await supabase
-        .from("users")
-        .select("has_completed_onboarding")
-        .eq("id", user.id)
-        .single();
-
-      if (profile?.has_completed_onboarding) {
-        router.replace("/dashboard");
-        return;
-      }
-
-      setIsCheckingAuth(false);
     };
     checkAuth();
+    return () => { isMounted = false; };
   }, [router]);
 
   const [formData, setFormData] = useState<OnboardingFormData>({

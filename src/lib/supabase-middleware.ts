@@ -51,11 +51,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Protected Routes
-  const protectedRoutes = ['/dashboard', '/scan', '/history', '/settings'];
+  const protectedRoutes = ['/dashboard', '/scan', '/riwayat', '/settings', '/onboarding', '/premium'];
   const isProtectedRoute = protectedRoutes.some(route => url.pathname.startsWith(route));
   
   // Auth Routes (Login)
-  const isAuthRoute = url.pathname.startsWith('/login');
+  const isAuthRoute = url.pathname.startsWith('/login') || url.pathname.startsWith('/register');
   
   // 1. If user is NOT logged in and tries to access protected route -> Redirect to Login
   if (!user && isProtectedRoute) {

@@ -74,27 +74,32 @@ export default function RiwayatPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchLogs = async () => {
-    setLoading(true);
+    if (!mounted) setLoading(true); // Don't reset loading if already fetched
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (!user) {
+      if (authError || !user) {
+        console.error("User tidak ditemukan atau sesi berakhir");
         setLoading(false);
-        console.error("User tidak ditemukan");
         return;
       }
 
+      console.log("Fetching logs for user:", user.id);
       const { data, error } = await supabase
         .from("food_logs")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(50); // Optimization: fetch only last 50 entries initially
+        .limit(50);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error fetching logs:", error);
+        throw error;
+      }
+      
       setLogs(data || []);
     } catch (error: unknown) {
-      console.error("Error fetching logs:", error instanceof Error ? error.message : error);                                                                                         
+      console.error("Caught error in fetchLogs:", error instanceof Error ? error.message : error);                                                                                         
     } finally {
       setLoading(false);
     }
@@ -103,6 +108,7 @@ export default function RiwayatPage() {
   useEffect(() => {
     setMounted(true);
     fetchLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openDeleteModal = (id: string, name: string) => {
@@ -145,7 +151,7 @@ export default function RiwayatPage() {
     log.food_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Group logs by date
+  // Group logs by date with safe parsing
   const groupedLogs = filteredLogs.reduce((groups: { [key: string]: ScanLog[] }, log) => {
     const date = log.scan_time 
       ? new Date(log.scan_time).toISOString().split('T')[0] 
@@ -160,9 +166,15 @@ export default function RiwayatPage() {
   // Sort dates descending
   const sortedDates = Object.keys(groupedLogs).sort((a, b) => b.localeCompare(a));
 
+  // Safe calorie calculation
   const totalCalories = logs.reduce((acc, log) => {
-    const nut = typeof log.nutrition === 'string' ? JSON.parse(log.nutrition) : log.nutrition;
-    return acc + (Number(nut?.calories) || 0);
+    try {
+      const nut = typeof log.nutrition === 'string' ? JSON.parse(log.nutrition) : log.nutrition;
+      return acc + (Number(nut?.calories) || 0);
+    } catch (e) {
+      console.warn("Invalid nutrition data for log:", log.id);
+      return acc;
+    }
   }, 0);
 
 

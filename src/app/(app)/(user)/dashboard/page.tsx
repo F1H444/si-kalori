@@ -111,9 +111,10 @@ function DashboardContent() {
         }
 
         // 2. Regular user onboarding check
-        if (error || !data?.daily_calorie_target) {
-          console.error("Profile incomplete or error:", error);
+        if (error || !data || (data && !data.has_completed_onboarding)) {
+          console.error("Profile incomplete or missing onboarding flag:", error);
           router.push("/onboarding");
+          return;
         } else {
           // Fetch premium status and expiration (More robust check)
           const availableColumns = Object.keys(data);
