@@ -23,6 +23,7 @@ interface User {
   name: string;
   email: string;
   isPremium?: boolean;
+  hasOnboarded?: boolean;
 }
 
 interface NavLink {
@@ -51,7 +52,13 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
   ];
 
   const navLinks = user
-    ? [...baseLinks, { name: "Dashboard", href: "/dashboard" }]
+    ? [
+        ...baseLinks, 
+        { 
+          name: "Dashboard", 
+          href: user.hasOnboarded ? "/dashboard" : "/onboarding" 
+        }
+      ]
     : baseLinks;
 
   useEffect(() => {
@@ -65,7 +72,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       try {
         const { data: profile, error } = await supabase
           .from("users")
-          .select("full_name, email, is_premium")
+          .select("full_name, email, is_premium, has_completed_onboarding")
           .eq("id", userId)
           .single();
 
@@ -108,6 +115,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             name: profile.full_name || email || "User",
             email: profile.email || email || "",
             isPremium: isPremium,
+            hasOnboarded: !!profile.has_completed_onboarding
           });
         } else {
           // If no profile found, still show name from auth

@@ -115,7 +115,11 @@ export default function EditProfilePage() {
     setSaving(false);
   };
 
-  if (loading) return <LoadingOverlay message="MEMUAT PROFIL..." />;
+  if (loading) return (
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative">
+      <LoadingOverlay message="MEMUAT PROFIL..." isFullPage={false} />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-yellow-50 text-black font-mono p-4 md:p-10">

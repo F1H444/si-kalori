@@ -88,13 +88,13 @@ export default function RiwayatPage() {
         .from("food_logs")
         .select("*")
         .eq("user_id", user.id)
-        .order("id", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(50); // Optimization: fetch only last 50 entries initially
 
       if (error) throw error;
       setLogs(data || []);
     } catch (error: unknown) {
       console.error("Error fetching logs:", error instanceof Error ? error.message : error);                                                                                         
-
     } finally {
       setLoading(false);
     }
@@ -166,7 +166,11 @@ export default function RiwayatPage() {
   }, 0);
 
 
-  if (!mounted || loading) return <LoadingOverlay message="MEMUAT RIWAYAT..." />;
+  if (!mounted || loading) return (
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative">
+      <LoadingOverlay message="MEMUAT RIWAYAT..." isFullPage={false} />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-10 font-mono text-black">

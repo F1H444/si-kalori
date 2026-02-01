@@ -11,7 +11,6 @@ import {
   Home,
   User as UserIcon,
   Camera,
-  Fingerprint,
   History,
   Users,
   BarChart3,
@@ -126,7 +125,7 @@ export default function Sidebar({
         <div className="p-6 border-b-4 border-black bg-black text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="bg-blue-500 p-2 border-2 border-black">
-              <Fingerprint className="w-6 h-6 text-black" />
+              <UserIcon className="w-6 h-6 text-black" />
             </div>
             <div>
               <h2 className="font-black text-xl tracking-tighter uppercase leading-none">

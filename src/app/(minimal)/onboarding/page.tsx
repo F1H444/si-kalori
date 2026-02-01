@@ -41,40 +41,72 @@ const ModernPicker = ({
 
   return (
     <div className="flex flex-col items-center w-full max-w-2xl mx-auto px-2 sm:px-4">
-      <div className="flex items-center justify-center w-full gap-4 sm:gap-10">
-        <button
+      <div className="flex items-center justify-between w-full gap-4 sm:gap-10">
+        <motion.button
+          whileHover={{ scale: 1.1, rotate: -5 }}
+          whileTap={{ scale: 0.9 }}
           onClick={decrement}
-          className="shrink-0 w-12 h-12 sm:w-20 sm:h-20 rounded-full border-2 border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all active:scale-90"
+          className="shrink-0 w-16 h-16 sm:w-24 sm:h-24 bg-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center hover:bg-red-50 transition-all active:shadow-none active:translate-x-1 active:translate-y-1"
         >
-          <Minus className="w-6 h-6 sm:w-8 sm:h-8" />
-        </button>
+          <Minus className="w-8 h-8 sm:w-12 sm:h-12 stroke-[3px]" />
+        </motion.button>
 
-        <div className="flex flex-col items-center min-w-[100px] sm:min-w-[120px]">
-          <div className="flex items-baseline gap-1">
-            <span className="text-6xl sm:text-9xl font-black tracking-tighter tabular-nums">
+        <div className="flex flex-col items-center flex-1">
+          <motion.div 
+            key={value}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="flex items-baseline gap-2"
+          >
+            <span className="text-7xl sm:text-[12rem] font-black tracking-tighter tabular-nums leading-none italic">
               {value}
             </span>
-            <span className="text-lg sm:text-2xl font-bold text-gray-400 uppercase italic">
+            <span className="text-xl sm:text-4xl font-black text-secondary uppercase italic tracking-tighter">
               {unit}
             </span>
-          </div>
+          </motion.div>
         </div>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
           onClick={increment}
-          className="shrink-0 w-12 h-12 sm:w-20 sm:h-20 rounded-full border-2 border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all active:scale-90"
+          className="shrink-0 w-16 h-16 sm:w-24 sm:h-24 bg-white border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center hover:bg-green-50 transition-all active:shadow-none active:translate-x-1 active:translate-y-1"
         >
-          <Plus className="w-6 h-6 sm:w-8 sm:h-8" />
-        </button>
+          <Plus className="w-8 h-8 sm:w-12 sm:h-12 stroke-[3px]" />
+        </motion.button>
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-full h-3 bg-gray-100 rounded-lg appearance-none cursor-pointer mt-12 accent-black"
-      />
+      
+      <div className="w-full mt-10 relative px-4">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(e) => onChange(parseInt(e.target.value))}
+          className="w-full h-8 bg-transparent appearance-none cursor-pointer accent-black scale-y-150"
+          style={{
+            WebkitAppearance: 'none',
+            background: 'linear-gradient(to right, black 0%, black 100%)',
+            backgroundSize: '100% 4px',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        />
+        <style jsx>{`
+          input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 32px;
+            width: 32px;
+            border-radius: 50%;
+            background: #FFDE59;
+            border: 4px solid black;
+            box-shadow: 4px 4px 0px 0px black;
+            cursor: pointer;
+            margin-top: -2px;
+          }
+        `}</style>
+      </div>
     </div>
   );
 };
@@ -260,22 +292,32 @@ export default function Onboarding() {
                 >
                   Apa target utama kamu?
                 </motion.h2>
-                <motion.div variants={containerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 px-2">
                   {Object.entries(goalLabels).map(([key, label]) => (
                     <motion.button
                       key={key}
                       variants={itemVariants}
+                      whileHover={{ y: -5, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() =>
                         updateData("goal", key as OnboardingFormData["goal"])
                       }
-                      className={`p-6 border-4 border-black text-2xl font-black flex justify-between items-center transition-all ${
+                      className={`p-6 border-4 border-black text-left flex flex-col justify-between transition-all min-h-[140px] ${
                         formData.goal === key
-                          ? "bg-[#FFDE59]"
-                          : "bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1"
+                          ? "bg-[#FFDE59] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] translate-x-1 translate-y-1"
+                          : "bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1"
                       }`}
                     >
-                      {label.toUpperCase()}
-                      {formData.goal === key && <Check strokeWidth={4} />}
+                      <div className="flex justify-between items-start mb-4">
+                        <span className="text-xl font-black uppercase tracking-tighter leading-none">{label}</span>
+                        {formData.goal === key && <Check strokeWidth={6} size={24} className="text-black" />}
+                      </div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase leading-none">
+                        {key === 'lose' ? "Kurangi lemak tubuh secara sehat." : 
+                         key === 'maintain' ? "Pertahankan berat badan idealmu." :
+                         key === 'gain' ? "Tingkatkan masa otot dan berat badan." :
+                         "Mulai gaya hidup sehat sekarang."}
+                      </p>
                     </motion.button>
                   ))}
                 </motion.div>
@@ -296,22 +338,25 @@ export default function Onboarding() {
                 </motion.h2>
                 <motion.div
                   variants={containerVariants}
-                  className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center"
+                  className="grid grid-cols-2 gap-4 max-w-sm mx-auto w-full px-2"
                 >
                   {["male", "female"].map((g) => (
                     <motion.button
                       key={g}
                       variants={itemVariants}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() =>
                         updateData("gender", g as OnboardingFormData["gender"])
                       }
-                      className={`flex-1 p-8 border-4 border-black text-2xl font-black uppercase transition-all ${
+                      className={`p-8 border-4 border-black font-black uppercase text-sm transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] ${
                         formData.gender === g
-                          ? "bg-[#FFDE59]"
-                          : "bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1"
+                          ? "bg-[#FFDE59] translate-x-1 translate-y-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                          : "bg-white hover:bg-gray-50 hover:shadow-none hover:translate-x-1 hover:translate-y-1"
                       }`}
                     >
-                      {g === "male" ? "LAKI-LAKI" : "PEREMPUAN"}
+                      <span className="text-3xl mb-2 block">{g === "male" ? "♂" : "♀"}</span>
+                      {g === "male" ? "Pria" : "Wanita"}
                     </motion.button>
                   ))}
                 </motion.div>
@@ -402,27 +447,35 @@ export default function Onboarding() {
                 >
                   Tingkat Aktivitas
                 </motion.h2>
-                <motion.div variants={containerVariants} className="grid gap-3 md:gap-4">
+                <motion.div
+                  variants={containerVariants}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-2"
+                >
                   {Object.entries(activityLabels).map(([key, label]) => (
                     <motion.button
                       key={key}
                       variants={itemVariants}
+                      whileHover={{ y: -5, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() =>
                         updateData(
                           "activityLevel",
                           key as OnboardingFormData["activityLevel"],
                         )
                       }
-                      className={`p-4 border-4 border-black text-xl font-black flex justify-between items-center transition-all ${
+                      className={`p-6 border-4 border-black text-left flex flex-col justify-between transition-all min-h-[120px] ${
                         formData.activityLevel === key
-                          ? "bg-[#FFDE59]"
-                          : "bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1"
+                          ? "bg-[#FFDE59] translate-x-1 translate-y-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                          : "bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1"
                       }`}
                     >
-                      {label.toUpperCase()}
-                      {formData.activityLevel === key && (
-                        <Check strokeWidth={4} />
-                      )}
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xl font-black uppercase tracking-tighter leading-none">{label.split('(')[0]}</span>
+                        {formData.activityLevel === key && <Check strokeWidth={6} size={20} className="text-black" />}
+                      </div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase leading-none italic">
+                        {label.includes('(') ? label.split('(')[1].replace(')', '') : ""}
+                      </p>
                     </motion.button>
                   ))}
                 </motion.div>
@@ -446,38 +499,57 @@ export default function Onboarding() {
                 </motion.h2>
                 <motion.div
                   variants={itemVariants}
-                  className="p-8 border-8 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] bg-white text-left font-black uppercase space-y-4"
+                  className="p-8 sm:p-12 border-4 sm:border-8 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] bg-white text-left font-black uppercase space-y-8 relative overflow-hidden"
                 >
+                  <div className="absolute top-0 right-0 bg-black text-white px-4 py-1 text-[10px] sm:text-xs">
+                    SIKALORI ANALYSIS
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs sm:text-sm text-gray-400 mb-2 italic">
                       Target Kalori Harian
                     </p>
-                    <p className="text-5xl text-black">
-                      {
-                        calculateAllMetrics(
-                          formData.weight,
-                          formData.height,
-                          formData.age,
-                          formData.gender,
-                          formData.activityLevel,
-                          formData.goal,
-                        ).recommendedCalories
-                      }{" "}
-                      KCAL
-                    </p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-6xl sm:text-9xl text-black leading-none">
+                        {
+                          calculateAllMetrics(
+                            formData.weight,
+                            formData.height,
+                            formData.age,
+                            formData.gender,
+                            formData.activityLevel,
+                            formData.goal,
+                          ).recommendedCalories
+                        }
+                      </span>
+                      <span className="text-xl sm:text-4xl text-secondary">KCAL</span>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 border-t-4 border-black pt-4 text-black">
-                    <p>
-                      Target:{" "}
-                      {formData.goal === "lose"
-                        ? "Turun BB"
-                        : formData.goal === "gain"
-                          ? "Nambah BB"
-                          : "Jaga BB"}
-                    </p>
-                    <p>Usia: {formData.age}th</p>
-                    <p>Berat: {formData.weight}kg</p>
-                    <p>Tinggi: {formData.height}cm</p>
+                  
+                  <div className="grid grid-cols-2 gap-y-6 gap-x-4 border-t-4 border-black pt-8 text-black">
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-gray-400 leading-none">Objektif</p>
+                      <p className="text-sm sm:text-xl leading-none">
+                        {formData.goal === "lose"
+                          ? "Turun Berat"
+                          : formData.goal === "gain"
+                            ? "Nambah Berat"
+                            : "Jaga Berat"}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-gray-400 leading-none">Profil Fisik</p>
+                      <p className="text-sm sm:text-xl leading-none">{formData.age}th • {formData.weight}kg • {formData.height}cm</p>
+                    </div>
+                    <div className="col-span-2 space-y-1">
+                      <p className="text-[10px] text-gray-400 leading-none">Aktivitas</p>
+                      <p className="text-sm sm:text-xl leading-none italic">
+                        {activityLabels[formData.activityLevel as keyof typeof activityLabels]?.split('(')[0] || formData.activityLevel}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 p-4 bg-yellow-50 border-2 border-black border-dashed text-[10px] sm:text-xs text-black normal-case font-bold leading-relaxed">
+                    *Rencana ini dibuat berdasarkan data fisikmu. Kami merekomendasikan untuk konsisten mencatat makanan setiap hari untuk hasil maksimal.
                   </div>
                 </motion.div>
               </motion.div>
@@ -486,31 +558,37 @@ export default function Onboarding() {
         </AnimatePresence>
       </main>
 
-      {/* Navigasi Footer */}
-      <footer className="p-6 border-t-8 border-black bg-white sticky bottom-0">
-        <div className="flex gap-4 max-w-2xl mx-auto">
+      <footer className="p-4 sm:p-6 border-t-[4px] sm:border-t-8 border-black bg-white sticky bottom-0 z-40">
+        <div className="flex gap-3 sm:gap-4 max-w-4xl mx-auto">
           {currentStep > 0 && (
-            <button
+            <motion.button
+              whileHover={{ x: -4 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentStep((prev) => prev - 1)}
-              className="p-6 border-4 border-black hover:bg-gray-50 active:scale-95 transition-all"
+              className="p-4 sm:p-6 border-4 border-black hover:bg-gray-50 active:translate-y-1 transition-all"
             >
               <ArrowLeft size={28} strokeWidth={3} />
-            </button>
+            </motion.button>
           )}
-          <button
+          <motion.button
+            whileHover={{ x: 4 }}
+            whileTap={{ scale: 0.95 }}
             onClick={nextStep}
             disabled={loading}
-            className="flex-1 h-16 sm:h-20 bg-black text-white font-black text-lg sm:text-2xl flex items-center justify-center gap-2 sm:gap-3 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50"
+            className="flex-1 h-16 sm:h-20 bg-black text-white font-black text-lg sm:text-3xl flex items-center justify-center gap-2 sm:gap-4 shadow-[4px_4px_0px_0px_#FFDE59] sm:shadow-[8px_8px_0px_0px_#FFDE59] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all disabled:opacity-50 uppercase italic"
           >
             {loading ? (
-              <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                <span className="text-sm">MEMPROSES...</span>
+              </div>
             ) : (
               <>
                 {currentStep === totalSteps - 1 ? "MULAI SEKARANG" : "LANJUT"}
-                <ArrowRight size={28} strokeWidth={3} />
+                <ArrowRight size={28} strokeWidth={4} />
               </>
             )}
-          </button>
+          </motion.button>
         </div>
       </footer>
     </div>

@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
       ],
-      model: "llama-3.2-11b-vision-preview",
+      model: "llama-3.2-11b-vision-instant",
       temperature: 0.5,
       max_tokens: 1024,
       top_p: 1,

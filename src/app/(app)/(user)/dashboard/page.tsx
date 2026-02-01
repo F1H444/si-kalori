@@ -6,7 +6,6 @@ import {
   Scale,
   Ruler,
   Calendar,
-  Fingerprint,
   User as UserIcon,
   Flame,
   Dumbbell,
@@ -126,7 +125,11 @@ function DashboardContent() {
   }, [router]);
 
   // --- TAMPILAN LOADING BARU (NEO-BRUTALIST SKELETON) ---
-  if (loading) return <LoadingOverlay message="MENYIAPKAN PANEL..." />;
+  if (loading) return (
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative">
+      <LoadingOverlay message="MENYIAPKAN PANEL..." isFullPage={false} />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-white text-black font-mono p-4 md:p-10 selection:bg-secondary">
@@ -164,7 +167,7 @@ function DashboardContent() {
           </div>
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Fingerprint size={16} className="text-secondary" />
+              <UserIcon size={16} className="text-secondary" />
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
                 Dashboard
               </p>
