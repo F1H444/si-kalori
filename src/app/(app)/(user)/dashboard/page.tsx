@@ -98,6 +98,19 @@ function DashboardContent() {
           .eq("id", user.id)
           .single();
 
+        // 1. Check if user is an admin
+        const { data: adminRecord } = await supabase
+          .from("admins")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (adminRecord) {
+          console.log("Admin detected, redirecting to admin panel...");
+          return router.push("/admin");
+        }
+
+        // 2. Regular user onboarding check
         if (error || !data?.daily_calorie_target) {
           console.error("Profile incomplete or error:", error);
           router.push("/onboarding");

@@ -110,6 +110,8 @@ export default function ScanPage() {
     const [inputText, setInputText] = useState("");
     const [tempInput, setTempInput] = useState<File | string | null>(null);
     const [mounted, setMounted] = useState(false);
+    const [showInvalidModal, setShowInvalidModal] = useState(false);
+    const [invalidMessage, setInvalidMessage] = useState("");
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -193,8 +195,8 @@ export default function ScanPage() {
           img.src = event.target?.result as string;
           img.onload = () => {
             const canvas = document.createElement("canvas");
-            const MAX_WIDTH = 1024;
-            const MAX_HEIGHT = 1024;
+            const MAX_WIDTH = 512; // Reduced for speed
+            const MAX_HEIGHT = 512;
             let width = img.width;
             let height = img.height;
 
@@ -221,7 +223,7 @@ export default function ScanPage() {
               } else {
                 reject(new Error("Canvas to blob failed"));
               }
-            }, "image/jpeg", 0.7);
+            }, "image/jpeg", 0.6); // Lower quality for speed
           };
         };
         reader.onerror = (error) => reject(error);
@@ -235,117 +237,127 @@ export default function ScanPage() {
 
     // --- LOGIKA ANALISA & DATABASE ---
     const handleAnalyze = async (input: File | string, mealType: MealType) => {
+        console.log("⚡ [Analyze] Initializing Turbo Flow...");
         setLoading(true);
-        try {
-            // 1. Dapatkan User Session
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("Silakan login terlebih dahulu untuk menyimpan data.");
 
-            // 2. Upload Gambar ke Supabase Storage (Jika ada input file)
-            let publicUrl = null;
-            if (input instanceof File) {
+        try {
+            // 0. Preliminary Check
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                console.error("❌ No user session found");
+                alert("Sesi kamu habis, silakan login kembali.");
+                window.location.href = "/login";
+                return;
+            }
+
+            // 1. Define Concurrent Tasks
+            const uploadTask = async () => {
+                if (!(input instanceof File)) return null;
+                console.log("📤 [Upload] Starting background upload...");
                 try {
                     const fileExt = input.name.split('.').pop();
                     const path = `${user.id}/${Date.now()}.${fileExt}`;
                     
-                    console.log("Attempting to upload file to food-images:", path);
-                    const { error: uploadError, data: uploadData } = await supabase.storage
-                        .from('food-images')
-                        .upload(path, input);
+                    // Add a 15s timeout for storage upload specifically
+                    const uploadPromise = supabase.storage.from('food-images').upload(path, input);
+                    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Upload Timeout")), 15000));
+                    
+                    const { error } = await Promise.race([uploadPromise, timeout]) as any;
+                    if (error) throw error;
 
-                    if (uploadError) {
-                        console.error("Upload Error Details:", uploadError);
-                        alert(`Gagal upload gambar: ${uploadError.message}. Pastikan bucket 'food-images' ada dan Policy Public sudah diatur.`);
-                    } else {
-                        console.log("Upload Success:", uploadData);
-                        const { data } = supabase.storage.from('food-images').getPublicUrl(path);
-                        publicUrl = data.publicUrl;
-                        console.log("Generated Public URL:", publicUrl);
-                    }
-                } catch (storageErr) {
-                    console.error("Storage Exception:", storageErr);
-                    alert("Terjadi kesalahan saat upload gambar.");
+                    const url = supabase.storage.from('food-images').getPublicUrl(path).data.publicUrl;
+                    console.log("✅ [Upload] Success:", url);
+                    return url;
+                } catch (e) {
+                    console.warn("⚠️ [Upload] Background upload failed or timed out:", e);
+                    return null; // Don't block the whole flow if upload fails
                 }
-            } else {
-                console.log("Input is not a File, skipping upload.");
-            }
-
-            // 3. Panggil API AI (Analyze-Food)
-            const formData = new FormData();
-            if (typeof input === "string") formData.append("text", input);
-            else formData.append("image", input);
-            formData.append("userEmail", user.email || "");
-
-            const response = await fetch("/api/analyze-food", {
-                method: "POST",
-                body: formData,
-            });
-
-            const data = await response.json();
-            
-            if (!response.ok) {
-                if (response.status === 403 && data.error === "LIMIT_REACHED") {
-                    if (confirm("Kuota Harian Habis!\n\nKamu sudah scan 10x hari ini. Upgrade ke Premium untuk scan sepuasnya?\n\nKlik OK untuk Upgrade.")) {
-                        window.location.href = "/premium";
-                    }
-                    throw new Error("Kuota harian habis.");
-                }
-
-                if (response.status === 400 && data.error === "NOT_FOOD") {
-                    alert(`${data.message}`);
-                    setMode("select");
-                    return;
-                }
-
-                throw new Error(data.error || "Gagal menganalisis makanan atau minuman kamu.");
-            }
-
-            const aiData: NutritionResult = data;
-
-            // Mapping Indonesian meal types to DB Enums
-            const mealTypeMapping: Record<string, string> = {
-                "pagi": "breakfast",
-                "siang": "lunch",
-                "malam": "dinner",
-                "snack": "snack",
-                "minuman": "snack" // Fallback
             };
 
-            const dbMealType = mealTypeMapping[mealType] || "snack";
+            const aiTask = async () => {
+                console.log("🤖 [AI] Requesting analysis...");
+                const formData = new FormData();
+                if (typeof input === "string") formData.append("text", input);
+                else formData.append("image", input);
+                formData.append("userEmail", user.email || "");
 
-            // 4. Simpan ke Tabel 'food_logs'
-            const { error: dbError } = await supabase
-                .from("food_logs")
-                .insert([{
-                    user_id: user.id,
-                    food_name: aiData.name,
-                    calories: aiData.calories,
-                    protein: Number(aiData.protein) || 0,
-                    carbs: Number(aiData.carbs) || 0,
-                    fat: Number(aiData.fat) || 0,
-                    nutrition: {
-                        calories: aiData.calories,
-                        protein: aiData.protein,
-                        carbs: aiData.carbs,
-                        fat: aiData.fat,
-                        health_score: aiData.health_score
-                    },
-                    ai_analysis: aiData.description,
-                    image_url: publicUrl, 
-                    meal_type: dbMealType as any,
-                }]);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 35000); // 35s AI timeout
 
-            if (dbError) throw dbError;
+                try {
+                    const response = await fetch("/api/analyze-food", {
+                        method: "POST",
+                        body: formData,
+                        signal: controller.signal,
+                    });
+                    clearTimeout(timeoutId);
 
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ error: "Gagal membaca error dari server" }));
+                        if (response.status === 403) throw new Error("LIMIT_REACHED");
+                        if (response.status === 400 && errorData.error === "NOT_FOOD") {
+                            setInvalidMessage(errorData.message);
+                            throw new Error("NOT_FOOD");
+                        }
+                        throw new Error(errorData.error || `HTTP Error ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log("✅ [AI] Analysis complete");
+                    return data;
+                } catch (err: any) {
+                    if (err.name === 'AbortError') throw new Error("Koneksi AI Terlalu Lama (Timeout). Coba lagi.");
+                    throw err;
+                }
+            };
+
+            // 2. Parallel Execution
+            const [publicUrl, aiData] = await Promise.all([
+                uploadTask(),
+                aiTask()
+            ]);
+
+            // 3. Database Logging (Background)
+            console.log("💾 [DB] Saving log...");
+            const mealTypeMapping: any = { 
+                "pagi": "breakfast", "siang": "lunch", "malam": "dinner", "snack": "snack", "minuman": "snack" 
+            };
+            
+            supabase.from("food_logs").insert([{
+                user_id: user.id,
+                food_name: aiData.name,
+                calories: aiData.calories,
+                protein: Number(aiData.protein) || 0,
+                carbs: Number(aiData.carbs) || 0,
+                fat: Number(aiData.fat) || 0,
+                nutrition: aiData,
+                ai_analysis: aiData.description,
+                image_url: publicUrl, 
+                meal_type: mealTypeMapping[mealType] || "snack",
+            }]).then(({ error }) => {
+                if (error) console.error("❌ [DB] Insert Error:", error);
+                else console.log("✅ [DB] Log Saved");
+            });
+
+            // 4. Update UI
             setResult(aiData);
             setMode("result");
-        } catch (error: unknown) {
-            const err = error as Error;
-            alert(err.message || "Something went wrong");
-            setMode("select");
-        } finally {
 
+        } catch (error: any) {
+            console.error("🚨 [TurboFlow] Fault:", error);
+            
+            if (error.message === "LIMIT_REACHED") {
+                alert("Kuota harian habis! Silakan upgrade ke Premium untuk scan sepuasnya.");
+                window.location.href = "/premium";
+            } else if (error.message === "NOT_FOOD") {
+                setShowInvalidModal(true);
+            } else {
+                alert(error.message || "Terjadi masalah teknis. Silakan coba lagi.");
+                setMode("select");
+            }
+        } finally {
             setLoading(false);
+            console.log("🏁 [Flow] Done.");
         }
     };
 
@@ -369,10 +381,19 @@ export default function ScanPage() {
                 
                 <AnimatePresence mode="wait">
                     {/* LOADING OVERLAY */}
-                    {loading && <LoadingOverlay message="MENGANALISA..." isFullPage={false} />}
+                    {loading && (
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }}
+                            className="flex flex-col items-center justify-center py-20"
+                        >
+                            <LoadingOverlay message="MENGANALISA..." isFullPage={false} />
+                        </motion.div>
+                    )}
 
                     {/* SELECT MODE */}
-                    {mode === "select" && (
+                    {mode === "select" && !loading && (
                         <motion.div 
                             key="select" 
                             variants={containerVariants}
@@ -422,7 +443,7 @@ export default function ScanPage() {
                     )}
 
                     {/* CAMERA MODE */}
-                    {mode === "camera" && (
+                    {mode === "camera" && !loading && (
                         <motion.div key="camera" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center">
                             <div className="w-full aspect-square border-8 border-black bg-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden mb-10">
                                 <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover grayscale-[0.2]" />
@@ -445,7 +466,7 @@ export default function ScanPage() {
                     )}
 
                     {/* TYPE MODE */}
-                    {mode === "type" && (
+                    {mode === "type" && !loading && (
                         <motion.div key="type" initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="w-full">
                              <button onClick={() => setMode("select")} className="mb-8 flex items-center gap-2 font-black uppercase text-sm hover:underline">
                                 <ArrowLeft size={16} /> Kembali
@@ -468,7 +489,7 @@ export default function ScanPage() {
                     )}
 
                      {/* MEAL SELECTION MODE */}
-                     {mode === "meal_selection" && (
+                     {mode === "meal_selection" && !loading && (
                         <motion.div 
                             key="meal_selection" 
                             variants={mealContainerVariants}
@@ -521,7 +542,7 @@ export default function ScanPage() {
                     )}
 
                     {/* RESULT MODE */}
-                    {mode === "result" && result && (
+                    {mode === "result" && result && !loading && (
                         <motion.div key="result" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                             <div className="lg:col-span-2">
                                 {preview && (
@@ -584,6 +605,49 @@ export default function ScanPage() {
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* NOT FOOD MODAL (BRUTAL STYLE) */}
+            <AnimatePresence>
+                {showInvalidModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowInvalidModal(false)}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                        />
+                        <motion.div 
+                            initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                            className="relative w-full max-w-lg bg-white border-8 border-black p-10 shadow-[20px_20px_0px_0px_rgba(239,68,68,1)] z-10"
+                        >
+                            <div className="flex flex-col items-center text-center space-y-6">
+                                <div className="w-24 h-24 bg-red-500 border-4 border-black flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                                    <Info size={48} className="text-white" />
+                                </div>
+                                <h3 className="text-4xl font-black uppercase italic tracking-tighter leading-none">Waduh, Bukan Makanan!</h3>
+                                <div className="p-4 bg-yellow-300 border-4 border-black font-black uppercase text-sm italic">
+                                    AI Bilang: "{invalidMessage}"
+                                </div>
+                                <p className="font-bold text-gray-600">
+                                    Pastikan kamu memotret makanan atau minuman agar sistem bisa menghitung kalorinya ya!
+                                </p>
+                                <button 
+                                    onClick={() => {
+                                        setShowInvalidModal(false);
+                                        setMode("select");
+                                    }}
+                                    className="w-full bg-black text-white p-6 text-2xl font-black uppercase shadow-[8px_8px_0px_0px_rgba(239,68,68,1)] active:translate-y-1 active:shadow-none transition-all"
+                                >
+                                    COBA LAGI
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
         </div>
     );

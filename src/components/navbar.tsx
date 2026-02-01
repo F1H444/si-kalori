@@ -24,6 +24,7 @@ interface User {
   email: string;
   isPremium?: boolean;
   hasOnboarded?: boolean;
+  isAdmin?: boolean;
 }
 
 interface NavLink {
@@ -66,6 +67,15 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
 
+    // Close dropdown on click outside
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (isDropdownOpen && !target.closest('.profile-dropdown-container')) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
     let isSubscribed = true;
 
     const fetchProfile = async (userId: string, email?: string) => {
@@ -79,6 +89,26 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         if (!isSubscribed) return;
 
         if (profile) {
+          // Check admin status - ROBUST METHOD
+          const { data: adminData } = await supabase
+            .from("admins")
+            .select("role")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          // Check if this is an admin by both table lookup and email
+          const isAdminByTable = !!adminData;
+          const isAdminByEmail = (profile.email?.toLowerCase() === "admin@sikalori.com" || email?.toLowerCase() === "admin@sikalori.com");
+          const isAdmin = isAdminByTable || isAdminByEmail;
+
+          console.log("🔍 [Navbar] Admin Check:", {
+            userId,
+            email: profile.email || email,
+            isAdminByTable,
+            isAdminByEmail,
+            finalIsAdmin: isAdmin
+          });
+
           const availableColumns = Object.keys(profile);
           let isPremium = availableColumns.includes("is_premium") ? (profile as any).is_premium : false;
 
@@ -126,10 +156,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           }
 
           setUser({
-            name: profile.full_name || email || "User",
+            name: profile.full_name || email || (isAdminByEmail ? "ADMIN" : "User"),
             email: profile.email || email || "",
             isPremium: isPremium,
-            hasOnboarded: !!profile.has_completed_onboarding
+            hasOnboarded: !!profile.has_completed_onboarding,
+            isAdmin: isAdmin  // ALWAYS set this, not undefined
           });
         } else {
           // If no profile found, still show name from auth
@@ -137,6 +168,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
             name: email?.split("@")[0] || "User",
             email: email || "",
             isPremium: false,
+            isAdmin: false  // DEFAULT to false
           });
         }
       } catch (err) {
@@ -153,6 +185,11 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
       // Case 1: Already has initialUser and session is marked active in storage
       if (initialUser && isSessionActive) {
+        console.log("✅ [Navbar] Using initialUser from server:", { 
+          email: initialUser.email, 
+          isAdmin: initialUser.isAdmin 
+        });
+        setUser(initialUser); // IMPORTANT: Set the user state!
         setLoading(false);
         return;
       }
@@ -167,16 +204,18 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (initialUser || session) {
-          // If we have initialUser, it means the server successfully verified the session.
-          // To make it less sensitive, if it's an initial mount with a server-verified user,
-          // we can assume the session is valid and set the flag.
-          // The "logout on browser close" will still work because if they close and reopen,
-          // and the server session is still valid, they stay logged in (which is standard).
-          // If the user wants STRICT session logout, we should keep it as is.
-          // But the user said "it becomes login button incorrectly".
-          
           console.log("Session detected without storage flag - Syncing...");
           sessionStorage.setItem("sikalori_session_active", "true");
+          
+          // Use initialUser if available (already has isAdmin from server)
+          if (initialUser) {
+            console.log("✅ [Navbar] Setting user from initialUser:", {
+              email: initialUser.email,
+              isAdmin: initialUser.isAdmin
+            });
+            setUser(initialUser);
+          }
+          
           setLoading(false);
           return;
         }
@@ -231,6 +270,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       isSubscribed = false;
       subscription.unsubscribe();
       window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [initialUser]);
 
@@ -240,36 +280,41 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       e.stopPropagation();
     }
     
+    console.log("🚪 [Navbar] Logout triggered");
+    
+    // Close dropdowns immediately
+    setIsDropdownOpen(false);
+    setIsMobileMenuOpen(false);
+    
+    // Reset UI state for instant feedback
+    setUser(null);
+    setLoading(true);
+    
     try {
-      console.log("Logout triggered - Clearing session...");
-      setIsDropdownOpen(false);
+      // Sign out (with timeout to prevent hanging)
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise((resolve) => setTimeout(resolve, 1500))
+      ]);
       
-      // 1. Sign out from Supabase
-      await supabase.auth.signOut();
-      
-      // 2. Clear all possible storage remnants
+      // Clear all storage
       if (typeof window !== "undefined") {
-        localStorage.clear();
         sessionStorage.clear();
+        localStorage.clear();
         
-        // Clear cookies related to supabase
+        // Clear cookies
         document.cookie.split(";").forEach((c) => {
-          document.cookie = c
-            .replace(/^ +/, "")
-            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+          const name = c.split("=")[0].trim();
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
         });
       }
       
-      // 3. Reset local state immediately
-      setUser(null);
-      setLoading(false);
-      
+      console.log("✅ [Navbar] Logout complete");
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("⚠️ [Navbar] Logout error:", error);
     } finally {
-      // 4. Client-side navigation to home
-      router.push("/");
-      router.refresh(); // Ensure layout props (initialUser) are updated
+      // Force redirect using window.location
+      window.location.href = "/";
     }
   };
 
@@ -348,9 +393,17 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                       </motion.div>
                     )}
 
-                    <div className="relative">
+                    <div className="relative profile-dropdown-container">
                       <button
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        onClick={() => {
+                          console.log("🎯 [Navbar] Dropdown Toggle - User:", {
+                            name: user.name,
+                            email: user.email,
+                            isAdmin: user.isAdmin,
+                            isPremium: user.isPremium
+                          });
+                          setIsDropdownOpen(!isDropdownOpen);
+                        }}
                         className="flex items-center gap-2 p-1.5 bg-white border-2 border-black rounded-full shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
                       >
                         <div className="w-9 h-9 bg-blue-500 border-2 border-black rounded-full overflow-hidden relative flex items-center justify-center">
@@ -385,33 +438,40 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
                             <div className="space-y-3">
                               <DropdownItem
-                                href="/dashboard"
+                                href={user.isAdmin ? "/admin" : "/dashboard"}
                                 icon={<LayoutDashboard size={20} />}
                                 label="Dashboard"
                               />
-                              <DropdownItem
-                                href="/settings"
-                                icon={<Settings size={20} />}
-                                label="Pengaturan"
-                              />
-
-                              {/* Tombol Premium Brutal */}
-                              {user.isPremium ? (
-                                <div className="flex items-center justify-center gap-3 p-5 border-4 border-black rounded-2xl font-black text-sm uppercase bg-green-500 text-white italic shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mt-6">
-                                  <Crown size={20} strokeWidth={3} fill="currentColor" />
-                                  Sudah Premium
-                                </div>
-                              ) : (
-                                <Link
-                                  href="/premium"
-                                  className="flex items-center justify-between p-5 border-4 border-black rounded-2xl font-black text-sm uppercase shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all mt-6 bg-yellow-400 text-black italic group"
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <Crown size={20} strokeWidth={3} fill="currentColor" className="group-hover:animate-bounce" />
-                                    Upgrade Pro
-                                  </span>
-                                  <ArrowRight size={20} strokeWidth={3} />
-                                </Link>
+                              {/* Filter items for non-admins */}
+                              {(() => {
+                                console.log("🔒 [Navbar] Rendering dropdown items - isAdmin:", user.isAdmin, "shouldShowSettings:", !user.isAdmin);
+                                return !user.isAdmin;
+                              })() && (
+                                <>
+                                  <DropdownItem
+                                    href="/settings"
+                                    icon={<Settings size={20} />}
+                                    label="Pengaturan"
+                                  />
+                                  
+                                  {user.isPremium ? (
+                                    <div className="flex items-center justify-center gap-3 p-5 border-4 border-black rounded-2xl font-black text-sm uppercase bg-green-500 text-white italic shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mt-6">
+                                      <Crown size={20} strokeWidth={3} fill="currentColor" />
+                                      Sudah Premium
+                                    </div>
+                                  ) : (
+                                    <Link
+                                      href="/premium"
+                                      className="flex items-center justify-between p-5 border-4 border-black rounded-2xl font-black text-sm uppercase shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all mt-6 bg-yellow-400 text-black italic group"
+                                    >
+                                      <span className="flex items-center gap-2">
+                                        <Crown size={20} strokeWidth={3} fill="currentColor" className="group-hover:animate-bounce" />
+                                        Upgrade Pro
+                                      </span>
+                                      <ArrowRight size={20} strokeWidth={3} />
+                                    </Link>
+                                  )}
+                                </>
                               )}
 
                               {/* Logout dengan gaya elegan tapi brutal */}

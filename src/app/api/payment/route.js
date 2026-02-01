@@ -32,24 +32,17 @@ export async function POST(request) {
   const serverKey = (process.env.MIDTRANS_SERVER_KEY || "").trim();
   
   if (!serverKey) {
-    console.error(
-      "PAYMENT ERROR: MIDTRANS_SERVER_KEY is missing in environment variables.",
-    );
-    return NextResponse.json(
-      { error: "Server Configuration Error: Missing Key" },
-      { status: 500 },
-    );
+    console.error("PAYMENT ERROR: MIDTRANS_SERVER_KEY is missing.");
+    return NextResponse.json({ error: "Konfigurasi server bermasalah (Missing Key)" }, { status: 500 });
   }
 
-  // Force Sandbox for testing as requested
+  // Force Sandbox for testing
   const isProduction = false;
-
-  console.log("PAYMENT DEBUG:", {
-    keyLoaded: true,
-    keyPrefix: serverKey.substring(0, 4) + "...",
-    isProductionMode: isProduction,
-    keyLength: serverKey.length,
-  });
+  
+  // Detection for potential key mismatch
+  if (!serverKey.startsWith('SB-') && !isProduction) {
+    console.warn("⚠️ [PAYMENT] Using isProduction:false but key doesn't start with SB-. This may cause 401.");
+  }
 
   const snap = new Midtrans.Snap({
     isProduction: isProduction,
@@ -58,11 +51,10 @@ export async function POST(request) {
   });
 
   const orderId = `ORDER-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  const amount = 16000; // Fixed amount from UI
+  const amount = 16000; 
 
-  // 4. Create Transaction Record
-  // Using Admin Client to bypass RLS for logging transactions
-  console.log("Creating transaction record for:", user.id, orderId);
+  // 4. Create Transaction Record (Securely using Admin Client)
+  console.log("💾 [Payment] Creating transaction:", orderId);
   const { error: transactionError } = await supabaseAdmin
     .from("transactions")
     .insert({
@@ -71,18 +63,12 @@ export async function POST(request) {
       amount: amount,
       status: "pending",
       payment_type: "midtrans",
-      metadata: { 
-        email: user.email, 
-        created_at_api: new Date().toISOString() 
-      }
+      metadata: { email: user.email }
     });
   
   if (transactionError) {
-    console.error("PAYMENT DB ERROR Details:", transactionError);
-    return NextResponse.json(
-      { error: `Database Error: ${transactionError.message}` },
-      { status: 500 },
-    );
+    console.error("❌ [Payment] DB Error:", transactionError);
+    return NextResponse.json({ error: "Gagal mencatat transaksi di database." }, { status: 500 });
   }
 
   // 5. Create Snap Transaction
@@ -93,32 +79,27 @@ export async function POST(request) {
     },
     customer_details: {
       first_name: profile.full_name || "Customer",
-      // last_name: "", // Optional
       email: user.email,
-      phone: profile.phone || undefined,
     },
     credit_card: {
       secure: true,
     },
     callbacks: {
-      finish: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/payment/success`,
-      error: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/payment/failed`,
-      pending: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/payment/success`,
+      finish: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/payment/success`,
+      error: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/payment/failed`,
+      pending: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/payment/success`,
     },
   };
 
   try {
     const transaction = await snap.createTransaction(parameter);
-
-    // Optional: Update transaction with token or url if column exists
-    // await supabase.from("transactions").update({ payment_url: transaction.redirect_url }).eq("order_id", orderId);
-
     return NextResponse.json({
       token: transaction.token,
       redirect_url: transaction.redirect_url,
     });
   } catch (e) {
-    console.error("Midtrans error:", e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error("💥 [Midtrans] Transaction Error:", e.message);
+    return NextResponse.json({ error: e.message || "Gagal menghubungi Midtrans." }, { status: 500 });
   }
+
 }

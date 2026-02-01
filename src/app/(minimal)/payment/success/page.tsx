@@ -98,7 +98,7 @@ function SuccessContent() {
           className="h-2 bg-black w-24 mx-auto mb-6"
         />
 
-        <motion.p 
+        <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -137,7 +137,7 @@ function SuccessContent() {
               Nikmati semua fitur tanpa batas sekarang juga.
             </>
           )}
-        </motion.p>
+        </motion.div>
 
         <div className="space-y-4">
             {isSuccess ? (

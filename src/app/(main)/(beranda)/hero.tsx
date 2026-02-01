@@ -50,8 +50,28 @@ export default function HomePage() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
 
-  const handleCTAClick = () => {
-    isLoggedIn ? router.push("/dashboard") : router.push("/login");
+  const handleCTAClick = async () => {
+    if (!isLoggedIn) {
+      router.push("/login");
+      return;
+    }
+
+    // Check if user is an admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: adminRecord } = await supabase
+        .from("admins")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (adminRecord) {
+        router.push("/admin");
+        return;
+      }
+    }
+
+    router.push("/dashboard");
   };
 
   // Variasi untuk animasi melayang (floating)

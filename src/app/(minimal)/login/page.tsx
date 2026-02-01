@@ -79,11 +79,11 @@ function LoginContent() {
                 user.user_metadata?.full_name ||
                 user.email?.split("@")[0] ||
                 "User SiKalori",
-              last_login: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             },
             { onConflict: "id" },
           )
-          .select("daily_calorie_target")
+          .select("daily_calorie_target, has_completed_onboarding")
           .single();
 
         if (upsertError) throw upsertError;
@@ -99,8 +99,14 @@ function LoginContent() {
           router.replace("/dashboard");
         }
       } catch (err: any) {
-        console.error("Sync Profile Error:", err);
-        setError(`Gagal menyimpan profil: ${err.message}`);
+        console.error("❌ [SyncProfile] Detailed Error:", {
+          message: err.message,
+          details: err.details,
+          hint: err.hint,
+          code: err.code,
+          fullError: err
+        });
+        setError(`Gagal menyimpan profil: ${err.message || "Terjadi kesalahan internal"}`);
         router.replace("/onboarding");
       }
     },

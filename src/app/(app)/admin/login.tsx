@@ -20,37 +20,77 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
     setIsAuthenticating(true);
     setLoginError("");
 
-    try {
+    // Define the full login process
+    const performLogin = async () => {
+      console.log("[LOGIN] Starting Supabase Auth...");
       // 1. Authenticate with Supabase Auth
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error("[LOGIN] Supabase Auth Failed:", authError);
+        throw authError; // Re-throw to be caught below
+      }
+      
+      if (!data.user) {
+        console.error("[LOGIN] No user data returned.");
+        throw new Error("User not found");
+      }
+      
+      console.log("[LOGIN] Supabase Auth Success. User ID:", data.user.id);
+      console.log("[LOGIN] Verifying Admin Role via API...");
 
-      if (!data.user) throw new Error("User not found");
+      // 2. Verify Admin Role via Secure API (Bypasses RLS)
+      const verifyResponse = await fetch("/api/admin/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          userId: data.user.id,
+          email: data.user.email  // Send email to avoid extra DB call
+        }),
+      });
+      
+      console.log("[LOGIN] API Response Status:", verifyResponse.status);
 
-      // 2. Check if user is in 'admins' table
-      const { data: adminRecord, error: adminError } = await supabase
-        .from("admins")
-        .select("role")
-        .eq("user_id", data.user.id)
-        .single();
-
-      if (adminError || !adminRecord) {
-        // If not set as admin, sign out
-        await supabase.auth.signOut();
-        setLoginError("Akses ditolak. Akun ini bukan level Administrator.");
-        return;
+      if (!verifyResponse.ok) {
+         console.error("[LOGIN] API Error Response - Status:", verifyResponse.status);
+         const errorData = await verifyResponse.json().catch(() => ({}));
+         console.error("[LOGIN] Error details:", errorData);
+         throw new Error(errorData.details || "Gagal verifikasi admin via API.");
       }
 
+      const verifyResult = await verifyResponse.json();
+      console.log("[LOGIN] API Verify Result:", verifyResult);
+
+      if (!verifyResult.isAdmin) {
+        console.warn("[LOGIN] User is not admin. Reason:", verifyResult.reason);
+        // If not set as admin, sign out
+        await supabase.auth.signOut();
+        throw new Error(`Akses ditolak. ${verifyResult.reason || "Akun ini bukan level Administrator."}`);
+      }
+
+      console.log("✅ [LOGIN] Admin verified successfully via:", verifyResult.method);
+
       // Success
+      return data.user;
+    };
+
+    // Race against a timeout (reduced to 15 seconds for better UX)
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("Koneksi lambat. Server membutuhkan waktu terlalu lama untuk merespons.")), 15000)
+      );
+
+      const user = await Promise.race([performLogin(), timeoutPromise]);
+
+      console.log("✅ [LOGIN] Success! Setting session...");
       sessionStorage.setItem("admin_auth", "true");
-      sessionStorage.setItem("admin_user", JSON.stringify(data.user));
+      sessionStorage.setItem("admin_user", JSON.stringify(user));
       onLoginSuccess();
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("❌ [LOGIN] Login error:", error);
       setLoginError(error.message || "Gagal masuk. Cek email dan password.");
     } finally {
       setIsAuthenticating(false);

@@ -64,8 +64,7 @@ export async function POST(request: Request) {
     // 3. Update Database Securely (Bypass RLS)
     const supabase = createAdminClient();
 
-    // Check current status first to avoid "already updated" edge cases
-    console.log(`[VERIFY] Checking current transaction status for: ${order_id}`);
+    // Check current transaction record
     const { data: currentTx, error: fetchError } = await supabase
       .from("transactions")
       .select("id, user_id, status")
@@ -74,130 +73,62 @@ export async function POST(request: Request) {
 
     if (fetchError || !currentTx) {
       console.error("[VERIFY] Transaction Find Error:", fetchError);
-      return NextResponse.json({ error: "Data transaksi tidak ditemukan di database kami" }, { status: 404 });
+      return NextResponse.json({ error: "Data transaksi tidak ditemukan" }, { status: 404 });
     }
 
     const userId = currentTx.user_id;
-    console.log(`[VERIFY] Database current status: ${currentTx.status} for User: ${userId}`);
 
-    // If already success, we can skip updates but still ensure premium just in case
+    // 4. Update Transaction Status if not already success
     if (currentTx.status !== "success") {
-      console.log(`[VERIFY] Updating transaction record to success...`);
-      const { error: txError } = await supabase
+      await supabase
         .from("transactions")
         .update({ 
           status: "success",
           payment_type: transactionStatus.payment_type || "midtrans"
         })
         .eq("order_id", order_id);
-
-      if (txError) {
-        console.error("[VERIFY] DB Transaction Update Error:", txError);
-      }
     }
 
-    // 4. Update Premium Table
+    // 5. Update Premium Subscriptions Table
     const startDate = new Date();
     const expiredAt = new Date(startDate);
-    expiredAt.setDate(startDate.getDate() + 30);
+    expiredAt.setDate(startDate.getDate() + 30); // 30 days premium
 
-    // Provide all possible required fields based on schema knowledge
     const premiumData = {
       user_id: userId,
-      transaction_id: currentTx.id || null,
+      transaction_id: currentTx.id,
       status: "active",
-      plan_type: "monthly", // Required in premium_subscriptions table
+      plan_type: "monthly",
       start_date: startDate.toISOString(),
       expired_at: expiredAt.toISOString(),
     };
 
-    console.log(`[VERIFY] Updating premium record for User: ${userId}`);
+    console.log(`[VERIFY] Activating Premium for User: ${userId}`);
     
-    // Helper function to update or insert without relying on ON CONFLICT constraint
-    const smartUpsert = async (tableName: string) => {
-      // Try update first
-      const { data, error: updateError } = await supabase
-        .from(tableName)
+    // Upsert logic: Try update first, then insert if not exists
+    const { data: existingPrem } = await supabase
+      .from("premium_subscriptions")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    let premError;
+    if (existingPrem) {
+      const { error } = await supabase
+        .from("premium_subscriptions")
         .update(premiumData)
-        .eq("user_id", userId)
-        .select();
-      
-      // If no data returned (not found), then insert
-      if (!updateError && (!data || data.length === 0)) {
-        console.log(`[VERIFY] Not found in ${tableName}, inserting new record...`);
-        const { error: insertError } = await supabase.from(tableName).insert(premiumData);
-        return insertError;
-      }
-      return updateError;
-    };
-
-    // Attempt smart update/insert on 'premium' first
-    let premError = await smartUpsert("premium");
-
-    // If 'premium' fails because it doesn't exist, try 'premium_subscriptions'
-    if (premError && (
-      premError.code === "42P01" || 
-      premError.message.includes("not found")
-    )) {
-      console.warn("[VERIFY] 'premium' table not found, trying 'premium_subscriptions'...");
-      premError = await smartUpsert("premium_subscriptions");
+        .eq("user_id", userId);
+      premError = error;
+    } else {
+      const { error } = await supabase
+        .from("premium_subscriptions")
+        .insert([premiumData]);
+      premError = error;
     }
 
     if (premError) {
-      console.error("[VERIFY] DB Premium Error Final:", premError);
-      return NextResponse.json({ 
-        error: "Gagal memperbarui status premium di database",
-        details: premError.message,
-        code: premError.code
-      }, { status: 500 });
-    }
-    
-    // Sync User Flag
-    console.log(`[VERIFY] Syncing is_premium flag for User: ${userId}`);
-    
-    // Diagnostic: Check columns first to avoid known error
-    const { data: sampleUser } = await supabase.from("users").select("*").limit(1).single();
-    const availableColumns = sampleUser ? Object.keys(sampleUser) : [];
-    
-    let updateSuccessful = false;
-    
-    if (availableColumns.includes("is_premium")) {
-        const { error: userUpdateError, data } = await supabase
-          .from("users")
-          .update({ is_premium: true })
-          .eq("id", userId)
-          .select("id");
-
-        if (userUpdateError) {
-          console.error("[VERIFY] DB User Sync Error Details:", JSON.stringify(userUpdateError));
-          return NextResponse.json({ 
-            error: "Gagal sinkronisasi data user", 
-            details: userUpdateError.message,
-            code: userUpdateError.code,
-            debug_id: userId 
-          }, { status: 500 });
-        }
-        console.log(`[VERIFY] Rows updated in 'users': ${data?.length ?? 0}`);
-        updateSuccessful = (data?.length ?? 0) > 0;
-    } else {
-        console.warn("[VERIFY] WARNING: 'is_premium' column is MISSING in 'users' table. Skipping flag sync.");
-        console.warn("[VERIFY] PLEASE RUN: ALTER TABLE users ADD COLUMN is_premium BOOLEAN DEFAULT FALSE;");
-        updateSuccessful = true; // Pretend it's ok so we don't trigger the insert fallback unnecessarily if columns are just missing
-    }
-
-    if (!updateSuccessful && availableColumns.length > 0) {
-        console.warn(`[VERIFY] No user record found for ${userId}. Creating skeleton profile.`);
-        const insertData: any = { 
-            id: userId, 
-            full_name: "Premium User",
-            email: "user@example.com" // Ditambahkan sesuai skema baru
-        };
-        
-        if (availableColumns.includes("is_premium")) {
-            insertData.is_premium = true;
-        }
-
-        await supabase.from("users").insert(insertData);
+      console.error("[VERIFY] Premium DB Error:", premError);
+      return NextResponse.json({ error: "Gagal mengaktifkan fitur premium di database." }, { status: 500 });
     }
 
     console.log(`[VERIFY] DONE: Premium activated successfully for ${userId}`);

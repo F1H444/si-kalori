@@ -129,13 +129,9 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
         return updateError;
       };
 
-      // Try 'premium' table
-      let premError = await smartUpsert("premium");
-      
-      // Fallback to 'premium_subscriptions' if table 'premium' doesn't exist
-      if (premError && (premError.code === "42P01" || premError.message.includes("not found"))) {
-        await smartUpsert("premium_subscriptions");
-      }
+      // Update 'premium_subscriptions' table directly
+      // 'premium' table does not exist in schema
+      await smartUpsert("premium_subscriptions");
 
       // Refresh list
       await fetchUsers();
@@ -154,81 +150,72 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     }, 5000);
 
     try {
-      console.log("🔍 [AdminDashboard] Starting fetch sequence...");
+      console.log("🔍 [AdminDashboard] Starting parallel fetch sequence...");
       setLoading(true);
 
-      // 1. Fetch Profiles
-      const { data: profiles, error: profileError } = await supabase
-        .from("users")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const [adminResponse, profileResponse, premiumResponse] = await Promise.all([
+        // 0. Fetch Admin IDs
+        supabase.from("admins").select("user_id"),
+        
+        // 1. Fetch Profiles
+        supabase.from("users").select("*").order("created_at", { ascending: false }),
+        
+        // 2. Fetch Premium Info (Try subscription table first)
+        supabase.from("premium_subscriptions").select("user_id, expired_at, status"),
+      ]);
 
-      if (profileError) {
-        console.error("❌ [AdminDashboard] User Profile Error:", profileError);
-        throw profileError;
-      }
-      console.log("✅ [AdminDashboard] Profiles fetched:", profiles?.length);
-
-      // 2. Fetch Premium Info (Non-blocking)
-      let premiumData: any[] = [];
-      try {
-        let { data: pData, error: pErr } = await supabase
-          .from("premium")
-          .select("user_id, expired_at, status");
-
-        if (pErr && (pErr.code === "42P01" || pErr.message.includes("not found"))) {
-          const { data: subData } = await supabase
-            .from("premium_subscriptions")
-            .select("user_id, expired_at, status");
-          pData = subData;
+      // 3. Fetch Total Scans (Non-blocking count - fetch in background)
+      supabase.from("food_logs").select("*", { count: "exact", head: true }).then(res => {
+        if (!res.error && res.count !== null) {
+          setTotalScans(res.count);
+          console.log("📊 [AdminDashboard] Total scans (background):", res.count);
+        } else {
+          // Fallback if food_logs count fails
+          supabase.from("scan_logs").select("*", { count: "exact", head: true }).then(sr => {
+            if (sr.count !== null) setTotalScans(sr.count);
+          });
         }
-        premiumData = pData || [];
-      } catch (e) {
-        console.warn("⚠️ [AdminDashboard] Failed to fetch premium data, continuing...", e);
+      });
+
+      // --- PROCESS RESULTS ---
+      const adminIds = (adminResponse.data || []).map(a => a.user_id);
+      
+      if (profileResponse.error) throw profileResponse.error;
+      const profiles = profileResponse.data || [];
+
+      // Filter out admins from the profiles list
+      const filteredProfiles = profiles.filter(p => !adminIds.includes(p.id));
+      console.log("✅ [AdminDashboard] Profiles fetched:", filteredProfiles.length);
+
+      // Handle Premium Data fallback if needed
+      let premiumData = premiumResponse.data || [];
+      if (premiumResponse.error) {
+        console.warn("⚠️ Premium Subscriptions table error, trying legacy...");
+        const { data: legacyData } = await supabase.from("premium").select("user_id, expired_at, status");
+        if (legacyData) premiumData = legacyData;
       }
 
-      const availableColumns = profiles && profiles.length > 0 ? Object.keys(profiles[0]) : [];
+      const availableColumns = filteredProfiles.length > 0 ? Object.keys(filteredProfiles[0]) : [];
+      
+      // OPTIMIZATION: Use Map for O(1) lookups instead of .find() in a loop (O(N+M))
+      const premiumMap = new Map();
+      premiumData?.forEach(pr => premiumMap.set(pr.user_id, pr));
 
-      const enrichedProfiles = (profiles || []).map(p => {
-        const premInfo = premiumData?.find(pr => pr.user_id === p.id);
+      const enrichedProfiles = filteredProfiles.map(p => {
+        const premInfo = premiumMap.get(p.id);
         const isPremiumActive = premInfo?.status === "active" && new Date(premInfo.expired_at) > new Date();
         
         return {
           ...p,
-          is_premium: availableColumns.includes("is_premium") ? p.is_premium : isPremiumActive,
+          is_premium: isPremiumActive || (availableColumns.includes("is_premium") && p.is_premium),
           premium_expired_at: premInfo?.expired_at || null
         };
       });
 
       setUsers(enrichedProfiles as UserData[]);
-      console.log("✅ [AdminDashboard] Users enriched and set.");
-
-      // 3. Fetch Total Scans (Non-blocking)
-      try {
-        setDetectingScans(true);
-        let countResult = 0;
-        const { count: foodLogsCount } = await supabase
-          .from("food_logs")
-          .select("*", { count: "exact", head: true });
-        
-        countResult = foodLogsCount || 0;
-        
-        if (countResult === 0) {
-          const { count: scanLogsCount } = await supabase
-            .from("scan_logs")
-            .select("*", { count: "exact", head: true });
-          countResult = scanLogsCount || 0;
-        }
-        
-        setTotalScans(countResult);
-        console.log("📊 [AdminDashboard] Total scans:", countResult);
-      } catch (scErr) {
-        console.warn("⚠️ [AdminDashboard] Failed to fetch scan count:", scErr);
-      }
 
     } catch (error: any) {
       console.error("❌ [AdminDashboard] Master Fetch Error:", error);
-      // If profiles fail, we can't show much, but at least stop loading
     } finally {
       clearTimeout(loadTimeout);
       setDetectingScans(false);
@@ -237,22 +224,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     }
   }, []);
 
-  const updateSettings = (key: string, value: string | boolean) => {
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
-    localStorage.setItem("admin_settings", JSON.stringify(newSettings));
-  };
-
-  useEffect(() => {
-    const savedSettings = localStorage.getItem("admin_settings");
-    if (savedSettings) {
-      try {
-        setSettings(JSON.parse(savedSettings));
-      } catch (error) {
-        console.error("Gagal memuat pengaturan", error);
-      }
-    }
-  }, []);
+  /* REMOVED SETTINGS STATE & HANDLERS */
 
   useEffect(() => {
     setMounted(true);
@@ -713,16 +685,15 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     overview: "Dashboard",
     users: "Daftar Pengguna",
     analytics: "Analitik",
-    settings: "Pengaturan",
   };
 
   return (
     <div
-      className="h-full bg-white flex relative overflow-hidden w-full"
+      className="min-h-screen bg-white flex relative w-full"
       suppressHydrationWarning
     >
       {/* Grid Background */}
-      <div className="absolute inset-0 opacity-[0.02]">
+      <div className="fixed inset-0 opacity-[0.02] pointer-events-none">
         <div
           className="absolute inset-0"
           style={{
@@ -733,9 +704,9 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative z-10 w-full overflow-hidden">
+      <main className="flex-1 flex flex-col relative z-10 w-full">
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 lg:p-8">
+        <div className="flex-1 p-4 md:p-6 lg:p-8">
           {/* Page Header */}
           <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-[6px] border-black pb-8">
             <div>
@@ -1231,72 +1202,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
             </div>
           )}
 
-          {/* Settings Tab */}
-          {activeTab === "settings" && (
-            <div className="space-y-10">
-              <div className="bg-white border-8 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-10">
-                <h3 className="text-4xl font-black italic tracking-tighter mb-10 border-b-8 border-black pb-6 flex items-center gap-4 uppercase underline decoration-8 decoration-yellow-400">
-                  Konfig / Sistem
-                </h3>
-
-                <div className="space-y-12">
-                  {/* Site Name */}
-                  <div className="group">
-                    <label className="block text-[10px] font-black mb-3 uppercase tracking-[0.4em] group-hover:text-yellow-500 transition-colors italic">
-                      App / Identitas
-                    </label>
-                    <input
-                      type="text"
-                      value={settings.siteName}
-                      onChange={(e) =>
-                        updateSettings("siteName", e.target.value)
-                      }
-                      className="w-full p-8 border-4 border-black font-black text-3xl italic tracking-tighter focus:outline-none focus:bg-yellow-50 transition-all uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-                    />
-                  </div>
-
-                  {/* Toggle Settings */}
-                  <div className="space-y-8 pt-10 border-t-8 border-black">
-                    <h4 className="font-black italic tracking-tighter text-3xl mb-10 uppercase bg-black text-white inline-block px-4 py-1">
-                      Preferensi / Logika
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <ToggleSetting
-                        label="MODE / MAINTENANCE"
-                        description="Kunci akses untuk pembaruan sistem"
-                        checked={settings.maintenanceMode}
-                        onChange={(val) =>
-                          updateSettings("maintenanceMode", val)
-                        }
-                      />
-                      <ToggleSetting
-                        label="AUTO / APPROVE"
-                        description="Validasi instan untuk pengguna baru"
-                        checked={settings.autoApproveUsers}
-                        onChange={(val) =>
-                          updateSettings("autoApproveUsers", val)
-                        }
-                      />
-                      <ToggleSetting
-                        label="NOTIF / EMAIL"
-                        description="Kirim notifikasi sistem otomatis"
-                        checked={settings.emailNotifications}
-                        onChange={(val) =>
-                          updateSettings("emailNotifications", val)
-                        }
-                      />
-                      <ToggleSetting
-                        label="PUBLIK / ANALITIK"
-                        description="Tampilkan data performa ke admin"
-                        checked={settings.showAnalytics}
-                        onChange={(val) => updateSettings("showAnalytics", val)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Settings Tab - REMOVED */}
         </div>
       </main>
     </div>
@@ -1405,40 +1311,6 @@ function GenderPillar({
   );
 }
 
-function ToggleSetting({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between p-5 border-4 border-black hover:bg-yellow-50 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1">
-      <div className="flex-1 pr-4">
-        <div className="font-black text-sm mb-1 uppercase tracking-tight italic">
-          {label}
-        </div>
-        <div className="text-[9px] text-gray-500 font-bold uppercase leading-tight">
-          {description}
-        </div>
-      </div>
-      <button
-        onClick={() => onChange(!checked)}
-        className={`relative w-16 h-8 border-4 border-black transition-all flex-shrink-0 ${
-          checked ? "bg-green-500" : "bg-gray-200"
-        }`}
-      >
-        <motion.div
-          animate={{ x: checked ? 32 : 0 }}
-          className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white border-2 border-black flex items-center justify-center`}
-        >
-          {checked && <Check className="w-4 h-4 text-black" strokeWidth={4} />}
-        </motion.div>
-      </button>
-    </div>
-  );
-}
+// ... (StatCard, DistributionBar, GenderPillar components remain unchanged)
+
+// (ToggleSetting component is removed as it was only used in settings)

@@ -70,8 +70,33 @@ export default function Sidebar({
   const isAdmin = pathname?.startsWith("/admin");
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
+    console.log("🚪 [Sidebar] Logout triggered");
+    
+    try {
+      // Sign out with timeout
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise((resolve) => setTimeout(resolve, 1500))
+      ]);
+      
+      // Clear storage
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+        localStorage.clear();
+        
+        document.cookie.split(";").forEach((c) => {
+          const name = c.split("=")[0].trim();
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+        });
+      }
+      
+      console.log("✅ [Sidebar] Logout complete");
+    } catch (error) {
+      console.error("⚠️ [Sidebar] Logout error:", error);
+    } finally {
+      // Force redirect
+      window.location.href = "/";
+    }
   };
 
   // REUSABLE NAV ITEM COMPONENT (Gaya Neo-Brutalism)
@@ -181,13 +206,7 @@ export default function Sidebar({
                 active={searchParams.get("tab") === "analytics"}
                 onClick={() => setIsMobileOpen(false)}
               />
-              <NavItem
-                href="/admin?tab=settings"
-                icon={<Settings size={20} />}
-                label="Pengaturan"
-                active={searchParams.get("tab") === "settings"}
-                onClick={() => setIsMobileOpen(false)}
-              />
+              {/* Settings Nav Item Removed */}
             </>
           ) : (
             // MENU KHUSUS USER

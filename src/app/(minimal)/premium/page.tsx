@@ -99,13 +99,17 @@ export default function PremiumPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
-        const { data: profile } = await supabase
-          .from("users")
-          .select("is_premium")
-          .eq("id", session.user.id)
-          .single();
+        
+        // Cek status premium dari tabel premium_subscriptions
+        const { data: premium } = await supabase
+          .from("premium_subscriptions")
+          .select("status, expired_at")
+          .eq("user_id", session.user.id)
+          .eq("status", "active")
+          .gt("expired_at", new Date().toISOString())
+          .maybeSingle();
 
-        if (profile?.is_premium) {
+        if (premium) {
           setIsPremium(true);
         }
       }

@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not Found" }, { status: 404 });
     }
 
-    // Process Premium if success and not already success
+    // Process Premium if success
     if (isSuccess) {
       const userId = txData.user_id;
       const startDate = new Date();
@@ -73,46 +73,22 @@ export async function POST(request: Request) {
         expired_at: expiredAt.toISOString(),
       };
 
-      // Helper function to update or insert without relying on ON CONFLICT constraint
-      const smartUpsert = async (tableName: string) => {
-        // Try update first
-        const { data, error: updateError } = await supabase
-          .from(tableName)
-          .update(premiumData)
-          .eq("user_id", userId)
-          .select();
-        
-        // If no data returned (not found), then insert
-        if (!updateError && (!data || data.length === 0)) {
-          console.log(`[WEBHOOK] Not found in ${tableName}, inserting...`);
-          const { error: insertError } = await supabase.from(tableName).insert(premiumData);
-          return insertError;
-        }
-        return updateError;
-      };
+      console.log(`[WEBHOOK] Activating Premium for User: ${userId}`);
 
-      // Try 'premium' table first
-      let premError = await smartUpsert("premium");
-      
-      // Fallback if 'premium' table doesn't exist
-      if (premError && (
-        premError.code === "42P01" || 
-        premError.message.includes("not found")
-      )) {
-        console.warn("[WEBHOOK] 'premium' table missing, trying 'premium_subscriptions'...");
-        premError = await smartUpsert("premium_subscriptions");
-      }
+      // Smart Upsert
+      const { data: existingPrem } = await supabase
+        .from("premium_subscriptions")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-      // Robust check for is_premium column before update
-      const { data: sampleUser } = await supabase.from("users").select("*").limit(1).single();
-      const availableColumns = sampleUser ? Object.keys(sampleUser) : [];
-      
-      if (availableColumns.includes("is_premium")) {
-        await supabase.from("users").update({ is_premium: true }).eq("id", userId);
-        console.log(`[WEBHOOK] PREMIUM ACTIVATED for ${userId}`);
+      if (existingPrem) {
+        await supabase.from("premium_subscriptions").update(premiumData).eq("user_id", userId);
       } else {
-        console.warn(`[WEBHOOK] Skipping is_premium update for ${userId} because column is missing.`);
+        await supabase.from("premium_subscriptions").insert([premiumData]);
       }
+      
+      console.log(`[WEBHOOK] PREMIUM ACTIVATED for ${userId}`);
     }
 
     return NextResponse.json({ message: "OK" });
