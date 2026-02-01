@@ -173,18 +173,18 @@ export default function PremiumPage() {
 
             if (verifyReq.ok) {
               setIsPremium(true);
-              window.location.href = "/dashboard?payment=success";
+              window.location.href = `/payment/success?order_id=${result.order_id}`;
             } else {
-              window.location.href = "/dashboard?payment=pending";
+              window.location.href = `/payment/success?order_id=${result.order_id}`;
             }
           } catch (vErr) {
             console.error("Verification error:", vErr);
-            window.location.href = "/dashboard?payment=pending";
+            window.location.href = `/payment/success?order_id=${result.order_id}`;
           }
         },
         onPending: function (result: any) {
           console.log("Midtrans Pending:", result);
-          window.location.href = "/dashboard?payment=pending";
+          window.location.href = `/payment/success?order_id=${result.order_id}`;
         },
         onError: function (result: any) {
           console.error("Midtrans Error:", result);
@@ -392,7 +392,7 @@ export default function PremiumPage() {
                     isPremium
                       ? "bg-green-500 cursor-default"
                       : "bg-black text-white"
-                  } ${!scriptLoaded || loading ? "opacity-70 cursor-wait" : "hover:bg-primary hover:text-black"}`}
+                  } ${!scriptLoaded || loading ? "opacity-70 cursor-wait" : "hover:bg-primary hover:text-white"}`}
                 >
                   {loading ? (
                     <div className="flex items-center gap-3">

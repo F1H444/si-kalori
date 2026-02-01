@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import Groq from "groq-sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { buildPersonalizedPrompt } from "@/lib/ai-prompt-builder";
-import { getProfileByEmail } from "@/lib/db/profiles";
 import type { UserProfile } from "@/types/user";
 
 export async function POST(req: NextRequest) {
@@ -13,51 +12,37 @@ export async function POST(req: NextRequest) {
 
     let userProfile: UserProfile | undefined;
 
-    // --- GET PROFILE FROM SUPABASE ---
-    // --- GET PROFILE & CHECK LIMITS ---
+    // 1. Get User Profile & Check Limits
     if (userEmail) {
       try {
-        // Fetch profile to get ID and Premium Status (available in new schema)
-        const { data: profile, error } = await (
-          await import("@/lib/supabase")
-        ).supabase
+        const { supabase } = await import("@/lib/supabase");
+        const { data: profile, error } = await supabase
           .from("users")
           .select("id, is_premium, goal, daily_calorie_target, age, gender, height, weight, activity_level, full_name")
           .eq("email", userEmail)
           .single();
 
-        if (error || !profile) {
-          throw new Error("User profile not found");
-        }
+        if (error || !profile) throw new Error("User profile not found");
 
         // CHECK LIMIT IF NOT PREMIUM
         if (!profile.is_premium) {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
 
-          const { count, error: countError } = await (
-            await import("@/lib/supabase")
-          ).supabase
+          const { count, error: countError } = await supabase
             .from("food_logs")
             .select("*", { count: "exact", head: true })
             .eq("user_id", profile.id)
             .gte("created_at", today.toISOString());
 
-          if (countError) {
-            console.error("Error counting logs:", countError);
-          } else if ((count || 0) >= 10) {
+          if (!countError && (count || 0) >= 10) {
             return NextResponse.json(
-              {
-                error: "LIMIT_REACHED",
-                message:
-                  "Harian gratis habis. Upgrade ke Premium untuk scan unlimited!",
-              },
-              { status: 403 },
+              { error: "LIMIT_REACHED", message: "Batas harian gratis habis. Tingkatkan ke Premium!" },
+              { status: 403 }
             );
           }
         }
 
-        // Construct UserProfile object for prompt builder using REAL data
         userProfile = {
           id: profile.id,
           goal: profile.goal || "maintain",
@@ -70,142 +55,92 @@ export async function POST(req: NextRequest) {
           activityLevel: profile.activity_level || "moderate",
           full_name: profile.full_name || "User",
         };
-
-        console.log("User profile loaded:", {
-          email: userEmail,
-          is_premium: profile.is_premium,
-        });
       } catch (err) {
-        console.log("Profile check failed:", (err as Error).message);
+        console.warn("Profile check failed:", (err as Error).message);
       }
     }
 
-    // -------------------------
-
-    // Cek API Key Groq
-    const apiKey = process.env.GROQ_API_KEY;
-
+    // 2. Initialize Gemini
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "GROQ_API_KEY belum disetting" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Sistem AI belum siap (Missing API Key)" }, { status: 500 });
     }
 
-    const groq = new Groq({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.0-flash",
+      generationConfig: { responseMimeType: "application/json" }
+    });
 
-    // Build personalized or default prompt
     const systemPrompt = buildPersonalizedPrompt(userProfile);
-
-    let userContent: (
-      | { type: "text"; text: string }
-      | { type: "image_url"; image_url: { url: string } }
-    )[] = [];
-
+    
+    // 3. Prepare Content for Gemini
+    let promptParts: any[] = [systemPrompt];
+    
     if (image) {
       const bytes = await image.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const base64Image = buffer.toString("base64");
-      const dataUrl = `data:${image.type};base64,${base64Image}`;
-
-      userContent = [
-        {
-          type: "text",
-          text: "Analyze this food image and calculate its nutrition.",
-        },
-        { type: "image_url", image_url: { url: dataUrl } },
-      ];
+      const base64Data = Buffer.from(bytes).toString("base64");
+      promptParts.push({
+        inlineData: {
+          data: base64Data,
+          mimeType: image.type
+        }
+      });
+      promptParts.push("Analisa makanan dalam gambar ini dan berikan estimasi nutrisinya dalam format JSON.");
     } else if (text) {
-      userContent = [{ type: "text", text: `Analyze this food: ${text}` }];
+      promptParts.push(`Analisa makanan berikut: ${text}`);
     } else {
-      return NextResponse.json({ error: "No input provided" }, { status: 400 });
+      return NextResponse.json({ error: "Input tidak ditemukan" }, { status: 400 });
     }
 
-    const completion = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent },
-      ],
-      model: "llama-3.2-11b-vision-instant",
-      temperature: 0.5,
-      max_tokens: 1024,
-      top_p: 1,
-      stream: false,
-      response_format: { type: "json_object" },
-    });
+    // 4. Generate Content
+    const result = await model.generateContent(promptParts);
+    const response = await result.response;
+    const resultContent = response.text();
  
-    const resultContent = completion.choices[0]?.message?.content;
- 
-    if (!resultContent) {
-      throw new Error("No response from AI");
-    }
- 
+    if (!resultContent) throw new Error("AI tidak memberikan respon.");
     const jsonResult = JSON.parse(resultContent);
 
-    // --- VALIDATION: IS IT FOOD? ---
+    // 5. Validation: Is it Food?
     if (jsonResult.is_food === false) {
-      return NextResponse.json(
-        { 
-          error: "NOT_FOOD", 
-          message: jsonResult.description || "Wah, sepertinya ini bukan makanan atau minuman deh. Coba scan yang lain ya!",
-          name: jsonResult.name
-        }, 
-        { status: 400 }
-      );
+      return NextResponse.json({ 
+        error: "NOT_FOOD", 
+        message: jsonResult.description || "Sepertinya ini bukan makanan. Coba scan yang lain!",
+        name: jsonResult.name
+      }, { status: 400 });
     }
  
-    // --- SAVE TO SCAN LOGS ---
+    // 6. Save to DB
     if (userEmail && userProfile) {
       try {
-        const { data: profileData } = await (
-          await import("@/lib/supabase")
-        ).supabase
-          .from("users")
-          .select("id")
-          .eq("email", userEmail)
-          .single();
- 
-        if (profileData) {
-          await (await import("@/lib/supabase")).supabase
-            .from("food_logs")
-            .insert([
-              {
-                user_id: profileData.id,
-                food_name: jsonResult.name,
-                nutrition: {
-                  calories: jsonResult.calories,
-                  protein: jsonResult.protein,
-                  carbs: jsonResult.carbs,
-                  fat: jsonResult.fat,
-                  health_score: jsonResult.health_score,
-                },
-                ai_analysis: jsonResult.description,
-                meal_type: "other",
-                // 'rating' dihapus karena tidak ada di skema baru
-              },
-            ]);
-          console.log("Scan log saved to food_logs for:", userEmail);
-        }
-      } catch (saveError) {
-        console.warn("Failed to save scan log:", saveError);
+        const { supabase } = await import("@/lib/supabase");
+        await supabase.from("food_logs").insert([{
+          user_id: userProfile.id,
+          food_name: jsonResult.name,
+          nutrition: {
+            calories: jsonResult.calories,
+            protein: jsonResult.protein,
+            carbs: jsonResult.carbs,
+            fat: jsonResult.fat,
+            health_score: jsonResult.health_score,
+          },
+          ai_analysis: jsonResult.description,
+          meal_type: "other",
+        }]);
+      } catch (dbErr) {
+        console.error("Failed to save log:", dbErr);
       }
     }
 
-    // Add personalization flag to response
     return NextResponse.json({
       ...jsonResult,
       personalized: !!userProfile,
       userGoal: userProfile?.goal,
       userCalorieTarget: userProfile?.recommendedCalories,
     });
-  } catch (err: unknown) {
-    const error = err as Error;
-    console.error("Error analyzing food with Groq:", error);
-    return NextResponse.json(
-      {
-        error: `Gagal menganalisa makanan: ${error.message || "Unknown error"}`,
-      },
-      { status: 500 },
-    );
+
+  } catch (err: any) {
+    console.error("Gemini Error:", err);
+    return NextResponse.json({ error: `Gagal menganalisa makanan: ${err.message}` }, { status: 500 });
   }
 }

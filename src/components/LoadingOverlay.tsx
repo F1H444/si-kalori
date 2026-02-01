@@ -9,7 +9,7 @@ interface LoadingOverlayProps {
 }
 
 export default function LoadingOverlay({ 
-  message = "MENYIAPKAN DATA...", 
+  message = "MENYIAPKAN PENGALAMAN...", 
   className = "",
   isFullPage = true 
 }: LoadingOverlayProps) {
@@ -18,109 +18,101 @@ export default function LoadingOverlay({
     : "relative min-h-[400px] w-full flex-1 bg-white";
 
   return (
-    <div className={`${containerClasses} flex flex-col items-center justify-center p-6 select-none ${className}`}>
-      {/* Subtle Grid Background */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+    <div className={`${containerClasses} flex flex-col items-center justify-center p-6 select-none overflow-hidden ${className}`}>
+      {/* 1. LAYER BACKGROUND: ULTRA-CLEAN GRID */}
+      <div className="absolute inset-0 pointer-events-none">
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(to right, #000 1px, transparent 1px)`,
-            backgroundSize: "40px 40px",
+            backgroundImage: `linear-gradient(#000 1.5px, transparent 1.5px), linear-gradient(to right, #000 1.5px, transparent 1.5px)`,
+            backgroundSize: "60px 60px",
           }}
         />
+        {/* Decorative corner numbers (Brutalist style) */}
+        <span className="absolute top-8 left-8 text-[10px] font-black opacity-20 italic">01 // INIT_ENGINE</span>
+        <span className="absolute bottom-8 right-8 text-[10px] font-black opacity-20 italic">v2.4.0 // STABLE</span>
       </div>
 
+      {/* 2. CENTRAL COMPONENT: THE "CORE" */}
       <div className="relative flex flex-col items-center">
-        {/* Modern Neo-Brutalist Spinner */}
-        <div className="relative w-24 h-24 sm:w-32 sm:h-32 mb-10">
-          {/* Static outer ring */}
-          <div className="absolute inset-0 border-[3px] border-black rounded-full opacity-10" />
-          
-          {/* Animated partial ring */}
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 border-[3px] border-transparent border-t-black rounded-full"
-          />
-          
-          {/* Inner pulsating circle */}
+        {/* High-Impact Visual Spinner */}
+        <div className="relative w-32 h-32 sm:w-40 sm:h-40 mb-12">
+          {/* Main Rotating Square (Neo-Brutalist) */}
           <motion.div
             animate={{ 
-              scale: [1, 1.2, 1],
-              opacity: [0.1, 0.3, 0.1]
+              rotate: 360,
+              borderRadius: ["0%", "20%", "0%"]
             }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute inset-4 sm:inset-6 bg-yellow-400 rounded-full border-2 border-black"
+            transition={{ 
+              duration: 3, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
+            className="absolute inset-0 border-[8px] border-black shadow-[12px_12px_0px_0px_#FFDE59]"
           />
+          
+          {/* Inner Pulsing Core */}
+          <motion.div
+            animate={{ 
+              scale: [0.8, 1.1, 0.8],
+              rotate: -360
+            }}
+            transition={{ 
+              duration: 4, 
+              repeat: Infinity, 
+              ease: "linear" 
+            }}
+            className="absolute inset-8 bg-black flex items-center justify-center border-4 border-[#FFDE59]"
+          >
+             <motion.div 
+               animate={{ opacity: [0.4, 1, 0.4] }}
+               transition={{ duration: 1, repeat: Infinity }}
+               className="w-4 h-4 bg-[#FFDE59] rounded-full"
+             />
+          </motion.div>
 
-          {/* Drifting dots */}
-          {[...Array(4)].map((_, i) => (
-            <motion.div
-              key={i}
-              animate={{ 
-                rotate: 360,
-              }}
-              transition={{ 
-                duration: 3, 
-                repeat: Infinity, 
-                ease: "linear",
-                delay: i * 0.75 
-              }}
-              className="absolute inset-0 flex items-start justify-center p-1"
-            >
-              <div className="w-2 h-2 bg-black rounded-full shadow-[2px_2px_0px_0px_#FFC700]" />
-            </motion.div>
-          ))}
+          {/* Orbiting Tech Labels */}
+          <motion.div
+            animate={{ rotate: 180 }}
+            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+            className="absolute -inset-10 border-2 border-dashed border-black/10 rounded-full"
+          />
         </div>
 
-        {/* Text Content */}
-        <div className="text-center space-y-3">
-          <motion.h2 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter text-black leading-tight"
+        {/* 3. TYPOGRAPHY: BOLD & CLEAN */}
+        <div className="text-center relative">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-block bg-black text-[#FFDE59] px-4 py-1 mb-4 font-black text-xs uppercase italic tracking-[0.3em]"
           >
-            {message}
-          </motion.h2>
+            Sistem Sedang Memuat
+          </motion.div>
           
-          <div className="flex items-center justify-center gap-4">
-            <div className="h-[2px] w-8 bg-black opacity-20" />
-            <motion.p 
-              animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-black italic"
-            >
-              SIKALORI ENGINE v2.0
-            </motion.p>
-            <div className="h-[2px] w-8 bg-black opacity-20" />
+          <h2 className="text-5xl sm:text-7xl font-black uppercase italic tracking-tighter text-black leading-none mb-4">
+            {message}
+          </h2>
+
+          {/* Marquee Style Footer */}
+          <div className="w-full h-8 border-y-2 border-black flex items-center overflow-hidden bg-[#FFDE59]">
+             <motion.div
+                animate={{ x: [0, -1000] }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="whitespace-nowrap flex gap-10 font-black text-[10px] uppercase italic text-black"
+             >
+                {[...Array(10)].map((_, i) => (
+                    <span key={i}>OPTIMIZING NUTRITION DATABASE // ANALYZING SCAN ENGINE // SECURE PAYMENT GATEWAY // </span>
+                ))}
+             </motion.div>
           </div>
         </div>
-
-        {/* Decorative Floating Elements (Premium Feel) */}
-        <motion.div 
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-16 -left-16 w-8 h-8 bg-black flex items-center justify-center -rotate-12 shadow-[4px_4px_0px_0px_#FFC700]"
-        >
-            <div className="w-4 h-[2px] bg-white" />
-        </motion.div>
-        
-        <motion.div 
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute -bottom-12 -right-16 w-10 h-10 border-4 border-black rotate-12 flex items-center justify-center"
-        >
-            <div className="w-2 h-2 bg-yellow-400 rounded-full" />
-        </motion.div>
       </div>
 
-      {/* Progress Line (Fake but adds to 'Clean & Good' feel) */}
-      <div className="mt-20 w-48 sm:w-64 h-1 bg-gray-100 border border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
-        <motion.div 
-          animate={{ x: ["-100%", "100%"] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="h-full w-1/2 bg-yellow-400"
-        />
+      {/* 4. DECORATIVE SIDEBAR (PREMIUM FEEL) */}
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-1 pr-4">
+         {[...Array(20)].map((_, i) => (
+             <div key={i} className={`h-1 w-8 bg-black ${i % 4 === 0 ? 'opacity-100 w-12' : 'opacity-10'}`} />
+         ))}
       </div>
     </div>
   );
