@@ -14,7 +14,7 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ScanLog } from "@/types/user";
-import { HistorySkeleton } from "@/components/Skeleton";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 // Animation Variants
 const containerVariants = {
@@ -79,6 +79,7 @@ export default function RiwayatPage() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        setLoading(false);
         console.error("User tidak ditemukan");
         return;
       }
@@ -165,7 +166,7 @@ export default function RiwayatPage() {
   }, 0);
 
 
-  if (!mounted || loading) return <HistorySkeleton />;
+  if (!mounted || loading) return <LoadingOverlay message="MEMUAT RIWAYAT..." />;
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-10 font-mono text-black">

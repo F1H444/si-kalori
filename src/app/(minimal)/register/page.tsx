@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 // Declare Google Sign-In types
 declare global {
@@ -62,7 +63,9 @@ export default function Register() {
         if (error) throw error;
 
         if (data.user) {
-          router.replace("/onboarding");
+          // Sign out immediately so they have to login
+          await supabase.auth.signOut();
+          router.replace("/login?registered=true");
         }
       } catch (error: any) {
         setLoading(false);
@@ -98,7 +101,9 @@ export default function Register() {
           alert("Silakan cek email kamu untuk konfirmasi akun.");
           router.replace("/login");
         } else {
-          router.replace("/onboarding");
+          // Sign out immediately so they have to login if session was created
+          await supabase.auth.signOut();
+          router.replace("/login?registered=true");
         }
       }
     } catch (err: any) {
@@ -169,19 +174,7 @@ export default function Register() {
       >
         {/* Loading Overlay */}
         <AnimatePresence>
-          {loading && (
-            <motion.div
-              className="absolute inset-0 z-50 bg-black/95 flex flex-col items-center justify-center overflow-hidden backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <div className="flex flex-col items-center gap-6">
-                <div className="w-16 h-16 border-4 border-primary border-t-white rounded-full animate-spin"></div>
-                <p className="font-black uppercase text-sm tracking-[0.4em] text-white animate-pulse">MENDAFTAR...</p>
-              </div>
-            </motion.div>
-          )}
+          {loading && <LoadingOverlay message="MENDAFTAR..." />}
         </AnimatePresence>
 
         {/* Header Section */}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   Loader2,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import type { User } from "@supabase/supabase-js";
 
 // Declare Google Sign-In types
@@ -23,11 +25,27 @@ declare global {
 }
 
 export default function Login() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FFDE59] flex items-center justify-center font-black">MEMUAT...</div>}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (searchParams.get("registered") === "true") {
+      setSuccess("Registrasi Berhasil! Silakan masuk ke akun Anda.");
+    }
+  }, [searchParams]);
 
   // --- Animation Variants ---
   const containerVariants: Variants = {
@@ -202,19 +220,7 @@ export default function Login() {
       >
         {/* Loading Overlay */}
         <AnimatePresence>
-          {loading && (
-            <motion.div
-              className="absolute inset-0 z-50 bg-black/95 flex flex-col items-center justify-center overflow-hidden backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <div className="flex flex-col items-center gap-6">
-                <div className="w-16 h-16 border-4 border-primary border-t-white rounded-full animate-spin"></div>
-                <p className="font-black uppercase text-sm tracking-[0.4em] text-white animate-pulse">AUTENTIKASI...</p>
-              </div>
-            </motion.div>
-          )}
+          {loading && <LoadingOverlay message="AUTENTIKASI..." />}
         </AnimatePresence>
 
         {/* Header Section */}
@@ -277,6 +283,16 @@ export default function Login() {
                         />
                     </div>
                 </motion.div>
+
+                {success && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="p-3 bg-green-100 border-2 border-green-500 text-green-600 text-xs font-bold text-center uppercase"
+                    >
+                        {success}
+                    </motion.div>
+                )}
 
                 {error && (
                     <motion.div 

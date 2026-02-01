@@ -164,17 +164,17 @@ export default function PremiumPage() {
               if (verifyReq.ok) {
                 setIsPremium(true);
                 alert("Pembayaran Berhasil! Akun Anda kini Premium.");
-                window.location.href = "/dashboard";
+                window.location.href = "/dashboard?payment=success";
               } else {
                 throw new Error("Verifikasi pembayaran gagal di server.");
               }
             } catch (vErr) {
-              console.error("Verification Error:", vErr);
-              alert(
-                "Pembayaran sukses tapi gagal verifikasi. Silakan refresh.",
-              );
-              window.location.href = "/dashboard"; // Still redirect as it might be a false negative or webhook will catch up
-            }
+                console.error("Verification Error:", vErr);
+                alert(
+                  "Pembayaran sukses tapi gagal verifikasi. Silakan refresh.",
+                );
+                window.location.href = "/dashboard?payment=pending"; // Still redirect as it might be a false negative or webhook will catch up
+              }
           },
           onPending: function (result: any) {
             alert("Menunggu pembayaran...");
@@ -370,20 +370,33 @@ export default function PremiumPage() {
                   ))}
                 </motion.div>
 
-                <motion.button
+                 <motion.button
                   variants={itemVariants}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ 
+                    scale: 1.02,
+                    x: -4,
+                    y: -4,
+                    boxShadow: "12px 12px 0px 0px rgba(0,0,0,1)"
+                  }}
+                  whileTap={{ 
+                    scale: 0.98,
+                    x: 4,
+                    y: 4,
+                    boxShadow: "0px 0px 0px 0px rgba(0,0,0,1)"
+                  }}
                   onClick={handleUpgrade}
                   disabled={loading || isPremium || !scriptLoaded}
-                  className={`w-full py-5 sm:py-7 font-black text-xl sm:text-3xl uppercase italic border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[8px] active:translate-y-[8px] transition-all flex items-center justify-center gap-4 ${
+                  className={`w-full py-5 sm:py-7 font-black text-xl sm:text-3xl uppercase italic border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center gap-4 ${
                     isPremium
                       ? "bg-green-500 cursor-default"
-                      : "bg-black text-white hover:bg-gray-800"
-                  } ${!scriptLoaded ? "opacity-70 cursor-wait" : ""}`}
+                      : "bg-black text-white"
+                  } ${!scriptLoaded || loading ? "opacity-70 cursor-wait" : "hover:bg-primary hover:text-black"}`}
                 >
                   {loading ? (
-                    <Loader2 className="w-8 h-8 animate-spin" />
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-8 h-8 animate-spin" />
+                      <span>Memproses...</span>
+                    </div>
                   ) : isPremium ? (
                     "SUDAH PREMIUM"
                   ) : !scriptLoaded ? (

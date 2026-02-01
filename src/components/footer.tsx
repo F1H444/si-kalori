@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowRight, Github, Twitter, Instagram, Mail } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 
@@ -26,12 +26,6 @@ export default function Footer() {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const socials = [
-    { icon: Github, href: "#", name: "GitHub" },
-    { icon: Twitter, href: "#", name: "Twitter" },
-    { icon: Instagram, href: "#", name: "Instagram" },
-  ];
 
   const quickLinks = [
     { name: "Beranda", href: "/" },
@@ -117,21 +111,6 @@ export default function Footer() {
             <p className="text-gray-400 font-bold leading-relaxed">
               Kami percaya hidup sehat itu harusnya seru dan tidak kaku. Pantau nutrisimu dengan AI tercanggih, biarkan kami yang berhitung.
             </p>
-            <div className="flex space-x-4">
-              {socials.map((social) => {
-                const Icon = social.icon;
-                return (
-                  <a
-                    key={social.name}
-                    href={social.href}
-                    className="p-3 bg-white text-black border-2 border-white hover:bg-yellow-400 hover:border-black hover:translate-y-[-4px] transition-all duration-200"
-                    aria-label={social.name}
-                  >
-                    <Icon className="w-5 h-5" strokeWidth={2.5} />
-                  </a>
-                );
-              })}
-            </div>
           </div>
 
           {/* Navigasi Cepat */}

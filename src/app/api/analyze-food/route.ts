@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
           await import("@/lib/supabase")
         ).supabase
           .from("users")
-          .select("id, is_premium")
+          .select("id, is_premium, goal, daily_calorie_target, age, gender, height, weight, activity_level, full_name")
           .eq("email", userEmail)
           .single();
 
@@ -57,18 +57,18 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Construct UserProfile object for prompt builder
+        // Construct UserProfile object for prompt builder using REAL data
         userProfile = {
           id: profile.id,
-          goal: "maintain", // Default karena kolom sudah dihapus dari users
+          goal: profile.goal || "maintain",
           is_premium: profile.is_premium,
-          recommendedCalories: 2000, // Default karena kolom sudah dihapus dari users
-          age: 25,
-          gender: "male",
-          height: 170,
-          weight: 60,
-          activityLevel: "moderate",
-          full_name: "User",
+          recommendedCalories: profile.daily_calorie_target || 2000,
+          age: profile.age || 25,
+          gender: profile.gender || "male",
+          height: profile.height || 170,
+          weight: profile.weight || 60,
+          activityLevel: profile.activity_level || "moderate",
+          full_name: profile.full_name || "User",
         };
 
         console.log("User profile loaded:", {

@@ -12,10 +12,11 @@ import {
   Dumbbell,
   Crown,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { DashboardSkeleton } from "@/components/Skeleton";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 // Animation Variants
 const containerVariants = {
@@ -70,9 +71,19 @@ interface UserProfile {
 }
 
 export default function UserDashboard() {
+  return (
+    <Suspense fallback={<LoadingOverlay message="MENYIAPKAN PANEL..." />}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paymentStatus = searchParams.get("payment");
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -115,7 +126,7 @@ export default function UserDashboard() {
   }, [router]);
 
   // --- TAMPILAN LOADING BARU (NEO-BRUTALIST SKELETON) ---
-  if (loading) return <DashboardSkeleton />;
+  if (loading) return <LoadingOverlay message="MENYIAPKAN PANEL..." />;
 
   return (
     <div className="min-h-screen bg-white text-black font-mono p-4 md:p-10 selection:bg-secondary">
@@ -128,8 +139,29 @@ export default function UserDashboard() {
         {/* HEADER UTAMA */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b-4 border-black pb-8"
+          className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b-4 border-black pb-8 relative"
         >
+          {/* Payment Status Overlay */}
+          <div className="absolute -top-12 left-0 right-0 flex justify-center pointer-events-none">
+            {paymentStatus === "success" && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-green-500 text-white px-4 py-1 border-2 border-black font-black uppercase italic text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] pointer-events-auto"
+              >
+                ✓ PEMBAYARAN BERHASIL! Selamat Datang di Premium.
+              </motion.div>
+            )}
+            {paymentStatus === "pending" && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-yellow-400 text-black px-4 py-1 border-2 border-black font-black uppercase italic text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] pointer-events-auto"
+              >
+                ! PEMBAYARAN SEDANG DIPROSES. Cek lagi nanti ya.
+              </motion.div>
+            )}
+          </div>
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Fingerprint size={16} className="text-secondary" />
@@ -319,27 +351,37 @@ export default function UserDashboard() {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -5 }}
-            className="sm:col-span-2 lg:col-span-1 border-4 border-black p-6 md:p-8 bg-primary text-white shadow-[6px_6px_0px_0px_#F97316] flex flex-col justify-between min-h-[160px]"
+            className="sm:col-span-2 lg:col-span-1 border-4 border-black p-6 md:p-8 bg-primary text-black shadow-[6px_6px_0px_0px_#2563EB] flex flex-col justify-between min-h-[160px]"
           >
             <div className="flex justify-between items-center mb-6">
-              <Dumbbell size={24} className="text-secondary" />
-              <span className="text-[10px] font-black uppercase text-gray-500">
+              <Dumbbell size={24} className="text-black" />
+              <span className="text-[10px] font-black uppercase text-black/40">
                 Intensitas
               </span>
             </div>
-            <h3 className="text-xl md:text-2xl font-black uppercase italic tracking-tighter leading-tight">
-              {profile?.activity_level === "sedentary"
-                ? "Jarang Gerak"
-                : profile?.activity_level === "light"
-                  ? "Olahraga Ringan"
-                  : profile?.activity_level === "moderate"
-                    ? "Cukup Aktif"
-                    : profile?.activity_level === "active"
-                      ? "Sangat Aktif"
-                      : profile?.activity_level === "veryActive" || profile?.activity_level === "very_active"
-                        ? "Atletis"
-                        : profile?.activity_level}
-            </h3>
+            <div className="mt-4">
+              <h3 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter leading-tight">
+                {profile?.activity_level === "sedentary"
+                  ? "Jarang Gerak"
+                  : profile?.activity_level === "light"
+                    ? "Olahraga Ringan"
+                    : profile?.activity_level === "moderate"
+                      ? "Cukup Aktif"
+                      : profile?.activity_level === "active"
+                        ? "Sangat Aktif"
+                        : profile?.activity_level === "veryActive" || profile?.activity_level === "very_active"
+                          ? "Atletis"
+                          : profile?.activity_level || "Tidak diisi"}
+              </h3>
+              <p className="text-[10px] font-bold uppercase mt-2 opacity-60">
+                {profile?.activity_level === "sedentary" ? "Minimal aktivitas fisik harian." : 
+                 profile?.activity_level === "light" ? "Olahraga 1-3 kali seminggu." :
+                 profile?.activity_level === "moderate" ? "Olahraga 3-5 kali seminggu." :
+                 profile?.activity_level === "active" ? "Olahraga 6-7 kali seminggu." :
+                 profile?.activity_level === "veryActive" || profile?.activity_level === "very_active" ? "Latihan fisik berat setiap hari." :
+                 "Lengkapi profil anda."}
+              </p>
+            </div>
           </motion.div>
         </motion.div>
       </motion.main>

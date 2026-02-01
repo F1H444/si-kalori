@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import { 
   User as UserIcon, 
   Mail, 
@@ -51,7 +52,10 @@ export default function EditProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return router.push("/login");
+      if (!user) {
+        setLoading(false);
+        return router.push("/login");
+      }
 
       const { data, error } = await supabase
         .from("users")
@@ -69,6 +73,8 @@ export default function EditProfilePage() {
           activity_level: data.activity_level || "",
           goal: data.goal || ""
         });
+      } else {
+        console.error("Profile not found:", error);
       }
       setLoading(false);
     };
@@ -109,16 +115,7 @@ export default function EditProfilePage() {
     setSaving(false);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-10">
-        <div className="text-center">
-            <Loader2 className="w-16 h-16 animate-spin text-black mx-auto mb-4" />
-            <p className="font-black uppercase tracking-tighter text-xl">Memuat Data...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingOverlay message="MEMUAT PROFIL..." />;
 
   return (
     <div className="min-h-screen bg-yellow-50 text-black font-mono p-4 md:p-10">

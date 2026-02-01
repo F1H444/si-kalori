@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import {
   goalLabels,
   activityLabels,
@@ -149,16 +150,8 @@ export default function Onboarding() {
   });
 
   // Loading Screen to prevent flashing
-  if (isCheckingAuth) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center">
-        <div className="relative mb-6">
-          <div className="w-16 h-16 border-8 border-white/10 border-t-primary rounded-full animate-spin"></div>
-        </div>
-        <p className="text-white/40 font-black uppercase text-[10px] tracking-[0.4em]">Menyiapkan Sesi...</p>
-      </div>
-    );
-  }
+  if (isCheckingAuth) return <LoadingOverlay message="MENGECEK SESI..." />;
+  if (loading) return <LoadingOverlay message="MENYIMPAN DATA..." />;
 
   const totalSteps = 7; // Goal, Gender, Age, Weight, Height, Activity, Summary
 

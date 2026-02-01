@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import LoadingOverlay from "@/components/LoadingOverlay";
 
 // --- TYPES ---
 type ScanMode = "select" | "camera" | "upload" | "type" | "result" | "meal_selection";
@@ -164,12 +165,67 @@ export default function ScanPage() {
         }
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) {
-            const file = e.target.files[0];
+            let file = e.target.files[0];
+            
+            // Basic compression/resize if file is large (> 1MB)
+            if (file.size > 1024 * 1024) {
+              try {
+                const compressed = await compressImage(file);
+                file = compressed;
+              } catch (e) {
+                console.error("Compression failed", e);
+              }
+            }
+            
             setPreview(URL.createObjectURL(file));
             handleMealSelection(file);
         }
+    };
+
+    const compressImage = (file: File): Promise<File> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new (window as any).Image();
+          img.src = event.target?.result as string;
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const MAX_WIDTH = 1024;
+            const MAX_HEIGHT = 1024;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx?.drawImage(img, 0, 0, width, height);
+            
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(new File([blob], file.name, { type: "image/jpeg" }));
+              } else {
+                reject(new Error("Canvas to blob failed"));
+              }
+            }, "image/jpeg", 0.7);
+          };
+        };
+        reader.onerror = (error) => reject(error);
+      });
     };
 
     const handleMealSelection = (input: File | string) => {
@@ -299,23 +355,7 @@ export default function ScanPage() {
                 
                 <AnimatePresence mode="wait">
                     {/* LOADING OVERLAY */}
-                    {loading && (
-                        <motion.div 
-                            key="loading"
-                            initial={{ opacity: 0 }} 
-                            animate={{ opacity: 1 }} 
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/95 z-[100] flex flex-col items-center justify-center p-6 text-center backdrop-blur-sm"
-                        >
-                            <div className="relative mb-8">
-                                <Loader2 className="w-24 h-24 animate-spin text-primary" strokeWidth={3} />
-                            </div>
-                            <h2 className="text-5xl font-black uppercase tracking-tighter italic text-white">MENGANALISA...</h2>
-                            <p className="mt-4 bg-primary text-black px-8 py-2 font-black uppercase shadow-[6px_6px_0px_0px_rgba(37,99,235,1)]">
-                                Tunggu Sebentar
-                            </p>
-                        </motion.div>
-                    )}
+                    {loading && <LoadingOverlay message="MENGANALISA..." />}
 
                     {/* SELECT MODE */}
                     {mode === "select" && (

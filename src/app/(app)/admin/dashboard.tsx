@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import {
   Search,
   Loader2,
@@ -664,20 +665,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     searchQuery,
   });
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-[99] flex items-center justify-center bg-white/80 backdrop-blur-sm">
-        <div className="text-center">
-          <div className="bg-black p-8 border-8 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] inline-block">
-            <Loader2 className="w-16 h-16 text-white animate-spin mx-auto mb-4" />
-            <p className="text-white font-black text-xl uppercase tracking-tighter">
-              Memuat Dashboard...
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingOverlay message="MEMUAT DASHBOARD..." />;
 
   const tabLabels: Record<string, string> = {
     overview: "Dashboard",
