@@ -119,10 +119,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Analyze with Groq
-    console.log("🤖 [AnalyzeFood] Calling Groq with model: llama-3.2-11b-vision-preview");
+    console.log("🤖 [AnalyzeFood] Calling Groq with model: meta-llama/llama-4-scout-17b-16e-instruct");
     const completion = await groq.chat.completions.create({
       messages,
-      model: "llama-3.2-11b-vision-preview",
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
       temperature: 0.1,
       max_tokens: 1024,
       response_format: { type: "json_object" }

@@ -90,28 +90,35 @@ const checkItemVariants = {
 
 export default function PremiumPage() {
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        
-        // Cek status premium dari tabel premium_subscriptions
-        const { data: premium } = await supabase
-          .from("premium_subscriptions")
-          .select("status, expired_at")
-          .eq("user_id", session.user.id)
-          .eq("status", "active")
-          .gt("expired_at", new Date().toISOString())
-          .maybeSingle();
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+          
+          // Cek status premium dari tabel premium_subscriptions
+          const { data: premium } = await supabase
+            .from("premium_subscriptions")
+            .select("status, expired_at")
+            .eq("user_id", session.user.id)
+            .eq("status", "active")
+            .gt("expired_at", new Date().toISOString())
+            .maybeSingle();
 
-        if (premium) {
-          setIsPremium(true);
+          if (premium) {
+            setIsPremium(true);
+          }
         }
+      } catch (err) {
+        console.error("Error checking user:", err);
+      } finally {
+        setInitialLoading(false);
       }
     };
     checkUser();
@@ -129,6 +136,8 @@ export default function PremiumPage() {
   }, []);
 
   const handleUpgrade = async () => {
+    if (initialLoading) return;
+
     if (!user) {
        // Save intended destination
        if (typeof window !== 'undefined') {
@@ -139,7 +148,7 @@ export default function PremiumPage() {
     }
 
     if (!scriptLoaded || !(window as any).snap) {
-      alert("Sistem pembayaran sedang diinisialisasi, mohon tunggu 2-3 detik.");
+      alert("Sistem pembayaran sedang diinisialisasi, mohon tunggu beberapa saat.");
       return;
     }
 
@@ -391,21 +400,21 @@ export default function PremiumPage() {
                     boxShadow: "0px 0px 0px 0px rgba(0,0,0,1)"
                   }}
                   onClick={handleUpgrade}
-                  disabled={loading || isPremium || !scriptLoaded}
+                  disabled={loading || isPremium || !scriptLoaded || initialLoading}
                   className={`w-full py-5 sm:py-7 font-black text-xl sm:text-3xl uppercase italic border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center gap-4 ${
                     isPremium
                       ? "bg-green-500 cursor-default"
                       : "bg-black text-white"
-                  } ${!scriptLoaded || loading ? "opacity-70 cursor-wait" : "hover:bg-primary hover:text-white"}`}
+                  } ${!scriptLoaded || loading || initialLoading ? "opacity-70 cursor-wait" : "hover:bg-primary hover:text-white"}`}
                 >
-                  {loading ? (
+                  {loading || initialLoading ? (
                     <div className="flex items-center gap-3">
                       <motion.div 
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                         className="w-8 h-8 border-4 border-white border-t-transparent rounded-full"
                       />
-                      <span>Memproses...</span>
+                      <span>{initialLoading ? "Memuat..." : "Memproses..."}</span>
                     </div>
                   ) : isPremium ? (
                     "SUDAH PREMIUM"
@@ -422,7 +431,11 @@ export default function PremiumPage() {
       </main>
 
       <Script
-        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        src={
+          process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY?.startsWith("SB-")
+            ? "https://app.sandbox.midtrans.com/snap/snap.js"
+            : "https://app.midtrans.com/snap/snap.js"
+        }
         data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ""}
         strategy="afterInteractive"
         onLoad={() => setScriptLoaded(true)}

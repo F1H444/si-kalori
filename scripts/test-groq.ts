@@ -12,14 +12,14 @@ async function testGroq() {
   }
 
   const groq = new Groq({ apiKey });
-  console.log("Testing Groq with model: llama-3.2-11b-vision-preview...");
+  console.log("Testing Groq with model: meta-llama/llama-4-scout-17b-16e-instruct...");
   
   try {
     const completion = await groq.chat.completions.create({
       messages: [
         { role: "user", content: "Say hello!" }
       ],
-      model: "llama-3.2-11b-vision-preview",
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
     });
     console.log("Response:", completion.choices[0]?.message?.content);
     console.log("Groq is working!");
