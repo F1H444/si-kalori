@@ -208,7 +208,7 @@ export default function Onboarding() {
   if (isCheckingAuth) return <LoadingOverlay message="MENGECEK SESI..." />;
   if (loading) return <LoadingOverlay message="MENYIMPAN DATA..." />;
 
-  const totalSteps = 7; // Goal, Gender, Age, Weight, Height, Activity, Summary
+  const totalSteps = 8; // Goal, Gender, Age, Weight, Target, Height, Activity, Summary
 
   // --- Simpan ke Supabase ---
   const handleSubmit = async () => {
@@ -259,14 +259,20 @@ export default function Onboarding() {
       });
 
       if (error) throw error;
+      
+      // Delay sedikit agar terasa mulus
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      router.push("/dashboard");
+      // Gunakan window.location untuk hard navigation agar fresh
+      if (typeof window !== "undefined") {
+        window.location.href = "/dashboard";
+      }
+
     } catch (error: unknown) {
       const err = error as Error;
       console.error("Error:", err.message);
       alert("Gagal menyimpan profil: " + err.message);
-    } finally {
-      setLoading(false);
+      setLoading(false); // Stop loading only on error
     }
   };
 
@@ -420,7 +426,7 @@ export default function Onboarding() {
                   variants={itemVariants}
                   className="text-3xl sm:text-5xl lg:text-7xl font-black italic tracking-tighter uppercase"
                 >
-                  Berat Badan
+                  Berat Saat Ini
                 </motion.h2>
                 <motion.div variants={itemVariants}>
                   <ModernPicker
@@ -434,8 +440,37 @@ export default function Onboarding() {
               </motion.div>
             )}
 
-            {/* Step 5: Height */}
+            {/* Step 5: Target Weight - NEW */}
             {currentStep === 4 && (
+              <motion.div
+                variants={containerVariants}
+                className="space-y-8 text-center"
+              >
+                <motion.h2
+                  variants={itemVariants}
+                  className="text-3xl sm:text-5xl lg:text-7xl font-black italic tracking-tighter uppercase"
+                >
+                  Target Berat
+                </motion.h2>
+                 <p className="text-gray-500 font-bold uppercase tracking-widest text-xs sm:text-sm">
+                    {formData.goal === 'lose' ? "Ayo turunkan berat badanmu!" : 
+                     formData.goal === 'gain' ? "Ayo tambah massa tubuhmu!" : 
+                     "Jaga berat badan idealmu!"}
+                 </p>
+                <motion.div variants={itemVariants}>
+                  <ModernPicker
+                    value={formData.targetWeight || formData.weight} // Fallback to current weight
+                    unit="kg"
+                    onChange={(v: number) => updateData("targetWeight", v)}
+                    min={30}
+                    max={200}
+                  />
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* Step 6: Height */}
+            {currentStep === 5 && (
               <motion.div
                 variants={containerVariants}
                 className="space-y-8 text-center"
@@ -458,8 +493,8 @@ export default function Onboarding() {
               </motion.div>
             )}
 
-            {/* Step 6: Activity Level */}
-            {currentStep === 5 && (
+            {/* Step 7: Activity Level */}
+            {currentStep === 6 && (
               <motion.div
                 variants={containerVariants}
                 className="space-y-8 text-center"
@@ -505,8 +540,8 @@ export default function Onboarding() {
               </motion.div>
             )}
 
-            {/* Step 7: Summary & Final Result */}
-            {currentStep === 6 && (
+            {/* Step 8: Summary & Final Result */}
+            {currentStep === 7 && (
               <motion.div
                 variants={containerVariants}
                 className="space-y-8 text-center"
@@ -561,7 +596,7 @@ export default function Onboarding() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-[10px] text-gray-400 leading-none">Profil Fisik</p>
-                      <p className="text-sm sm:text-xl leading-none">{formData.age}th • {formData.weight}kg • {formData.height}cm</p>
+                      <p className="text-sm sm:text-xl leading-none">{formData.age}th • {formData.weight}kg → <span className="text-blue-600">{formData.targetWeight}kg</span></p>
                     </div>
                     <div className="col-span-2 space-y-1">
                       <p className="text-[10px] text-gray-400 leading-none">Aktivitas</p>
