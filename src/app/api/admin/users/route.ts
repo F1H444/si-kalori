@@ -10,7 +10,7 @@ export async function GET() {
 
     // Optimize: Fetch minimal fields for heavy tables
     const [adminRes, userRes, premiumRes, foodLogRes] = await Promise.all([
-      supabase.from("admins").select("user_id"),
+      supabase.from("admins").select("id"),
       supabase.from("users").select("*").order("created_at", { ascending: false }),
       supabase.from("premium_subscriptions").select("user_id, expired_at, status"),
       supabase.from("food_logs").select("user_id") // Fetch all logs but only user_id to count

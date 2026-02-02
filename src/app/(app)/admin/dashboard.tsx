@@ -159,7 +159,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       
       const data = await response.json();
       
-      const adminIds = (data.admins || []).map((a: any) => a.user_id);
+      const adminIds = (data.admins || []).map((a: any) => a.id);
       const profiles = data.users || [];
       const premiumData = data.premium || [];
       const scanCounts = data.scanCounts || {}; // New data from API

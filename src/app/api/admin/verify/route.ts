@@ -22,20 +22,19 @@ export async function POST(req: NextRequest) {
       console.log("✅ [API/Admin/Verify] Admin by email match: admin@sikalori.com");
       
       // AUTO-SAVE: Ensure this super admin exists in the 'admins' table
-      // This fixes the issue where the admin can login but doesn't exist in the database table
+      // Refactored: We now use 'id' as the FK to auth.users, 'user_id' column is removed.
       const { error: upsertError } = await supabase
         .from("admins")
         .upsert(
           { 
-            user_id: userId, 
+            id: userId,          // 'id' now stores the User UUID directly 
             role: "super_admin" 
           }, 
-          { onConflict: "user_id" }
+          { onConflict: "id" }   // Conflict on PK 'id'
         );
 
       if (upsertError) {
         console.error("⚠️ [API/Admin/Verify] Failed to auto-save super admin to DB:", upsertError);
-        // We generally shouldn't block login if this fails, as hardcoded check passed.
       } else {
         console.log("💾 [API/Admin/Verify] Super admin auto-saved to database.");
       }
@@ -47,7 +46,7 @@ export async function POST(req: NextRequest) {
     const { data: adminRecord, error } = await supabase
       .from("admins")
       .select("role")
-      .eq("user_id", userId)
+      .eq("id", userId) // Lookup by 'id'
       .maybeSingle();
 
     if (error) {
