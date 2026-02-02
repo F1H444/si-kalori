@@ -38,9 +38,8 @@ export async function POST(request) {
   }
 
   // Detect environment
-  // Priority: 1. ENV Var, 2. Key Prefix
-  const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true' || 
-                      (process.env.MIDTRANS_IS_PRODUCTION === undefined && !serverKey.startsWith('SB-'));
+  // Default to Sandbox unless explicitly set to 'true'
+  const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true';
   
   console.log(`🚀 [Payment] Initializing Midtrans Snap...`);
   console.log(`📡 [Payment] Mode: ${isProduction ? 'PRODUCTION' : 'SANDBOX'}`);

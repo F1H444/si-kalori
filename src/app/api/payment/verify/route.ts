@@ -15,8 +15,7 @@ export async function POST(request: Request) {
     const clientKey = (process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "").trim();
     
     // Detect environment
-    const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true' || 
-                        (process.env.MIDTRANS_IS_PRODUCTION === undefined && !serverKey.startsWith('SB-'));
+    const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true';
     
     console.log(`[VERIFY] Starting verification in ${isProduction ? 'PROD' : 'SANDBOX'} mode for Order: ${order_id}`);
 
