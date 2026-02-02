@@ -162,6 +162,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       const adminIds = (data.admins || []).map((a: any) => a.user_id);
       const profiles = data.users || [];
       const premiumData = data.premium || [];
+      const scanCounts = data.scanCounts || {}; // New data from API
       
       setTotalScans(data.totalScans || 0);
 
@@ -179,7 +180,8 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
           ...p,
           is_premium: isPremiumActive || p.is_premium,
           premium_expired_at: premInfo?.expired_at || null,
-          isAdmin: isAdminUser
+          isAdmin: isAdminUser,
+          scan_count: scanCounts[p.id] || 0, // Accurately map scan count
         };
       });
 
@@ -1006,7 +1008,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                           Pengguna
                         </th>
                         <th className="text-left p-6 font-black text-xs uppercase tracking-widest whitespace-nowrap">
-                          Status & Aktivitas
+                          Aktivitas Scan
                         </th>
                         <th className="text-left p-6 font-black text-xs uppercase tracking-widest whitespace-nowrap">
                           Metrik Fisik
@@ -1018,7 +1020,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                           Log Akses
                         </th>
                         <th className="text-center p-6 font-black text-xs uppercase tracking-widest whitespace-nowrap">
-                          Kelola
+                          Status Membership
                         </th>
                       </tr>
                     </thead>
@@ -1059,23 +1061,12 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                               </div>
                             </td>
 
-                            {/* STATUS & SCAN: Premium Badge + Count */}
+                            {/* SCAN_COUNT ONLY */}
                             <td className="p-6">
-                              <div className="space-y-3">
-                                {user.is_premium ? (
-                                  <div className="inline-flex items-center gap-2 bg-[#FFC700] text-black px-3 py-1 border-2 border-black font-black text-[10px] uppercase italic shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                                    <Crown size={12} fill="currentColor" /> Pro Member
-                                  </div>
-                                ) : (
-                                  <div className="inline-flex items-center gap-2 bg-gray-200 text-gray-600 px-3 py-1 border-2 border-gray-400 font-black text-[10px] uppercase">
-                                    Free Tier
-                                  </div>
-                                )}
                                 <div className="flex items-center gap-2 text-blue-600 font-black text-sm">
                                   <Camera size={16} />
                                   <span>{user.scan_count || 0} Kali Scan</span>
                                 </div>
-                              </div>
                             </td>
 
                             {/* METRIC: BB, TB, Age, Gender */}
@@ -1136,18 +1127,17 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                                </div>
                             </td>
 
-                            {/* ACTION */}
+                            {/* STATUS MEMBERSHIP */}
                             <td className="p-6 text-center">
-                              <button
-                                onClick={() => togglePremium(user.id, user.is_premium || false)}
-                                className={`w-full py-3 font-black text-xs uppercase border-4 border-black transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 ${
-                                  user.is_premium 
-                                    ? "bg-red-50 text-red-600" 
-                                    : "bg-green-500 text-white"
-                                }`}
-                              >
-                                {user.is_premium ? "Cabut Akses Pro" : "Jadikan Pro"}
-                              </button>
+                              {user.is_premium ? (
+                                <div className="inline-flex items-center gap-2 bg-[#FFC700] text-black px-4 py-2 border-2 border-black font-black text-xs uppercase italic shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                                  <Crown size={14} fill="currentColor" /> Pro Member
+                                </div>
+                              ) : (
+                                <div className="inline-flex items-center gap-2 bg-gray-200 text-gray-600 px-4 py-2 border-2 border-400 font-black text-xs uppercase">
+                                  Free Tier
+                                </div>
+                              )}
                             </td>
                           </tr>
                         ))
@@ -1166,7 +1156,6 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                      <h3 className="text-xl font-black uppercase mb-6 border-b-4 border-black pb-2 italic">User Adoption</h3>
                      <div className="space-y-6">
                         <DistributionBar label="New Signups" value={growthData[5].value} total={users.length} color="bg-yellow-400" />
-                        <DistributionBar label="Returning (Last Login)" value={users.filter(u => u.last_login).length} total={users.length} color="bg-green-500" />
                      </div>
                   </div>
                   <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
