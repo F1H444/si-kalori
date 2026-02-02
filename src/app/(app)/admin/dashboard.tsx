@@ -330,6 +330,10 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
+      // Exclude Admins/Superadmins
+      // Assuming 'isAdmin' is set in fetchUsers or we check specific emails if needed
+      if ((user as any).isAdmin || user.email === "admin@sikalori.com") return false;
+
       // Search filter
       const matchesSearch =
         (user.full_name?.toLowerCase() || "").includes(
@@ -350,6 +354,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       return matchesSearch && matchesPremium && matchesGender;
     });
   }, [users, searchQuery, filterPremium, filterGender]);
+
 
   const exportToCSV = () => {
     const now = new Date();
@@ -655,7 +660,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
 
   return (
     <div
-      className="min-h-screen bg-white flex relative w-full"
+      className="h-full bg-white flex flex-col relative w-full overflow-hidden"
       suppressHydrationWarning
     >
       {/* Grid Background */}
@@ -670,7 +675,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative z-10 w-full">
+      <main className="flex-1 flex flex-col relative z-10 w-full overflow-y-auto">
         {/* Content Area */}
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           {/* Page Header */}
@@ -704,6 +709,19 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
           {/* Overview Tab */}
           {activeTab === "overview" && (
             <div className="space-y-10">
+              
+              {/* Insight Text */}
+              <div className="bg-yellow-100 border-l-8 border-yellow-500 p-6 shadow-sm">
+                <h3 className="font-black text-xl uppercase mb-2 flex items-center gap-2">
+                    <Activity className="w-6 h-6" /> Analisis Singkat
+                </h3>
+                <p className="font-medium text-gray-700 leading-relaxed text-sm md:text-base">
+                  Saat ini platform memiliki <span className="font-black text-black">{stats.totalUsers} pengguna</span>. 
+                  Mayoritas pengguna adalah <span className="font-bold bg-white text-black px-1 border border-black transform -rotate-1 inline-block">{(demographics.genders.male >= demographics.genders.female ? "Pria" : "Wanita")}</span> dengan tujuan utama <span className="font-bold bg-white text-black px-1 border border-black transform rotate-1 inline-block">{(demographics.goals.lose >= demographics.goals.maintain ? "Menurunkan Berat Badan" : "Menjaga Berat Badan")}</span>.
+                  Tingkat konversi ke Premium berada di angka <span className="font-bold bg-green-200 px-1 border border-black text-black">{((stats.premiumUsers / (stats.totalUsers || 1)) * 100).toFixed(1)}%</span>.
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                   title="Total Pengguna"
