@@ -146,6 +146,21 @@ export async function POST(request: Request) {
       premError = error;
     }
 
+    // 6. SYNC: Update the 'users' table is_premium flag
+    await supabase
+      .from("users")
+      .update({ is_premium: true })
+      .eq("id", userId);
+
+    // 7. SYNC: Also update the legacy 'premium' table if it exists
+    await supabase
+      .from("premium")
+      .upsert({
+        user_id: userId,
+        status: "active",
+        expired_at: expiredAt.toISOString()
+      }, { onConflict: 'user_id' });
+
     if (premError) {
       console.error("[VERIFY] Premium DB Error:", premError);
       return NextResponse.json({ error: "Gagal mengaktifkan fitur premium di database." }, { status: 500 });

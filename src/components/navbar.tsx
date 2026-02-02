@@ -442,12 +442,6 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                                 return !user.isAdmin;
                               })() && (
                                 <>
-                                  <DropdownItem
-                                    href="/settings"
-                                    icon={<Settings size={20} />}
-                                    label="Pengaturan"
-                                  />
-                                  
                                   {user.isPremium ? (
                                     <div className="flex items-center justify-center gap-3 p-5 border-4 border-black rounded-2xl font-black text-sm uppercase bg-green-500 text-white italic shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mt-6">
                                       <Crown size={20} strokeWidth={3} fill="currentColor" />
