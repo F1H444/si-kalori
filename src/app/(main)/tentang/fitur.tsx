@@ -3,6 +3,7 @@
 import React from "react";
 import { motion, type Variants } from "framer-motion";
 import { Camera, Layers, History, Database, Sparkle } from "lucide-react";
+import Link from "next/link";
 
 export default function FeaturesSection() {
   const features = [
@@ -46,7 +47,7 @@ export default function FeaturesSection() {
   };
 
   return (
-    <section className="bg-white py-24 px-4 sm:px-6 lg:px-20 pb-40">
+    <section id="fitur" className="bg-white py-24 px-4 sm:px-6 lg:px-20 pb-40">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20">
             <div className="space-y-4 max-w-2xl">
@@ -99,9 +100,9 @@ export default function FeaturesSection() {
                     <h3 className="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter leading-none text-white">Siap Mulai Hidup Lebih Baik?</h3>
                     <p className="text-black font-black uppercase tracking-wider text-sm opacity-100">Coba gratis 10 scan tiap harinya, spesial buat Anda!</p>
                 </div>
-                <button className="w-full md:w-auto bg-black text-white px-10 py-5 font-black text-xl uppercase border-4 border-white hover:bg-white hover:text-black transition-all shadow-[6px_6px_0px_0px_rgba(255,255,255,1)]">
+                <Link href="/scan" className="w-full md:w-auto bg-black text-white px-10 py-5 font-black text-xl uppercase border-4 border-white hover:bg-white hover:text-black transition-all shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] text-center">
                     Mulai Sekarang
-                </button>
+                </Link>
             </div>
             <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400 border-4 border-black -translate-y-12 translate-x-12 rotate-12" />
         </motion.div>

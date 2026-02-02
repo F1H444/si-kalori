@@ -6,6 +6,7 @@ import { useLoading } from "@/context/LoadingContext";
 import { ArrowRight, Apple, Beef, Coffee, Salad, Camera } from "lucide-react";
 import { TextScramble } from "@/components/ui/text-scramble";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function HeroSection() {
   const { isLoading: globalLoading } = useLoading();
@@ -98,12 +99,12 @@ export default function HeroSection() {
             </motion.div>
 
             <motion.div variants={itemVariants} className="flex flex-wrap gap-4 justify-start lg:justify-end w-full">
-              <button className="flex-1 sm:flex-none bg-black text-white px-8 py-4 border-4 border-black font-black text-lg shadow-[6px_6px_0px_0px_rgba(34,197,94,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+              <Link href="#fitur" className="flex-1 sm:flex-none bg-black text-white px-8 py-4 border-4 border-black font-black text-lg shadow-[6px_6px_0px_0px_rgba(34,197,94,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all text-center">
                 CEK KEUNGGULAN
-              </button>
-              <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 font-black text-lg px-8 py-4 border-4 border-black bg-white hover:bg-black hover:text-white transition-all group">
+              </Link>
+              <Link href="/kontak" className="flex-1 sm:flex-none flex items-center justify-center gap-2 font-black text-lg px-8 py-4 border-4 border-black bg-white hover:bg-black hover:text-white transition-all group">
                 HUBUNGI KAMI <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-              </button>
+              </Link>
             </motion.div>
           </div>
         </motion.div>

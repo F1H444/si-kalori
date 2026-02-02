@@ -14,14 +14,20 @@ export default function ContactPage() {
     "idle" | "sending" | "success" | "error"
   >("idle");
   const [errorMessage, setErrorMessage] = useState("");
-
   const sendEmail = (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("sending");
 
-    const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!;
-    const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!;
-    const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!;
+    const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "";
+    const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "";
+    const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "";
+
+    if (!serviceId || !templateId || !publicKey) {
+      console.error("❌ [EmailJS] Config missing:", { serviceId, templateId, publicKey });
+      setStatus("error");
+      setErrorMessage("Konfigurasi pesan gagal. Pastikan API Key sudah benar.");
+      return;
+    }
 
     if (!form.current) return;
 
@@ -30,14 +36,16 @@ export default function ContactPage() {
         publicKey: publicKey,
       })
       .then(
-        () => {
+        (res) => {
+          console.log("✅ Message sent!", res.status, res.text);
           setStatus("success");
           if (form.current) form.current.reset();
           setTimeout(() => setStatus("idle"), 5000);
         },
         (error) => {
+          console.error("❌ Send failed:", error);
           setStatus("error");
-          setErrorMessage(error.text || "Gagal mengirim pesan");
+          setErrorMessage(error.text || "Gagal mengirim pesan. Coba lagi.");
           setTimeout(() => setStatus("idle"), 5000);
         },
       );

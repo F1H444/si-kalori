@@ -243,10 +243,10 @@ export default function EditProfilePage() {
                         <select 
                             value={profile.gender}
                             onChange={(e) => setProfile({...profile, gender: e.target.value})}
-                            className="bg-transparent text-right font-black text-lg focus:outline-none uppercase"
+                            className="bg-transparent text-right font-black text-lg focus:outline-none uppercase text-black"
                         >
-                            <option value="male">Laki-laki</option>
-                            <option value="female">Perempuan</option>
+                            <option value="male" className="text-black">Laki-laki</option>
+                            <option value="female" className="text-black">Perempuan</option>
                         </select>
                     </div>
                 </div>
@@ -266,13 +266,13 @@ export default function EditProfilePage() {
                     <select 
                         value={profile.activity_level}
                         onChange={(e) => setProfile({...profile, activity_level: e.target.value})}
-                        className="w-full bg-transparent border-b-4 border-yellow-500 py-2 font-black text-lg focus:outline-none uppercase"
+                        className="w-full bg-transparent border-b-4 border-yellow-500 py-2 font-black text-lg focus:outline-none uppercase text-white"
                     >
-                        <option value="sedentary">Jarang Gerak</option>
-                        <option value="light">Olahraga Ringan</option>
-                        <option value="moderate">Cukup Aktif</option>
-                        <option value="active">Sangat Aktif</option>
-                        <option value="veryActive">Atletis</option>
+                        <option value="sedentary" className="text-black">Jarang Gerak</option>
+                        <option value="light" className="text-black">Olahraga Ringan</option>
+                        <option value="moderate" className="text-black">Cukup Aktif</option>
+                        <option value="active" className="text-black">Sangat Aktif</option>
+                        <option value="veryActive" className="text-black">Atletis</option>
                     </select>
                 </div>
                 <div className="space-y-4">
@@ -280,11 +280,11 @@ export default function EditProfilePage() {
                     <select 
                         value={profile.goal}
                         onChange={(e) => setProfile({...profile, goal: e.target.value})}
-                        className="w-full bg-transparent border-b-4 border-yellow-500 py-2 font-black text-lg focus:outline-none uppercase"
+                        className="w-full bg-transparent border-b-4 border-yellow-500 py-2 font-black text-lg focus:outline-none uppercase text-white"
                     >
-                        <option value="lose">Turunin Berat Badan</option>
-                        <option value="maintain">Jaga Berat Badan</option>
-                        <option value="gain">Nambah Berat Badan</option>
+                        <option value="lose" className="text-black">Turunin Berat Badan</option>
+                        <option value="maintain" className="text-black">Jaga Berat Badan</option>
+                        <option value="gain" className="text-black">Nambah Berat Badan</option>
                     </select>
                 </div>
               </div>
