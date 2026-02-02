@@ -96,10 +96,20 @@ export default function PremiumPage() {
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    
+    // Safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+        if (isMounted && initialLoading) {
+            console.warn("⚠️ Premium checkUser timed out, forcing loading to false...");
+            setInitialLoading(false);
+        }
+    }, 10000);
+
     const checkUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
+        if (session?.user && isMounted) {
           setUser(session.user);
           
           // Cek status premium dari tabel premium_subscriptions
@@ -111,17 +121,25 @@ export default function PremiumPage() {
             .gt("expired_at", new Date().toISOString())
             .maybeSingle();
 
-          if (premium) {
+          if (premium && isMounted) {
             setIsPremium(true);
           }
         }
       } catch (err) {
         console.error("Error checking user:", err);
       } finally {
-        setInitialLoading(false);
+        if (isMounted) {
+            clearTimeout(safetyTimeout);
+            setInitialLoading(false);
+        }
       }
     };
     checkUser();
+    
+    return () => {
+        isMounted = false;
+        clearTimeout(safetyTimeout);
+    }
   }, []);
 
   useEffect(() => {

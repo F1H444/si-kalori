@@ -173,13 +173,20 @@ export default function RiwayatPage() {
 
   // Group logs by date with safe parsing
   const groupedLogs = filteredLogs.reduce((groups: { [key: string]: ScanLog[] }, log) => {
-    const date = log.scan_time 
-      ? new Date(log.scan_time).toISOString().split('T')[0] 
-      : 'TANGGAL KOSONG';
-    if (!groups[date]) {
-      groups[date] = [];
+    // Use scan_time if available, otherwise fallback to created_at, otherwise today
+    const rawDate = log.scan_time || log.created_at || new Date().toISOString();
+    
+    let dateKey = 'TANGGAL KOSONG';
+    try {
+      dateKey = new Date(rawDate).toISOString().split('T')[0];
+    } catch(e) {
+      console.warn("Invalid date for log:", log.id);
     }
-    groups[date].push(log);
+
+    if (!groups[dateKey]) {
+      groups[dateKey] = [];
+    }
+    groups[dateKey].push(log);
     return groups;
   }, {});
 
@@ -192,13 +199,14 @@ export default function RiwayatPage() {
       const nut = typeof log.nutrition === 'string' ? JSON.parse(log.nutrition) : log.nutrition;
       return acc + (Number(nut?.calories) || 0);
     } catch (e) {
-      console.warn("Invalid nutrition data for log:", log.id);
       return acc;
     }
   }, 0);
 
 
-  if (!mounted || loading) return (
+  if (!mounted) return null; // Hydration fix
+  
+  if (loading) return (
     <div className="flex-1 flex items-center justify-center p-4 min-h-[500px]">
       <LoadingOverlay message="MEMUAT RIWAYAT..." isFullPage={false} />
     </div>

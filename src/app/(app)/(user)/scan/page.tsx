@@ -343,6 +343,7 @@ export default function ScanPage() {
                 ai_analysis: aiData.description,
                 image_url: publicUrl, 
                 meal_type: mealTypeMapping[mealType] || "snack",
+                scan_time: new Date().toISOString(),
             }]).then(({ error }) => {
                 if (error) console.error("❌ [DB] Insert Error:", error);
                 else console.log("✅ [DB] Log Saved");

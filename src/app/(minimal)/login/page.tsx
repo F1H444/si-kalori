@@ -217,6 +217,19 @@ function LoginContent() {
     };
   }, [handleGoogleResponse]);
 
+  // Safety timeout for loading state
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (loading) {
+      timeout = setTimeout(() => {
+        console.warn("⚠️ Login loading timed out");
+        setLoading(false);
+        setError("Waktu habis. Cek koneksi internet Anda dan coba lagi.");
+      }, 15000); // 15 seconds safety
+    }
+    return () => clearTimeout(timeout);
+  }, [loading]);
+
   return (
     <div className="min-h-screen bg-[#FFDE59] flex flex-col items-center justify-center p-4 font-mono relative overflow-hidden">
       {/* Back Button Restored */}
