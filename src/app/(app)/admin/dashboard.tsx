@@ -358,28 +358,11 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
   }, [users, searchQuery, filterPremium, filterGender]);
 
 
-  const exportToCSV = () => {
+  const exportToExcel = () => {
     const now = new Date();
     const timestamp = now.toISOString().split("T")[0];
-    const time = now.toTimeString().split(" ")[0].replace(/:/g, "-");
 
-    // Hitung statistik untuk export
-    const totalPremium = users.filter((u) => u.is_premium).length;
-    const totalFree = users.filter((u) => !u.is_premium).length;
-    const totalMale = users.filter((u) => u.gender === "male").length;
-    const totalFemale = users.filter((u) => u.gender === "female").length;
-    const totalScansAll = users.reduce(
-      (sum, u) => sum + (u.scan_count || 0),
-      0,
-    );
-    const avgScansPerUser =
-      users.length > 0 ? (totalScansAll / users.length).toFixed(2) : 0;
-
-    const goalLose = users.filter((u) => u.goal === "lose").length;
-    const goalMaintain = users.filter((u) => u.goal === "maintain").length;
-    const goalGain = users.filter((u) => u.goal === "gain").length;
-
-    // Headers dengan format yang lebih rapi
+    // Headers with neat formatting
     const headers = [
       "No",
       "ID Pengguna",
@@ -400,9 +383,9 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       "Total Scan Makanan",
     ];
 
-    // Format data dengan penomoran
-    const csvData = filteredUsers.map((user, index) => {
-      // Format activity level
+    // Format data rows
+    const excelData = filteredUsers.map((user, index) => {
+      // Activity Map
       const activityMap: { [key: string]: string } = {
         sedentary: "Ringan (Sedentary)",
         lightly_active: "Sedang (Lightly Active)",
@@ -411,20 +394,20 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
         extra_active: "Extra Aktif (Extra Active)",
       };
 
-      // Format goal
+      // Goal Map
       const goalMap: { [key: string]: string } = {
         lose: "Turunkan Berat Badan",
         maintain: "Jaga Berat Badan",
         gain: "Naikkan Berat Badan",
       };
 
-      // Format gender
+      // Gender Map
       const genderMap: { [key: string]: string } = {
         male: "Pria",
         female: "Wanita",
       };
 
-      // Hitung BMI
+      // BMI Calculation
       let bmi = "Tidak tersedia";
       if (user.weight && user.height) {
         const heightInMeters = user.height / 100;
@@ -440,24 +423,15 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
         })`;
       }
 
-      // Format last login
+      // Dates
       const lastLogin = user.last_login
         ? new Date(user.last_login).toLocaleString("id-ID", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
+            day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
           })
         : "Belum pernah login";
 
-      // Format bergabung
       const joinedDate = new Date(user.created_at).toLocaleString("id-ID", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
+        day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
       });
 
       return [
@@ -465,64 +439,64 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
         user.id,
         user.full_name || "Tidak ada nama",
         user.email,
-        user.is_premium ? "Premium ⭐" : "Free",
-        user.gender ? genderMap[user.gender] || user.gender : "Tidak diisi",
-        user.age || "Tidak diisi",
-        user.weight || "Tidak diisi",
-        user.height || "Tidak diisi",
+        user.is_premium ? "Premium" : "Free",
+        user.gender ? genderMap[user.gender] || user.gender : "-",
+        user.age || "-",
+        user.weight || "-",
+        user.height || "-",
         bmi,
-        user.activity_level
-          ? activityMap[user.activity_level] || user.activity_level
-          : "Tidak diisi",
-        user.goal ? goalMap[user.goal] || user.goal : "Tidak diisi",
-        user.daily_calorie_target
-          ? `${user.daily_calorie_target.toLocaleString()} kalori`
-          : "Tidak diisi",
-        user.provider
-          ? user.provider === "google"
-            ? "Google"
-            : user.provider === "email"
-              ? "Email/Password"
-              : user.provider
-          : "Tidak diketahui",
+        user.activity_level ? activityMap[user.activity_level] || user.activity_level : "-",
+        user.goal ? goalMap[user.goal] || user.goal : "-",
+        user.daily_calorie_target ? `${user.daily_calorie_target} kcal` : "-",
+        user.provider || "-",
         lastLogin,
         joinedDate,
         user.scan_count || 0,
       ];
     });
 
-    // Header info dengan border yang lebih menarik
-    // Combine headers and data for a clean CSV table
-    const csv = [
-      headers.join(","),
-      ...csvData.map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
-      )
-    ].join("\n");
+    // Create HTML Table for Excel
+    const tableHTML = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
+      </head>
+      <body>
+        <table border="1">
+          <thead>
+            <tr>
+              <th colspan="17" style="font-size: 14pt; font-weight: bold; text-align: center; height: 40px; background-color: #FFC700; color: #000000; border: 2px solid #000000;">
+                DATA PENGGUNA SI KALORI
+              </th>
+            </tr>
+            <tr style="background-color: #000000; color: #ffffff;">
+               ${headers.map(h => `<th style="padding:10px; font-weight:bold; border:1px solid #000000; text-align: center; vertical-align: middle;">${h}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${excelData.map((row, index) => `
+              <tr style="background-color: ${index % 2 === 0 ? '#ffffff' : '#f9f9f9'};">
+                ${row.map(cell => `<td style="padding:8px; border:1px solid #dddddd; vertical-align: middle; mso-number-format:'\@';">${cell}</td>`).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
 
-    // Add BOM for proper Excel UTF-8 encoding
-    const BOM = "\uFEFF";
-    const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
+    // Download Logic
+    const blob = new Blob([tableHTML], { type: "application/vnd.ms-excel" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `SI-KALORI_Data-Pengguna_${timestamp}_${time}.csv`,
-    );
-    link.style.visibility = "hidden";
+    link.href = url;
+    link.download = `SI-KALORI_Data-Pengguna_${timestamp}.xls`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
-    // Show success notification
-    console.log(
-      `✅ Export berhasil! File: SI-KALORI_Data-Pengguna_${timestamp}_${time}.csv`,
-    );
-    console.log(
-      `📊 Total data: ${filteredUsers.length} dari ${users.length} pengguna`,
-    );
+    
+    console.log("✅ Export Excel berhasil");
   };
 
   console.log("🔎 Filtered Users:", {
@@ -810,11 +784,11 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                       />
                     </div>
                     <button
-                      onClick={exportToCSV}
+                      onClick={exportToExcel}
                       className="bg-green-500 text-white px-10 py-5 border-4 border-black font-black text-lg flex items-center justify-center gap-3 hover:bg-black transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 uppercase italic tracking-tighter"
                     >
                       <FileSpreadsheet size={24} />
-                      Download Data (.CSV)
+                      Download Data (.XLS)
                     </button>
                   </div>  
 
