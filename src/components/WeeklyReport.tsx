@@ -66,28 +66,48 @@ export default function WeeklyReport({ userId }: { userId: string }) {
   const maxCal = Math.max(...data.map(d => d.calories), 2500);
 
   return (
-    <div className="border-4 border-black p-6 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-      <h3 className="text-xl font-black uppercase mb-6 italic border-b-4 border-black pb-2 inline-block">Laporan Mingguan</h3>
+    <div className="border-4 border-black p-4 md:p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+      <div className="flex items-center justify-between mb-8 border-b-4 border-black pb-4">
+        <h3 className="text-xl md:text-2xl font-black uppercase italic tracking-tighter">Laporan Mingguan</h3>
+        <div className="bg-black text-white text-[10px] px-2 py-1 font-bold uppercase tracking-widest">
+          Premium Access
+        </div>
+      </div>
       
-      <div className="flex items-end justify-between gap-2 h-48 mt-4">
+      <div className="flex items-end justify-between gap-1 sm:gap-4 h-56 mt-4 w-full min-w-[300px]">
         {data.map((day, idx) => {
-          const heightPercent = (day.calories / maxCal) * 100;
+          const heightPercent = Math.max((day.calories / maxCal) * 100, 5); // Min height 5%
           return (
-            <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
-              <div className="relative w-full flex flex-col items-center">
-                <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-[10px] px-2 py-0.5 font-bold">
-                  {day.calories}
+            <div key={idx} className="flex-1 flex flex-col items-center gap-3 group h-full justify-end">
+              <div className="relative w-full flex flex-col items-center justify-end">
+                {/* Tooltip on Hover */}
+                <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-[10px] px-2 py-1 font-bold shadow-[2px_2px_0px_0px_rgba(37,99,235,1)] z-10 whitespace-nowrap">
+                  {day.calories} kcal
                 </div>
+                
+                {/* The Bar */}
                 <motion.div
                   initial={{ height: 0 }}
                   animate={{ height: `${heightPercent}%` }}
-                  className="w-full bg-yellow-400 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                  transition={{ delay: idx * 0.1, type: "spring", stiffness: 50 }}
+                  className="w-full sm:w-[80%] bg-yellow-400 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] group-hover:bg-primary transition-colors cursor-pointer"
                 />
               </div>
-              <span className="text-[10px] font-black uppercase italic">{day.date}</span>
+              <span className="text-[9px] sm:text-xs font-black uppercase italic tracking-tighter">{day.date}</span>
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-8 flex items-center gap-4 text-[10px] font-bold text-gray-400 uppercase italic">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-yellow-400 border-2 border-black" />
+          <span>Kalori Harian</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-black border-2 border-black" />
+          <span>Target: {maxCal} kcal</span>
+        </div>
       </div>
     </div>
   );

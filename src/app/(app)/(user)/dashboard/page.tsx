@@ -341,7 +341,7 @@ function DashboardContent() {
 
           {/* Weekly Report for Premium Users */}
           {profile?.is_premium && (
-            <motion.div variants={itemVariants} className="mt-8">
+            <motion.div variants={itemVariants} className="lg:col-span-12 mt-8">
               <Suspense fallback={<div className="h-48 bg-gray-50 border-4 border-black border-dashed animate-pulse" />}>
                 <WeeklyReport userId={profile.id} />
               </Suspense>

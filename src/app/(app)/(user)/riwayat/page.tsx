@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ScanLog } from "@/types/user";
 import LoadingOverlay from "@/components/LoadingOverlay";
@@ -60,6 +61,7 @@ export default function RiwayatPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
   
   // Modal state
   const [deleteModal, setDeleteModal] = useState<{
@@ -73,43 +75,46 @@ export default function RiwayatPage() {
   });
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchLogs = async () => {
-    if (!mounted) setLoading(true); // Don't reset loading if already fetched
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error("User tidak ditemukan atau sesi berakhir");
-        setLoading(false);
-        return;
-      }
-
-      console.log("Fetching logs for user:", user.id);
-      const { data, error } = await supabase
-        .from("food_logs")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(50);
-
-      if (error) {
-        console.error("Supabase error fetching logs:", error);
-        throw error;
-      }
-      
-      setLogs(data || []);
-    } catch (error: unknown) {
-      console.error("Caught error in fetchLogs:", error instanceof Error ? error.message : error);                                                                                         
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let isMounted = true;
+    const fetchLogs = async () => {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          console.error("User tidak ditemukan atau sesi berakhir");
+          if (isMounted) {
+            setLoading(false);
+            router.push("/login"); // Need to import router if using push
+          }
+          return;
+        }
+
+        console.log("Fetching logs for user:", user.id);
+        const { data, error } = await supabase
+          .from("food_logs")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(50);
+
+        if (error) {
+          console.error("Supabase error fetching logs:", error);
+          throw error;
+        }
+        
+        if (isMounted) setLogs(data || []);
+      } catch (error: unknown) {
+        console.error("Caught error in fetchLogs:", error instanceof Error ? error.message : error);                                                                                         
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
     setMounted(true);
     fetchLogs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => { isMounted = false; };
+  }, [router]);
 
   const openDeleteModal = (id: string, name: string) => {
     setDeleteModal({

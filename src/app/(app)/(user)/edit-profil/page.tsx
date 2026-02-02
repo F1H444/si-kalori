@@ -50,36 +50,48 @@ export default function EditProfilePage() {
   });
 
   useEffect(() => {
+    let isMounted = true;
     const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setLoading(false);
-        return router.push("/login");
-      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          if (isMounted) {
+            setLoading(false);
+            router.push("/login");
+          }
+          return;
+        }
 
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+        const { data, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single();
 
-      if (data) {
-        setProfile({
-          full_name: data.full_name || "",
-          weight: data.weight || 0,
-          height: data.height || 0,
-          age: data.age || 0,
-          gender: data.gender || "",
-          activity_level: data.activity_level || "",
-          goal: data.goal || ""
-        });
-      } else {
-        console.error("Profile not found:", error);
+        if (isMounted) {
+          if (data) {
+            setProfile({
+              full_name: data.full_name || "",
+              weight: data.weight || 0,
+              height: data.height || 0,
+              age: data.age || 0,
+              gender: data.gender || "",
+              activity_level: data.activity_level || "",
+              goal: data.goal || ""
+            });
+          } else {
+            console.error("Profile not found:", error);
+          }
+        }
+      } catch (err) {
+        console.error("Fetch profile error:", err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchProfile();
+    return () => { isMounted = false; };
   }, [router]);
 
   const handleSave = async (e: React.FormEvent) => {
