@@ -119,10 +119,13 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Analyze with Groq
-    console.log("🤖 [AnalyzeFood] Calling Groq with model: meta-llama/llama-4-scout-17b-16e-instruct");
+    // Use llama-3.2-11b-vision-preview for vision tasks and llama-3.3-70b-versatile for text
+    const modelId = image ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile";
+    console.log(`🤖 [AnalyzeFood] Calling Groq with model: ${modelId}`);
+    
     const completion = await groq.chat.completions.create({
       messages,
-      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      model: modelId,
       temperature: 0.1,
       max_tokens: 1024,
       response_format: { type: "json_object" }

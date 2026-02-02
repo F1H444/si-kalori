@@ -12,10 +12,13 @@ import {
   Crown,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, lazy } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import LoadingOverlay from "@/components/LoadingOverlay";
+
+// Lazy load WeeklyReport for code splitting
+const WeeklyReport = lazy(() => import("@/components/WeeklyReport"));
 
 // Animation Variants
 const containerVariants = {
@@ -85,12 +88,17 @@ function DashboardContent() {
   const paymentStatus = searchParams.get("payment");
 
   useEffect(() => {
+    let isMounted = true;
     const fetchUserData = async () => {
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        if (!user) return router.push("/login");
+        
+        if (!user) {
+          if (isMounted) router.push("/login");
+          return;
+        }
 
         const { data, error } = await supabase
           .from("users")
@@ -105,35 +113,32 @@ function DashboardContent() {
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (adminRecord) {
+        if (adminRecord && isMounted) {
           console.log("Admin detected, redirecting to admin panel...");
-          return router.push("/admin");
+          router.push("/admin");
+          return;
         }
 
         // 2. Regular user onboarding check
-        if (error || !data || (data && !data.has_completed_onboarding)) {
-          console.error("Profile incomplete or missing onboarding flag:", error);
-          router.push("/onboarding");
+        if (!data || error || !data.has_completed_onboarding) {
+          if (isMounted) router.push("/onboarding");
           return;
-        } else {
-          // Fetch premium status and expiration (More robust check)
-          const availableColumns = Object.keys(data);
-          let isPremium = false;
-          let premium_expired_at = null;
+        }
 
-          if (availableColumns.includes("is_premium")) {
-            isPremium = !!data.is_premium;
-          }
+        // Fetch premium status and expiration (More robust check)
+        const availableColumns = Object.keys(data);
+        let isPremium = !!data.is_premium;
+        let premium_expired_at = data.premium_expired_at || null;
 
-          // Query premium table with fallback
+        // Try to fetch from premium table for extra detail, but don't let it crash the dashboard
+        try {
           let { data: premiumData, error: premErr } = await supabase
             .from("premium")
             .select("expired_at, status")
             .eq("user_id", user.id)
             .maybeSingle();
 
-          // Fallback for table name
-          if (premErr && (premErr.code === "42P01" || premErr.message.includes("not found") || premErr.message.includes("schema cache"))) {
+          if (premErr && (premErr.code === "42P01" || premErr.message.includes("not found"))) {
             const { data: subData } = await supabase
               .from("premium_subscriptions")
               .select("expired_at, status")
@@ -144,26 +149,33 @@ function DashboardContent() {
 
           if (premiumData) {
             premium_expired_at = premiumData.expired_at;
-            // If column is_premium missing, we rely on the premium table status
-            if (!availableColumns.includes("is_premium")) {
-              isPremium = premiumData.status === "active" && new Date(premiumData.expired_at) > new Date();
+            const now = new Date();
+            const expireDate = new Date(premiumData.expired_at);
+            if (premiumData.status === "active" && expireDate > now) {
+              isPremium = true;
             }
           }
+        } catch (e) {
+          console.warn("Optional premium tables check failed:", e);
+        }
 
+        if (isMounted) {
           setProfile({ ...data, is_premium: isPremium, premium_expired_at });
-          // Update last_login activity
-          await supabase
+          // Update last_login activity (non-blocking)
+          supabase
             .from("users")
             .update({ last_login: new Date().toISOString() })
-            .eq("id", user.id);
+            .eq("id", user.id)
+            .then();
         }
       } catch (err) {
-        console.error("Fetch User Data Error:", err);
+        console.error("Dashboard Fetch Error:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchUserData();
+    return () => { isMounted = false; };
   }, [router]);
 
   // --- TAMPILAN LOADING BARU ---
@@ -350,6 +362,15 @@ function DashboardContent() {
               </motion.div>
             )}
           </div>
+
+          {/* Weekly Report for Premium Users */}
+          {profile?.is_premium && (
+            <motion.div variants={itemVariants} className="mt-8">
+              <Suspense fallback={<div className="h-48 bg-gray-50 border-4 border-black border-dashed animate-pulse" />}>
+                <WeeklyReport userId={profile.id} />
+              </Suspense>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* SECTION 2: DATA BIOLOGIS & AKTIVITAS */}

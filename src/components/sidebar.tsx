@@ -33,15 +33,20 @@ export default function Sidebar({
   const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("users")
-          .select("is_premium")
-          .eq("id", session.user.id)
-          .single();
-        if (profile) setIsPremium(!!profile.is_premium);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && isMounted) {
+          const { data: profile } = await supabase
+            .from("users")
+            .select("is_premium")
+            .eq("id", session.user.id)
+            .single();
+          if (profile && isMounted) setIsPremium(!!profile.is_premium);
+        }
+      } catch (err) {
+        console.error("Sidebar auth check error:", err);
       }
     };
     checkUser();
@@ -53,13 +58,16 @@ export default function Sidebar({
           .select("is_premium")
           .eq("id", session.user.id)
           .single();
-        if (profile) setIsPremium(!!profile.is_premium);
+        if (profile && isMounted) setIsPremium(!!profile.is_premium);
       } else {
-        setIsPremium(false);
+        if (isMounted) setIsPremium(false);
       }
     });
  
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Hide sidebar on root admin page unless forced (for login screen clarity)

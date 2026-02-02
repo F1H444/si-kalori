@@ -55,10 +55,16 @@ ATURAN KETAT:
   // Build personalized context
   const personalizedContext = buildPersonalizedContext(profile);
 
+  // Premium instruction
+  const premiumInstruction = profile.is_premium 
+    ? `\n=== MODE PREMIUM AKTIF ===\nBERIKAN ANALISIS "EXPERT": Sertakan detail mikro-nutrisi (estimasi) dalam deskripsi, jelaskan dampak jangka panjang dari makanan ini terhadap target harian pengguna secara spesifik. Pastikan nada bicara sangat mendalam dan teknis namun tetap mudah dimengerti.`
+    : "";
+
   // Combine base prompt with personalized context
   return `${basePrompt}
 
-${personalizedContext}`.trim();
+${personalizedContext}
+${premiumInstruction}`.trim();
 }
 
 /**
