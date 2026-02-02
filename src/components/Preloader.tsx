@@ -22,7 +22,7 @@ export default function Preloader() {
       setLoading(false);
       setIsLoading(false);
       sessionStorage.setItem("sikalori_preloader_seen", "true");
-    }, 1500); 
+    }, 800); 
 
     return () => clearTimeout(timer);
   }, [setIsLoading]);

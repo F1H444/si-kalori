@@ -80,24 +80,17 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
     const fetchProfile = async (userId: string, email?: string) => {
       try {
-        const { data: profile, error } = await supabase
-          .from("users")
-          .select("full_name, email, is_premium, has_completed_onboarding")
-          .eq("id", userId)
-          .single();
+        // Parallelize profile and admin checks
+        const [profileRes, adminRes] = await Promise.all([
+          supabase.from("users").select("full_name, email, is_premium, has_completed_onboarding").eq("id", userId).single(),
+          supabase.from("admins").select("role").eq("user_id", userId).maybeSingle()
+        ]);
 
         if (!isSubscribed) return;
 
+        const profile = profileRes.data;
         if (profile) {
-          // Check admin status - ROBUST METHOD
-          const { data: adminData } = await supabase
-            .from("admins")
-            .select("role")
-            .eq("user_id", userId)
-            .maybeSingle();
-
-          // Check if this is an admin by both table lookup and email
-          const isAdminByTable = !!adminData;
+          const isAdminByTable = !!adminRes.data;
           const isAdminByEmail = (profile.email?.toLowerCase() === "admin@sikalori.com" || email?.toLowerCase() === "admin@sikalori.com");
           const isAdmin = isAdminByTable || isAdminByEmail;
 
@@ -107,21 +100,13 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
           let isPremium = availableColumns.includes("is_premium") ? (profile as any).is_premium : false;
 
           // --- LAZY EXPIRATION CHECK & ROBUST PREMIUM DETECTION ---
-          // Fetch from premium table with fallback
-          let { data: premiumInfo, error: pErr } = await supabase
-            .from("premium")
-            .select("expired_at, status")
-            .eq("user_id", userId)
-            .maybeSingle();
+          // Parallelize premium detail checks
+          const [premRes, subRes] = await Promise.all([
+            supabase.from("premium").select("expired_at, status").eq("user_id", userId).maybeSingle(),
+            supabase.from("premium_subscriptions").select("expired_at, status").eq("user_id", userId).maybeSingle()
+          ]);
 
-          if (pErr && (pErr.code === "42P01" || pErr.message.includes("not found") || pErr.message.includes("schema cache"))) {
-            const { data: subData } = await supabase
-              .from("premium_subscriptions")
-              .select("expired_at, status")
-              .eq("user_id", userId)
-              .maybeSingle();
-            premiumInfo = subData;
-          }
+          let premiumInfo = premRes.data || subRes.data;
 
           if (premiumInfo) {
             const expireDate = new Date(premiumInfo.expired_at);

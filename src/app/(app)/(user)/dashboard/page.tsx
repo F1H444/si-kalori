@@ -91,61 +91,41 @@ function DashboardContent() {
     let isMounted = true;
     const fetchUserData = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
           if (isMounted) router.push("/login");
           return;
         }
 
-        const { data, error } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", user.id)
-          .single();
+        // Parallelize initial checks
+        const [profileRes, adminRes] = await Promise.all([
+          supabase.from("users").select("*").eq("id", user.id).single(),
+          supabase.from("admins").select("role").eq("user_id", user.id).maybeSingle()
+        ]);
 
-        // 1. Check if user is an admin
-        const { data: adminRecord } = await supabase
-          .from("admins")
-          .select("role")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (adminRecord && isMounted) {
-          console.log("Admin detected, redirecting to admin panel...");
+        if (adminRes.data && isMounted) {
           router.push("/admin");
           return;
         }
 
-        // 2. Regular user onboarding check
-        if (!data || error || !data.has_completed_onboarding) {
+        const data = profileRes.data;
+        if (!data || profileRes.error || !data.has_completed_onboarding) {
           if (isMounted) router.push("/onboarding");
           return;
         }
 
-        // Fetch premium status and expiration (More robust check)
-        const availableColumns = Object.keys(data);
+        // Parallelize premium detail checks
         let isPremium = !!data.is_premium;
         let premium_expired_at = data.premium_expired_at || null;
 
-        // Try to fetch from premium table for extra detail, but don't let it crash the dashboard
         try {
-          let { data: premiumData, error: premErr } = await supabase
-            .from("premium")
-            .select("expired_at, status")
-            .eq("user_id", user.id)
-            .maybeSingle();
+          const [premRes, subRes] = await Promise.all([
+            supabase.from("premium").select("expired_at, status").eq("user_id", user.id).maybeSingle(),
+            supabase.from("premium_subscriptions").select("expired_at, status").eq("user_id", user.id).maybeSingle()
+          ]);
 
-          if (premErr && (premErr.code === "42P01" || premErr.message.includes("not found"))) {
-            const { data: subData } = await supabase
-              .from("premium_subscriptions")
-              .select("expired_at, status")
-              .eq("user_id", user.id)
-              .maybeSingle();
-            premiumData = subData;
-          }
+          const premiumData = premRes.data || subRes.data;
 
           if (premiumData) {
             premium_expired_at = premiumData.expired_at;
@@ -156,20 +136,16 @@ function DashboardContent() {
             }
           }
         } catch (e) {
-          console.warn("Optional premium tables check failed:", e);
+          console.warn("Optional premium check delay:", e);
         }
 
         if (isMounted) {
           setProfile({ ...data, is_premium: isPremium, premium_expired_at });
-          // Update last_login activity (non-blocking)
-          supabase
-            .from("users")
-            .update({ last_login: new Date().toISOString() })
-            .eq("id", user.id)
-            .then();
+          // Non-blocking update
+          supabase.from("users").update({ last_login: new Date().toISOString() }).eq("id", user.id).then();
         }
       } catch (err) {
-        console.error("Dashboard Fetch Error:", err);
+        console.error("Dashboard Speed Error:", err);
       } finally {
         if (isMounted) setLoading(false);
       }
