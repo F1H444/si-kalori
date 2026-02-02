@@ -104,7 +104,10 @@ function DashboardContent() {
           supabase.from("admins").select("role").eq("user_id", user.id).maybeSingle()
         ]);
 
-        if (adminRes.data && isMounted) {
+        const isAdmin = !!adminRes.data || user.email?.toLowerCase() === "admin@sikalori.com";
+
+        if (isAdmin && isMounted) {
+          console.log("🛡️ [Dashboard] Admin detected, redirecting to admin panel...");
           router.push("/admin");
           return;
         }

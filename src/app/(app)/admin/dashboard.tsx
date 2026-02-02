@@ -169,18 +169,17 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       // User said "mengambil data dari users", let's keep the filter if it was intended, 
       // but usually admins want to see everyone including themselves.
       // For now, let's show DEVELOPER current state: 
-      const filteredProfiles = profiles.filter((p: any) => !adminIds.includes(p.id));
-      
-      console.log("✅ [AdminDashboard] Data received. Users count:", filteredProfiles.length);
-
-      const enrichedProfiles = filteredProfiles.map((p: any) => {
+      // Show all users as requested
+      const enrichedProfiles = profiles.map((p: any) => {
         const premInfo = premiumData.find((pr: any) => pr.user_id === p.id);
         const isPremiumActive = premInfo?.status === "active" && new Date(premInfo.expired_at) > new Date();
+        const isAdminUser = adminIds.includes(p.id);
         
         return {
           ...p,
           is_premium: isPremiumActive || p.is_premium,
-          premium_expired_at: premInfo?.expired_at || null
+          premium_expired_at: premInfo?.expired_at || null,
+          isAdmin: isAdminUser
         };
       });
 

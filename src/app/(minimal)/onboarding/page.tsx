@@ -157,14 +157,20 @@ export default function Onboarding() {
           return;
         }
 
-        // Check if user already finished onboarding
-        const { data: profile, error: profileError } = await supabase
-          .from("users")
-          .select("has_completed_onboarding")
-          .eq("id", user.id)
-          .single();
+        // Check if user already finished onboarding OR is an admin
+        const [profileRes, adminRes] = await Promise.all([
+          supabase.from("users").select("has_completed_onboarding").eq("id", user.id).single(),
+          supabase.from("admins").select("role").eq("user_id", user.id).maybeSingle()
+        ]);
 
-        if (profile?.has_completed_onboarding) {
+        const isAdmin = !!adminRes.data || user.email?.toLowerCase() === "admin@sikalori.com";
+
+        if (isAdmin && isMounted) {
+          router.replace("/admin");
+          return;
+        }
+
+        if (profileRes.data?.has_completed_onboarding) {
           if (isMounted) router.replace("/dashboard");
           return;
         }
@@ -172,7 +178,7 @@ export default function Onboarding() {
         if (isMounted) setIsCheckingAuth(false);
       } catch (err) {
         console.error("Auth check error in onboarding:", err);
-        if (isMounted) setIsCheckingAuth(false); // Go to onboarding anyway or show error
+        if (isMounted) setIsCheckingAuth(false);
       }
     };
     checkAuth();

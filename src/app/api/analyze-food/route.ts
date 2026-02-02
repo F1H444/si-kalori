@@ -123,14 +123,24 @@ export async function POST(req: NextRequest) {
     const modelId = image ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile";
     console.log(`🤖 [AnalyzeFood] Calling Groq with model: ${modelId}`);
     
-    const completion = await groq.chat.completions.create({
+    // Safety check: wrap in a 25s timeout promise to ensure it doesn't hang the function
+    const aiPromise = groq.chat.completions.create({
       messages,
       model: modelId,
       temperature: 0.1,
       max_tokens: 1024,
       response_format: { type: "json_object" }
-    }).catch(err => {
-      console.error("💥 [AnalyzeFood] Groq SDK Error:", err);
+    });
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("GROQ_TIMEOUT")), 28000)
+    );
+
+    const completion: any = await Promise.race([aiPromise, timeoutPromise]).catch(err => {
+      console.error("💥 [AnalyzeFood] Detailed Error:", err);
+      if (err.message === "GROQ_TIMEOUT") {
+         throw new Error("AI sedang sibuk (Timeout). Coba kurangi teks atau upload gambar yang lebih kecil.");
+      }
       throw err;
     });
 

@@ -6,6 +6,7 @@ import Sidebar from "@/components/sidebar";
 import AdminLogin from "./login";
 import AdminDashboard from "./dashboard";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 function AdminPageContent() {
   const searchParams = useSearchParams();
@@ -15,12 +16,43 @@ function AdminPageContent() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check authentication on mount
-    const savedAuth = sessionStorage.getItem("admin_auth");
-    if (savedAuth === "true") {
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
+    const checkAdminAuth = async () => {
+      // 1. Pelayanan pertama: Cek session storage (cepat)
+      const savedAuth = sessionStorage.getItem("admin_auth");
+      if (savedAuth === "true") {
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Pelayanan kedua: Cek Supabase session (untuk user yang sudah login di sikalori)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Verifikasi admin via API
+          const verifyResponse = await fetch("/api/admin/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id, email: user.email }),
+          });
+          
+          if (verifyResponse.ok) {
+            const verifyResult = await verifyResponse.json();
+            if (verifyResult.isAdmin) {
+              sessionStorage.setItem("admin_auth", "true");
+              sessionStorage.setItem("admin_user", JSON.stringify(user));
+              setIsAuthenticated(true);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Admin auto-auth error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAdminAuth();
   }, []);
 
   if (isLoading) {

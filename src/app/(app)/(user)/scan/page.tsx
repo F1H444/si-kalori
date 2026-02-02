@@ -112,6 +112,7 @@ export default function ScanPage() {
     const [mounted, setMounted] = useState(false);
     const [showInvalidModal, setShowInvalidModal] = useState(false);
     const [invalidMessage, setInvalidMessage] = useState("");
+    const [analysisTimeout, setAnalysisTimeout] = useState(false);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -239,6 +240,12 @@ export default function ScanPage() {
     const handleAnalyze = async (input: File | string, mealType: MealType) => {
         console.log("⚡ [Analyze] Initializing Turbo Flow...");
         setLoading(true);
+        setAnalysisTimeout(false);
+
+        // Safety timer to show retry if slow
+        const safetyTimer = setTimeout(() => {
+            if (loading) setAnalysisTimeout(true);
+        }, 20000); // 20 seconds
 
         try {
             // 0. Preliminary Check
@@ -356,7 +363,9 @@ export default function ScanPage() {
                 setMode("select");
             }
         } finally {
+            clearTimeout(safetyTimer);
             setLoading(false);
+            setAnalysisTimeout(false);
             console.log("🏁 [Flow] Done.");
         }
     };
@@ -389,6 +398,22 @@ export default function ScanPage() {
                             className="flex flex-col items-center justify-center py-20"
                         >
                             <LoadingOverlay message="MENGANALISA..." isFullPage={false} />
+                            
+                            {analysisTimeout && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mt-8 p-6 border-4 border-black bg-yellow-50 text-center max-w-sm"
+                                >
+                                    <p className="font-bold text-sm mb-4">Sepertinya koneksi agak lambat. Mau coba lagi?</p>
+                                    <button 
+                                        onClick={() => handleAnalyze(tempInput!, "siang")} // Default to siang for retry
+                                        className="bg-black text-white px-6 py-2 font-black uppercase text-xs"
+                                    >
+                                        COBA LAGI SEKALI LAGI
+                                    </button>
+                                </motion.div>
+                            )}
                         </motion.div>
                     )}
 

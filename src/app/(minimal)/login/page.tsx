@@ -93,7 +93,18 @@ function LoginContent() {
           sessionStorage.setItem("sikalori_session_active", "true");
         }
 
-        if (!profile?.daily_calorie_target) {
+        // Check if admin
+        const { data: adminRecord } = await supabase
+          .from("admins")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        const isAdmin = !!adminRecord || (user.email?.toLowerCase() === "admin@sikalori.com");
+
+        if (isAdmin) {
+          router.replace("/admin");
+        } else if (!profile?.daily_calorie_target) {
           router.replace("/onboarding");
         } else {
           router.replace("/dashboard");
