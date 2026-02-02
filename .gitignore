@@ -42,3 +42,13 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# scripts
+check-*.js
+fix-*.js
+seed-*.js
+reset-*.js
+*.js
+!next.config.ts
+!postcss.config.mjs
+!eslint.config.mjs

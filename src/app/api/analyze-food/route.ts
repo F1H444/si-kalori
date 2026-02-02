@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Analyze with Groq
-    // Use meta-llama/llama-4-scout-17b-16e-instruct for vision tasks and llama-3.3-70b-versatile for text
+    // Verified available vision model in Feb 2026: meta-llama/llama-4-scout-17b-16e-instruct
     const modelId = image ? "meta-llama/llama-4-scout-17b-16e-instruct" : "llama-3.3-70b-versatile";
     console.log(`🤖 [AnalyzeFood] Calling Groq with model: ${modelId}`);
     
@@ -133,23 +133,26 @@ export async function POST(req: NextRequest) {
     });
 
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("GROQ_TIMEOUT")), 28000)
+      setTimeout(() => reject(new Error("GROQ_TIMEOUT")), 25000)
     );
 
-    const completion: any = await Promise.race([aiPromise, timeoutPromise]).catch(err => {
-      console.error("💥 [AnalyzeFood] Detailed Error:", err);
+    let completion: any;
+    try {
+      completion = await Promise.race([aiPromise, timeoutPromise]);
+    } catch (err: any) {
+      console.error("💥 [AnalyzeFood] Detailed Error during AI call:", err);
       if (err.message === "GROQ_TIMEOUT") {
-         throw new Error("AI sedang sibuk (Timeout). Coba kurangi teks atau upload gambar yang lebih kecil.");
+         return NextResponse.json({ error: "AI_TIMEOUT", message: "AI sedang sangat sibuk. Coba lagi dalam 10 detik." }, { status: 504 });
       }
-      throw err;
-    });
+      return NextResponse.json({ error: "AI_ERROR", message: err.message || "Gagal menghubungi AI" }, { status: 500 });
+    }
 
     const resultContent = completion.choices[0]?.message?.content;
-    console.log("📝 [AnalyzeFood] Groq Response Content:", resultContent);
+    console.log("📝 [AnalyzeFood] Groq Response Content Received");
     
     if (!resultContent) {
       console.error("❌ [AnalyzeFood] Groq returned empty content");
-      throw new Error("AI No Response");
+      return NextResponse.json({ error: "EMPTY_AI_RESPONSE", message: "AI tidak memberikan jawaban." }, { status: 500 });
     }
     
     // Robust JSON Extraction

@@ -89,16 +89,26 @@ function DashboardContent() {
 
   useEffect(() => {
     let isMounted = true;
+    
+    // Safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        console.warn("⚠️ Dashboard data fetching timed out, forcing loading to false...");
+        setLoading(false);
+      }
+    }, 10000); // 10 seconds safety
+
     const fetchUserData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        if (!user) {
+        if (authError || !user) {
+          console.error("Auth error or no user:", authError);
           if (isMounted) router.push("/login");
           return;
         }
 
-        // Parallelize initial checks
+        // Parallelize initial checks with timeout protection
         const [profileRes, adminRes] = await Promise.all([
           supabase.from("users").select("*").eq("id", user.id).single(),
           supabase.from("admins").select("role").eq("user_id", user.id).maybeSingle()
@@ -123,12 +133,16 @@ function DashboardContent() {
         let premium_expired_at = data.premium_expired_at || null;
 
         try {
-          const [premRes, subRes] = await Promise.all([
+          // Use a shorter internal timeout for non-critical premium checks
+          const premiumCheck = Promise.all([
             supabase.from("premium").select("expired_at, status").eq("user_id", user.id).maybeSingle(),
             supabase.from("premium_subscriptions").select("expired_at, status").eq("user_id", user.id).maybeSingle()
           ]);
+          
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000));
+          const [premRes, subRes] = await Promise.race([premiumCheck, timeoutPromise]) as any;
 
-          const premiumData = premRes.data || subRes.data;
+          const premiumData = premRes?.data || subRes?.data;
 
           if (premiumData) {
             premium_expired_at = premiumData.expired_at;
@@ -139,7 +153,7 @@ function DashboardContent() {
             }
           }
         } catch (e) {
-          console.warn("Optional premium check delay:", e);
+          console.warn("Optional premium check skipped or delayed:", e);
         }
 
         if (isMounted) {
@@ -150,11 +164,17 @@ function DashboardContent() {
       } catch (err) {
         console.error("Dashboard Speed Error:", err);
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          clearTimeout(safetyTimeout);
+          setLoading(false);
+        }
       }
     };
     fetchUserData();
-    return () => { isMounted = false; };
+    return () => { 
+      isMounted = false;
+      clearTimeout(safetyTimeout);
+    };
   }, [router]);
 
   // --- TAMPILAN LOADING BARU ---

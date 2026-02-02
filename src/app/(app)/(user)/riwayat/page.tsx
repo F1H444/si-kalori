@@ -77,6 +77,15 @@ export default function RiwayatPage() {
 
   useEffect(() => {
     let isMounted = true;
+    
+    // Safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        console.warn("⚠️ Riwayat data fetching timed out, forcing loading to false...");
+        setLoading(false);
+      }
+    }, 10000); // 10 seconds safety
+
     const fetchLogs = async () => {
       try {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -85,7 +94,7 @@ export default function RiwayatPage() {
           console.error("User tidak ditemukan atau sesi berakhir");
           if (isMounted) {
             setLoading(false);
-            router.push("/login"); // Need to import router if using push
+            router.push("/login");
           }
           return;
         }
@@ -107,13 +116,19 @@ export default function RiwayatPage() {
       } catch (error: unknown) {
         console.error("Caught error in fetchLogs:", error instanceof Error ? error.message : error);                                                                                         
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          clearTimeout(safetyTimeout);
+          setLoading(false);
+        }
       }
     };
 
     setMounted(true);
     fetchLogs();
-    return () => { isMounted = false; };
+    return () => { 
+      isMounted = false;
+      clearTimeout(safetyTimeout);
+    };
   }, [router]);
 
   const openDeleteModal = (id: string, name: string) => {

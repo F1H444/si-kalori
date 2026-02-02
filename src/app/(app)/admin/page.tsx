@@ -16,12 +16,24 @@ function AdminPageContent() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
+    const authTimeout = setTimeout(() => {
+      if (isMounted && isLoading) {
+        console.warn("⚠️ Admin auth check timed out, forcing loading to false...");
+        setIsLoading(false);
+      }
+    }, 10000);
+
     const checkAdminAuth = async () => {
       // 1. Pelayanan pertama: Cek session storage (cepat)
       const savedAuth = sessionStorage.getItem("admin_auth");
       if (savedAuth === "true") {
-        setIsAuthenticated(true);
-        setIsLoading(false);
+        if (isMounted) {
+          setIsAuthenticated(true);
+          setIsLoading(false);
+          clearTimeout(authTimeout);
+        }
         return;
       }
 
@@ -36,7 +48,7 @@ function AdminPageContent() {
             body: JSON.stringify({ userId: user.id, email: user.email }),
           });
           
-          if (verifyResponse.ok) {
+          if (verifyResponse.ok && isMounted) {
             const verifyResult = await verifyResponse.json();
             if (verifyResult.isAdmin) {
               sessionStorage.setItem("admin_auth", "true");
@@ -48,11 +60,18 @@ function AdminPageContent() {
       } catch (err) {
         console.error("Admin auto-auth error:", err);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          clearTimeout(authTimeout);
+        }
       }
     };
 
     checkAdminAuth();
+    return () => { 
+      isMounted = false;
+      clearTimeout(authTimeout);
+    };
   }, []);
 
   if (isLoading) {

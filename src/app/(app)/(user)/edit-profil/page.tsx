@@ -51,10 +51,19 @@ export default function EditProfilePage() {
 
   useEffect(() => {
     let isMounted = true;
+    
+    // Safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        console.warn("⚠️ Edit Profile data fetching timed out, forcing loading to false...");
+        setLoading(false);
+      }
+    }, 10000); // 10 seconds safety
+
     const fetchProfile = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
           if (isMounted) {
             setLoading(false);
             router.push("/login");
@@ -86,12 +95,18 @@ export default function EditProfilePage() {
       } catch (err) {
         console.error("Fetch profile error:", err);
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          clearTimeout(safetyTimeout);
+          setLoading(false);
+        }
       }
     };
 
     fetchProfile();
-    return () => { isMounted = false; };
+    return () => { 
+      isMounted = false;
+      clearTimeout(safetyTimeout);
+    };
   }, [router]);
 
   const handleSave = async (e: React.FormEvent) => {

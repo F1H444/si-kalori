@@ -113,6 +113,7 @@ export default function ScanPage() {
     const [showInvalidModal, setShowInvalidModal] = useState(false);
     const [invalidMessage, setInvalidMessage] = useState("");
     const [analysisTimeout, setAnalysisTimeout] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -241,6 +242,7 @@ export default function ScanPage() {
         console.log("⚡ [Analyze] Initializing Turbo Flow...");
         setLoading(true);
         setAnalysisTimeout(false);
+        setErrorMessage(null);
 
         // Safety timer to show retry if slow
         const safetyTimer = setTimeout(() => {
@@ -359,8 +361,8 @@ export default function ScanPage() {
             } else if (error.message === "NOT_FOOD") {
                 setShowInvalidModal(true);
             } else {
-                alert(error.message || "Terjadi masalah teknis. Silakan coba lagi.");
-                setMode("select");
+                setErrorMessage(error.message || "Terjadi masalah teknis. Silakan coba lagi.");
+                // We keep the mode at result/select so they can see the error
             }
         } finally {
             clearTimeout(safetyTimer);
@@ -376,6 +378,7 @@ export default function ScanPage() {
         setTempInput(null);
         setPreview(null);
         setInputText("");
+        setErrorMessage(null);
         stopCamera();
     };
 
@@ -435,6 +438,16 @@ export default function ScanPage() {
                             </motion.div>
 
                             <motion.div variants={containerVariants} className="grid gap-6">
+                                {errorMessage && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="p-4 bg-red-100 border-4 border-black text-red-600 font-black uppercase text-sm mb-4 flex flex-col items-center gap-4"
+                                    >
+                                        <p>{errorMessage}</p>
+                                        <button onClick={() => setErrorMessage(null)} className="text-[10px] underline">Tutup</button>
+                                    </motion.div>
+                                )}
                                 <motion.div variants={itemVariants}>
                                     <BrutalMenuBtn 
                                         onClick={() => { setMode("camera"); startCamera(); }} 

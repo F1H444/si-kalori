@@ -35,6 +35,9 @@ export default function Sidebar({
   useEffect(() => {
     let isMounted = true;
     const checkUser = async () => {
+      const sideTimeout = setTimeout(() => {
+        if (isMounted) console.warn("Sidebar auth timeout");
+      }, 5000);
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user && isMounted) {
@@ -47,6 +50,8 @@ export default function Sidebar({
         }
       } catch (err) {
         console.error("Sidebar auth check error:", err);
+      } finally {
+        clearTimeout(sideTimeout);
       }
     };
     checkUser();

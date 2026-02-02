@@ -146,6 +146,13 @@ export default function Onboarding() {
   useEffect(() => {
     let isMounted = true;
     const checkAuth = async () => {
+      const onboardTimeout = setTimeout(() => {
+        if (isMounted && isCheckingAuth) {
+          console.warn("⚠️ Onboarding auth timeout");
+          setIsCheckingAuth(false);
+        }
+      }, 10000);
+
       try {
         const {
           data: { user },
@@ -157,7 +164,6 @@ export default function Onboarding() {
           return;
         }
 
-        // Check if user already finished onboarding OR is an admin
         const [profileRes, adminRes] = await Promise.all([
           supabase.from("users").select("has_completed_onboarding").eq("id", user.id).single(),
           supabase.from("admins").select("role").eq("user_id", user.id).maybeSingle()
@@ -174,11 +180,13 @@ export default function Onboarding() {
           if (isMounted) router.replace("/dashboard");
           return;
         }
-
-        if (isMounted) setIsCheckingAuth(false);
       } catch (err) {
         console.error("Auth check error in onboarding:", err);
-        if (isMounted) setIsCheckingAuth(false);
+      } finally {
+        if (isMounted) {
+          setIsCheckingAuth(false);
+          clearTimeout(onboardTimeout);
+        }
       }
     };
     checkAuth();

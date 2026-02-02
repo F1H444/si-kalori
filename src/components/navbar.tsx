@@ -162,63 +162,56 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
 
       const isSessionActive = sessionStorage.getItem("sikalori_session_active");
 
+      // Safety timeout for navbar auth
+      const navAuthTimeout = setTimeout(() => {
+        if (isSubscribed && loading) {
+          console.warn("⚠️ Navbar auth check timed out");
+          setLoading(false);
+        }
+      }, 10000);
+
       // Case 1: Already has initialUser and session is marked active in storage
       if (initialUser && isSessionActive) {
-        console.log("✅ [Navbar] Using initialUser from server:", { 
-          email: initialUser.email, 
-          isAdmin: initialUser.isAdmin 
-        });
-        setUser(initialUser); // IMPORTANT: Set the user state!
+        console.log("✅ [Navbar] Using initialUser from server");
+        setUser(initialUser);
         setLoading(false);
+        clearTimeout(navAuthTimeout);
         return;
       }
 
       // Case 2: No active session flag in storage
       if (!isSessionActive) {
-        // If server thinks we are logged in (initialUser) or there's a real session in cookies
-        // but storage is empty, it's a new tab/browser session. 
-        // We only enforce logout if we are SURE it's a new session and not just a navigation 
-        // from a page that didn't have the Navbar.
-        
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (initialUser || session) {
-          console.log("Session detected without storage flag - Syncing...");
-          sessionStorage.setItem("sikalori_session_active", "true");
-          
-          // Use initialUser if available (already has isAdmin from server)
-          if (initialUser) {
-            console.log("✅ [Navbar] Setting user from initialUser:", {
-              email: initialUser.email,
-              isAdmin: initialUser.isAdmin
-            });
-            setUser(initialUser);
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (initialUser || session) {
+            sessionStorage.setItem("sikalori_session_active", "true");
+            if (initialUser) setUser(initialUser);
+            else if (session?.user) await fetchProfile(session.user.id, session.user.email);
           }
-          
+        } catch (e) {
+          console.warn("Navbar initial auth failed:", e);
+        } finally {
           setLoading(false);
-          return;
+          clearTimeout(navAuthTimeout);
         }
-        
-        setUser(null);
-        setLoading(false);
         return;
       }
 
-      // Case 3: Flag exists but no initialUser (e.g. navigation from non-main layout)
-      // Check if session actually exists
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!isSubscribed) return;
-
-      if (session?.user) {
-        await fetchProfile(session.user.id, session.user.email);
-        // Ensure flag is still there
-        sessionStorage.setItem("sikalori_session_active", "true");
-      } else {
-        // Flag was present but no session? Clear flag and state.
-        sessionStorage.removeItem("sikalori_session_active");
-        setUser(null);
+      // Case 3: Flag exists but no initialUser
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await fetchProfile(session.user.id, session.user.email);
+          sessionStorage.setItem("sikalori_session_active", "true");
+        } else {
+          sessionStorage.removeItem("sikalori_session_active");
+          setUser(null);
+        }
+      } catch (e) {
+        console.warn("Navbar periodic auth failed:", e);
+      } finally {
         setLoading(false);
+        clearTimeout(navAuthTimeout);
       }
     };
 
@@ -230,17 +223,13 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
       if (!isSubscribed) return;
 
       if (session?.user) {
-        // If it's a new login or session refresh, update profile
         await fetchProfile(session.user.id, session.user.email);
-        
-        // Ensure flag is set on any valid login event
         if (event === "SIGNED_IN") {
           sessionStorage.setItem("sikalori_session_active", "true");
         }
       } else {
         setUser(null);
         setLoading(false);
-        // Clear flag on actual sign out
         sessionStorage.removeItem("sikalori_session_active");
       }
     });
