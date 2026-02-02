@@ -37,9 +37,10 @@ export async function POST(request) {
     return NextResponse.json({ error: "Konfigurasi server bermasalah (Missing Key)" }, { status: 500 });
   }
 
-  // Detect environment automatically based on Key
-  // SB- means Sandbox, Mid-server- means Production
-  const isProduction = !serverKey.startsWith('SB-');
+  // Detect environment
+  // Priority: 1. ENV Var, 2. Key Prefix
+  const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true' || 
+                      (process.env.MIDTRANS_IS_PRODUCTION === undefined && !serverKey.startsWith('SB-'));
   
   console.log(`🚀 [Payment] Initializing Midtrans Snap...`);
   console.log(`📡 [Payment] Mode: ${isProduction ? 'PRODUCTION' : 'SANDBOX'}`);
