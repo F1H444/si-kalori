@@ -19,8 +19,28 @@ export async function POST(req: NextRequest) {
 
     // Check 1: Email-based admin (admin@sikalori.com) - FASTEST
     if (userEmail === "admin@sikalori.com") {
-      console.log("✅ [API/Admin/Verify] Admin by email");
-      return NextResponse.json({ isAdmin: true, role: "super_admin", method: "email" });
+      console.log("✅ [API/Admin/Verify] Admin by email match: admin@sikalori.com");
+      
+      // AUTO-SAVE: Ensure this super admin exists in the 'admins' table
+      // This fixes the issue where the admin can login but doesn't exist in the database table
+      const { error: upsertError } = await supabase
+        .from("admins")
+        .upsert(
+          { 
+            user_id: userId, 
+            role: "super_admin" 
+          }, 
+          { onConflict: "user_id" }
+        );
+
+      if (upsertError) {
+        console.error("⚠️ [API/Admin/Verify] Failed to auto-save super admin to DB:", upsertError);
+        // We generally shouldn't block login if this fails, as hardcoded check passed.
+      } else {
+        console.log("💾 [API/Admin/Verify] Super admin auto-saved to database.");
+      }
+
+      return NextResponse.json({ isAdmin: true, role: "super_admin", method: "email_autosave" });
     }
 
     // Check 2: Database lookup
