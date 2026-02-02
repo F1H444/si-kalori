@@ -119,8 +119,8 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Analyze with Groq
-    // Use llama-3.2-11b-vision-preview for vision tasks and llama-3.3-70b-versatile for text
-    const modelId = image ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile";
+    // Use meta-llama/llama-4-scout-17b-16e-instruct for vision tasks and llama-3.3-70b-versatile for text
+    const modelId = image ? "meta-llama/llama-4-scout-17b-16e-instruct" : "llama-3.3-70b-versatile";
     console.log(`🤖 [AnalyzeFood] Calling Groq with model: ${modelId}`);
     
     // Safety check: wrap in a 25s timeout promise to ensure it doesn't hang the function

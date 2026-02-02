@@ -542,8 +542,7 @@ export default function ScanPage() {
                             ) : null}
 
                             <motion.div variants={mealItemVariants}>
-                                <h2 className="text-4xl md:text-5xl font-black uppercase text-center mb-2 leading-none">Kapan Kamu</h2>
-                                <h2 className="text-4xl md:text-5xl font-black uppercase italic text-center mb-8 bg-yellow-400 inline-block w-full">Makan Ini?</h2>
+                                <h2 className="text-4xl md:text-5xl font-black uppercase text-center mb-2 leading-none">PILIH!</h2>
                             </motion.div>
                             
                             <motion.div variants={mealContainerVariants} className="grid gap-4">
