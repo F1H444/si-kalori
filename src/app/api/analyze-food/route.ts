@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
           isPremium = !!sub;
         }
 
-        if (!isPremium) {
+        if (!isPremium) {   
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const { count } = await supabase

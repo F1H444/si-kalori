@@ -42,12 +42,24 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser().
   // EXCEPT: If we are on the recovery page with a code, skip getUser to avoid consuming the code 
   // before the client-side logic can handle it for the special recovery flow.
-  const isRecoveryWithCode = url.pathname === '/update-password' && url.searchParams.has('code');
+    const isRecoveryWithCode = url.pathname === '/update-password' && url.searchParams.has('code');
   
   let user = null;
   if (!isRecoveryWithCode) {
-    const { data: { user: foundUser } } = await supabase.auth.getUser();
-    user = foundUser;
+    try {
+      const { data: { user: foundUser }, error } = await supabase.auth.getUser();
+      if (error) {
+        // Just log the error, don't crash. 
+        // Failing to fetch user usually means the token is invalid or network is down.
+        // We will proceed as unauthenticated.
+        console.warn("Middleware: Failed to get user session", error.message);
+      } else {
+        user = foundUser;
+      }
+    } catch (err) {
+      console.warn("Middleware: Exception checking user session", err);
+      // Proceed as unauthenticated
+    }
   }
 
   // Protected Routes

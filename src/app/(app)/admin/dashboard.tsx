@@ -39,6 +39,7 @@ import {
   Settings,
 } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
+import { NeoDateRangePicker } from "@/components/admin/NeoDateRangePicker";
 
 interface UserData {
   id: string;
@@ -77,6 +78,16 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     "all",
   );
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [premiumData, setPremiumData] = useState<any[]>([]);
+  const [stats, setStats] = useState({ totalUsers: 0, activeUsers: 0, premiumUsers: 0, estimatedRevenue: 0 });
+  const [demographics, setDemographics] = useState({ genders: { male: 0, female: 0 }, goals: { lose: 0, maintain: 0, gain: 0 } });
+  const [premiumGrowthData, setPremiumGrowthData] = useState<{ label: string; value: number }[]>([]);
+  
+  // Default to last 7 days
+  const [growthDateRange, setGrowthDateRange] = useState({
+    start: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), // Start from 6 days ago (+ today = 7 days)
+    end: new Date()
+  });
 
   const [settings, setSettings] = useState({
     siteName: "SI KALORI",
@@ -161,9 +172,10 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       
       const adminIds = (data.admins || []).map((a: any) => a.id);
       const profiles = data.users || [];
-      const premiumData = data.premium || [];
+      const premiumDataFetched = data.premium || [];
       const scanCounts = data.scanCounts || {}; // New data from API
       
+      setPremiumData(premiumDataFetched);
       setTotalScans(data.totalScans || 0);
 
       // Filter out admins if you want, or show all. 
@@ -172,7 +184,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       // For now, let's show DEVELOPER current state: 
       // Show all users as requested
       const enrichedProfiles = profiles.map((p: any) => {
-        const premInfo = premiumData.find((pr: any) => pr.user_id === p.id);
+        const premInfo = premiumDataFetched.find((pr: any) => pr.user_id === p.id);
         const isPremiumActive = premInfo?.status === "active" && new Date(premInfo.expired_at) > new Date();
         const isAdminUser = adminIds.includes(p.id);
         
@@ -254,40 +266,56 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
     };
   }, [fetchUsers]);
 
-  const stats = useMemo(() => {
-    const totalUsers = users.length;
-    const premiumUsers = users.filter((u) => u.is_premium).length;
-    const estimatedRevenue = premiumUsers * 16000;
+  // Calculate stats and demographics
+  useEffect(() => {
+    const totalMale = users.filter((u) => u.gender === "male").length;
+    const totalFemale = users.filter((u) => u.gender === "female").length;
+    
+    const goalLose = users.filter((u) => u.goal === "lose").length;
+    const goalMaintain = users.filter((u) => u.goal === "maintain").length;
+    const goalGain = users.filter((u) => u.goal === "gain").length;
 
-    console.log("📊 Stats calculated:", {
-      totalUsers,
-      premiumUsers,
-      estimatedRevenue,
-      totalScans
+    setDemographics({
+      genders: { male: totalMale, female: totalFemale },
+      goals: { lose: goalLose, maintain: goalMaintain, gain: goalGain },
     });
 
-    return { totalUsers, premiumUsers, estimatedRevenue };
-  }, [users, totalScans]);
-
-  const demographics = useMemo(() => {
-    const goals = { lose: 0, maintain: 0, gain: 0, other: 0 };
-    const genders = { male: 0, female: 0, unknown: 0 };
-
-    users.forEach((u) => {
-      // Goals
-      if (u.goal === "lose") goals.lose++;
-      else if (u.goal === "maintain") goals.maintain++;
-      else if (u.goal === "gain") goals.gain++;
-      else goals.other++;
-
-      // Gender
-      if (u.gender === "male") genders.male++;
-      else if (u.gender === "female") genders.female++;
-      else genders.unknown++;
+    const activePremiumCount = premiumData.filter((p) => p.status === "active").length;
+    
+    setStats({
+      totalUsers: users.length,
+      activeUsers: users.length,
+      premiumUsers: activePremiumCount,
+      estimatedRevenue: activePremiumCount * 16000,
     });
 
-    return { goals, genders };
-  }, [users]);
+    // Premium Growth (Dynamic Date Range)
+    const getDaysArray = (start: Date, end: Date) => {
+      const arr = [];
+      for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+        arr.push(new Date(dt));
+      }
+      return arr;
+    };
+
+    const dateRangeList = getDaysArray(new Date(growthDateRange.start), new Date(growthDateRange.end));
+    
+    // Safety check: if range is too large (e.g. > 30 days), maybe aggregate? 
+    // For now, let's keep it daily but formatted nicely.
+    
+    const premiumRangeGrowth = dateRangeList.map(date => {
+      const label = date.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: 'short' });
+      const dateString = date.toISOString().split("T")[0];
+      
+      const count = premiumData.filter(sub => {
+        const subDate = sub.created_at ? new Date(sub.created_at).toISOString().split("T")[0] : "";
+        return subDate === dateString && sub.status === "active";
+      }).length;
+
+      return { label, value: count };
+    });
+    setPremiumGrowthData(premiumRangeGrowth);
+  }, [users, premiumData, growthDateRange]);
 
   const growthData = useMemo(() => {
     const months = [];
@@ -530,7 +558,7 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative z-10 w-full overflow-y-auto">
+      <main className="flex-1 flex flex-col relative z-10 w-full overflow-y-auto overflow-x-hidden">
         {/* Content Area */}
         <div className="flex-1 p-4 md:p-6 lg:p-8">
           {/* Page Header */}
@@ -618,38 +646,39 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
                     <TrendingUp className="w-6 h-6" />
                     Tren Pertumbuhan (6 Bulan)
                   </h3>
-                  <div className="flex gap-3 h-64 items-end justify-between">
-                    {growthData.map((data, i) => {
-                      const maxValue = Math.max(
-                        ...growthData.map((d) => d.value),
-                        1,
-                      );
-                      const heightPercent = (data.value / maxValue) * 100;
-                      return (
-                        <motion.div
-                          key={i}
-                          className="flex-1 flex flex-col items-center justify-end gap-2"
-                          initial={{ height: 0 }}
-                          animate={{
-                            height: mounted ? `${heightPercent}%` : 0,
-                          }}
-                          transition={{
-                            delay: i * 0.1,
-                            duration: 0.5,
-                            ease: "easeOut",
-                          }}
-                        >
-                          <div className="w-full bg-black border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center min-h-[40px]">
-                            <span className="text-white font-black text-xl">
-                              {data.value}
-                            </span>
+                  <div className="h-64 px-2">
+                    <div className="h-48 relative flex gap-3 items-end justify-between">
+                      {growthData.map((data, i) => {
+                        const maxValue = Math.max(...growthData.map((d) => d.value), 1);
+                        const heightPx = data.value === 0 
+                          ? 30  // Show small bar (30px) for 0 values
+                          : Math.max((data.value / maxValue) * 192, 30); // Max 192px (h-48), min 30px
+                        
+                        return (
+                          <div key={i} className="flex-1 flex flex-col items-center justify-end gap-3 h-full">
+                            <motion.div
+                              initial={{ height: 0 }}
+                              animate={{ height: `${heightPx}px` }}
+                              transition={{ duration: 0.6, delay: i * 0.1, ease: "easeOut" }}
+                              className="w-full bg-black border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center"
+                            >
+                              <span className="text-white font-black text-lg">
+                                {data.value}
+                              </span>
+                            </motion.div>
                           </div>
-                          <span className="text-xs font-black uppercase text-center">
+                        );
+                      })}
+                    </div>
+                    <div className="flex gap-3 justify-between mt-3 px-1">
+                      {growthData.map((data, i) => (
+                        <div key={i} className="flex-1 text-center">
+                          <span className="text-xs font-black uppercase">
                             {data.label}
                           </span>
-                        </motion.div>
-                      );
-                    })}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -1005,6 +1034,32 @@ export default function AdminDashboard({ activeTab }: AdminDashboardProps) {
           {activeTab === "analytics" && (
             <div className="space-y-12">
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] col-span-1 lg:col-span-2">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b-4 border-black pb-4">
+                    <h3 className="text-xl font-black uppercase italic tracking-tight">Premium Growth</h3>
+                    <NeoDateRangePicker 
+                      onApply={(start, end) => setGrowthDateRange({ start, end })}
+                      defaultStart={growthDateRange.start}
+                      defaultEnd={growthDateRange.end}
+                    />
+                  </div>
+                  <div className="h-64 px-4 flex flex-col items-center justify-center">
+                    {/* Calculate Total */}
+                    {(() => {
+                      const totalInPeriod = premiumGrowthData.reduce((acc, curr) => acc + curr.value, 0);
+                      
+                      return (
+                        <div className="text-center">
+                          <span className="text-8xl font-black block mb-2">{totalInPeriod}</span>
+                          <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                            Member Baru dalam Periode Ini
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+               </div>
+
                   <div className="bg-white border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                      <h3 className="text-xl font-black uppercase mb-6 border-b-4 border-black pb-2 italic">User Adoption</h3>
                      <div className="space-y-6">

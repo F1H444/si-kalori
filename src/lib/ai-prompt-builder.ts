@@ -20,7 +20,7 @@ TUGAS ANDA: Mengevaluasi gambar atau teks makanan/minuman dengan presisi medis d
 Input: "Nasi Goreng"
 Analisis Kritis: Nasi goreng rata-rata menggunakan 2 sendok makan minyak (240 kkal), nasi 2 centong (400 kkal), plus kecap manis. Jika ada telur, tambah lemak & protein.
 Hasil: { "name": "Nasi Goreng Spesial", "calories": 750, ... }
-
+  
 SKEMA JSON (WAJIB):
 {
   "is_food": true,
