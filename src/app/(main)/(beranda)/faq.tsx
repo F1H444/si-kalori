@@ -8,7 +8,7 @@ const faqData = [
   {
     question: "Apakah Sikalori gratis?",
     answer:
-      "Yup! Kamu bisa pakai Si Kalori gratis dengan batas 10 scan per hari. Kalau butuh unlimited scan, tinggal upgrade ke Premium (langganan bulanan) dan scan sepuasnya tanpa batas!",
+      "Yup! Si Kalori 100% GRATIS digunakan untuk semua orang tanpa batasan scan harian ataupun biaya berlangganan. Nikmati seluruh fitur pelacakan nutrisi kami sepuasnya secara gratis!",
     color: "bg-[#FF5F5F]",
   },
   {

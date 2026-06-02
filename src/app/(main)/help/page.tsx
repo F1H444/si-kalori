@@ -20,7 +20,7 @@ export default function HelpPage() {
     {
       icon: Shield,
       title: "Akun & Keamanan",
-      description: "Kelola kata sandi, langganan premium, dan privasi data kamu.",
+      description: "Kelola kata sandi, informasi profil, dan privasi data kamu.",
       color: "bg-blue-400"
     },
     {

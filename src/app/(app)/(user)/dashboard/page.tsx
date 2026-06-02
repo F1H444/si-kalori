@@ -321,55 +321,14 @@ function DashboardContent() {
               </p>
             </motion.div>
 
-            {/* Premium Status Card */}
-            {profile?.is_premium ? (
-              <motion.div
-                variants={itemVariants}
-                className="flex-1 bg-secondary border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
-              >
-                <div className="flex justify-between items-center mb-6">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-black flex items-center gap-2">
-                    <Crown size={14} /> Premium Aktif
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-3xl font-black tracking-tighter uppercase italic leading-none">
-                    1 Bulan
-                  </h3>
-                  {profile.premium_expired_at && (
-                    <p className="text-[10px] font-bold text-black/60 uppercase mt-2 tracking-widest">
-                      Berakhir: {new Date(profile.premium_expired_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </p>
-                  )}
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                variants={itemVariants}
-                className="flex-1 bg-gray-100 border-4 border-black p-6 md:p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
-                    <Crown size={14} /> Berlangganan
-                  </p>
-                </div>
-                <Link href="/premium">
-                  <button className="w-full py-2 bg-black text-white font-black text-xs uppercase tracking-tighter shadow-[4px_4px_0px_0px_#F97316]">
-                    Upgrade ke Premium
-                  </button>
-                </Link>
-              </motion.div>
-            )}
           </div>
 
-          {/* Weekly Report for Premium Users */}
-          {profile?.is_premium && (
-            <motion.div variants={itemVariants} className="lg:col-span-12 mt-8">
-              <Suspense fallback={<div className="h-48 bg-gray-50 border-4 border-black border-dashed animate-pulse" />}>
-                <WeeklyReport userId={profile.id} />
-              </Suspense>
-            </motion.div>
-          )}
+          {/* Weekly Report for All Users */}
+          <motion.div variants={itemVariants} className="lg:col-span-12 mt-8">
+            <Suspense fallback={<div className="h-48 bg-gray-50 border-4 border-black border-dashed animate-pulse" />}>
+              <WeeklyReport userId={profile?.id || ""} />
+            </Suspense>
+          </motion.div>
         </motion.div>
 
         {/* SECTION 2: DATA BIOLOGIS & AKTIVITAS */}

@@ -12,8 +12,8 @@ export default function TermsPage() {
     },
     {
       icon: CreditCard,
-      title: "Langganan & Pembayaran",
-      content: "Fitur Premium Sikalori memerlukan pembayaran berlangganan. Semua transaksi bersifat final dan tidak dapat dikembalikan (non-refundable), kecuali ditentukan lain oleh hukum yang berlaku atau kebijakan internal kami."
+      title: "Layanan Gratis",
+      content: "Seluruh fitur Sikalori saat ini dapat diakses secara gratis tanpa biaya berlangganan. Kami berhak melakukan perubahan terhadap model bisnis di masa mendatang dengan pemberitahuan tertulis kepada pengguna terlebih dahulu."
     },
     {
       icon: AlertTriangle,

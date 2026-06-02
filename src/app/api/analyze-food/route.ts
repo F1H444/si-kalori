@@ -12,64 +12,33 @@ export async function POST(req: NextRequest) {
 
     let userProfile: UserProfile | undefined;
 
-    // 1. Get Profile & Check Limits
+    // 1. Get Profile (for personalized recommendations only)
     if (userEmail) {
       try {
         const { createAdminClient } = await import("@/lib/supabase-admin");
         const supabase = createAdminClient();
-        // 1. Fetch basic profile info
+        
+        // Fetch basic profile info for personalized recommendations
         const { data: profile, error } = await supabase
           .from("users")
           .select("*")
           .eq("email", userEmail)
           .single();
 
-        if (error || !profile) throw new Error("Profile not found");
-
-        // 2. Detect available columns for premium check
-        const availableColumns = Object.keys(profile);
-        let isPremium = false;
-
-        if (availableColumns.includes("is_premium")) {
-          isPremium = !!(profile as any).is_premium;
-        } else {
-          // Fallback: Check premium_subscriptions table directly
-          const { data: sub } = await supabase
-            .from("premium_subscriptions")
-            .select("id")
-            .eq("user_id", profile.id)
-            .eq("status", "active")
-            .gte("expired_at", new Date().toISOString())
-            .maybeSingle();
-          isPremium = !!sub;
+        if (!error && profile) {
+          userProfile = {
+            id: profile.id,
+            goal: (profile as any).goal || "maintain",
+            is_premium: false, // All features are now free
+            recommendedCalories: (profile as any).daily_calorie_target || 2000,
+            age: (profile as any).age || 25,
+            gender: (profile as any).gender || "male",
+            height: (profile as any).height || 170,
+            weight: (profile as any).weight || 60,
+            activityLevel: (profile as any).activity_level || "moderate",
+            full_name: (profile as any).full_name || "User",
+          };
         }
-
-        if (!isPremium) {   
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const { count } = await supabase
-            .from("food_logs")
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", profile.id)
-            .gte("created_at", today.toISOString());
-
-          if ((count || 0) >= 10) {
-            return NextResponse.json({ error: "LIMIT_REACHED", message: "Kuota gratis habis. Upgrade ke Premium!" }, { status: 403 });
-          }
-        }
-
-        userProfile = {
-          id: profile.id,
-          goal: (profile as any).goal || "maintain",
-          is_premium: isPremium,
-          recommendedCalories: (profile as any).daily_calorie_target || 2000,
-          age: (profile as any).age || 25,
-          gender: (profile as any).gender || "male",
-          height: (profile as any).height || 170,
-          weight: (profile as any).weight || 60,
-          activityLevel: (profile as any).activity_level || "moderate",
-          full_name: (profile as any).full_name || "User",
-        };
       } catch (e) {
         console.warn("Profile check failed", e);
       }
@@ -149,7 +118,7 @@ export async function POST(req: NextRequest) {
 
     const resultContent = completion.choices[0]?.message?.content;
     console.log("📝 [AnalyzeFood] Groq Response Content Received");
-    
+   
     if (!resultContent) {
       console.error("❌ [AnalyzeFood] Groq returned empty content");
       return NextResponse.json({ error: "EMPTY_AI_RESPONSE", message: "AI tidak memberikan jawaban." }, { status: 500 });

@@ -172,14 +172,7 @@ export default function Sidebar({
               <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mt-1 flex items-center gap-2">
                 {isAdmin ? "Admin" : "Pengguna"}
               </p>
-              {isPremium && !isAdmin && (
-                <div className="mt-2">
-                  <span className="inline-flex items-center gap-1 bg-yellow-400 text-black px-2 py-0.5 border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-[9px] font-black italic uppercase leading-none">
-                    <Crown size={10} strokeWidth={3} fill="currentColor" />
-                    Premium
-                  </span>
-                </div>
-              )}
+
             </div>
           </div>
           <button

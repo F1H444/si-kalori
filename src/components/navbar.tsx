@@ -350,16 +350,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                   />
                 ) : user ? (
                   <div className="flex items-center gap-2">
-                    {user.isPremium && (
-                      <motion.div 
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 bg-yellow-400 border-[3px] border-black text-black rounded-full text-[11px] font-black uppercase tracking-tighter italic shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-                      >
-                        <Crown size={14} strokeWidth={3} fill="currentColor" />
-                        Premium
-                      </motion.div>
-                    )}
+
 
                     <div className="relative profile-dropdown-container">
                       <button
@@ -416,23 +407,7 @@ export default function Navbar({ initialUser = null }: NavbarProps) {
                                 return !user.isAdmin;
                               })() && (
                                 <>
-                                  {user.isPremium ? (
-                                    <div className="flex items-center justify-center gap-3 p-5 border-4 border-black rounded-2xl font-black text-sm uppercase bg-green-500 text-white italic shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mt-6">
-                                      <Crown size={20} strokeWidth={3} fill="currentColor" />
-                                      Sudah Premium
-                                    </div>
-                                  ) : (
-                                    <Link
-                                      href="/premium"
-                                      className="flex items-center justify-between p-5 border-4 border-black rounded-2xl font-black text-sm uppercase shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all mt-6 bg-yellow-400 text-black italic group"
-                                    >
-                                      <span className="flex items-center gap-2">
-                                        <Crown size={20} strokeWidth={3} fill="currentColor" className="group-hover:animate-bounce" />
-                                        Upgrade Pro
-                                      </span>
-                                      <ArrowRight size={20} strokeWidth={3} />
-                                    </Link>
-                                  )}
+
                                 </>
                               )}
 

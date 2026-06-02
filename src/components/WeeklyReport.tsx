@@ -69,8 +69,8 @@ export default function WeeklyReport({ userId }: { userId: string }) {
     <div className="border-4 border-black p-4 md:p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
       <div className="flex items-center justify-between mb-8 border-b-4 border-black pb-4">
         <h3 className="text-xl md:text-2xl font-black uppercase italic tracking-tighter">Laporan Mingguan</h3>
-        <div className="bg-black text-white text-[10px] px-2 py-1 font-bold uppercase tracking-widest">
-          Premium Access
+        <div className="bg-green-500 text-white text-[10px] px-2 py-1 font-bold uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+          Free Access
         </div>
       </div>
       

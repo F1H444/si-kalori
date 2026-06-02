@@ -31,7 +31,6 @@ export default function Footer() {
     { name: "Beranda", href: "/" },
     { name: "Tentang", href: "/tentang" },
     { name: "Kontak", href: "/kontak" },
-    { name: "Premium", href: "/premium" },
     ...(isLoggedIn ? [{ name: "Dashboard", href: "/dashboard" }] : []),
   ];
 
